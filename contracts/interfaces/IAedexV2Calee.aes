@@ -1,0 +1,7 @@
+@compiler >= 6
+
+contract interface IAedexV2Calee = 
+
+    //TODO: data for what?
+    entrypoint uniswapV2Call: (address /*sender*/, int /*amount0*/, int /*amount1*/) => unit
+

@@ -1,0 +1,21 @@
+@compiler >= 6
+
+contract IAedexV2Calee =
+    datatype event 
+        = Transfer(address /*indexed from*/, address /*indexed to*/, AE.uint256 /*value*/)
+        | Approval(address /*indexed owner*/, address /*indexed spender*/, AE.uint256 /*value*/)
+
+        | Mint(address /*indexed sender*/, int amount0, int amount1)
+        | Burn(address /*indexed sender*/, address /*indexed to*/, string /*int amount0 | int amount1*/ )
+        | Swap(
+            address /*indexed sender*/
+            , address /*indexed to*/
+            , string
+            /*
+            , uint amount0In,
+            , uint amount1In,
+            , uint amount0Out,
+            , uint amount1Out,
+            */
+        )
+        | Sync(int /*uint112 reserve0*/, int /*reserve1*/)

@@ -1,0 +1,17 @@
+@compiler >= 6
+
+include "./IAEX9Minimal.aes"
+
+contract interface IAedexV2Factory =
+    entrypoint feeTo: () => address
+    entrypoint feeToSetter: () => address
+
+    entrypoint getPair: (IAEX9Minimal /*tokenA*/, IAEX9Minimal /*tokenB*/) => address
+    entrypoint allPairs: (int) => address 
+    entrypoint allPairsLength: () => int
+
+    entrypoint createPair: (IAEX9Minimal /*tokenA*/, IAEX9Minimal /*tokenB*/) => address /*pair*/
+
+    entrypoint setFeeTo: (address) => unit
+    entrypoint setFeeToSetter: (address) => unit
+

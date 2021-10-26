@@ -1,0 +1,52 @@
+@compiler >= 6
+
+contract interface IAEX9Minimal = 
+    record allowance_accounts = { from_account: address, for_account: address }
+
+    record meta_info = { name : string , symbol : string , decimals : int }
+
+
+    //This function returns meta information associated with the token contract.
+    entrypoint meta_info: () => meta_info
+
+    //This function returns the total token supply.
+    entrypoint total_supply: () => int
+
+    //This function returns the account balance of another account with address owner,
+    //if the account exists. If the owner address is unknown to the contract None will be returned.
+    //Using option type as a return value allows us to determine if the account has balance of 0, more than 0,=> unit
+    //or the account has never had balance and is still unknown to the contract.
+    entrypoint balance: (address) => option(int)
+
+    //This function returns the amount which for_account is still allowed to withdraw from from_account,
+    //where record allowance_accounts = { from_account: address, for_account: address }.
+    //If no allowance for this combination of accounts exists, None is returned.
+    entrypoint allowance: (allowance_accounts) => option(int)
+
+    // This function allows transfer of value amount of tokens to to_account address and MUST fire the Transfer event.
+    // The function SHOULD abort if the Call.caller's account balance does not have enough tokens to spend.
+    // Note: Transfers of 0 values MUST be treated as normal transfers and fire the Transfer event.
+    // @param to_account The account that will receive the amount transferred
+    // @param value The number of tokens to send from the sender to the recipient
+    stateful entrypoint transfer: (address /*to_account*/, int /*value*/) => unit
+
+
+    // Allows for_account to withdraw from your account multiple times, up to the value amount.
+    // If this function is called again it overwrites the current allowance with value.
+    // Note: To prevent attack vectors (like the ones possible in ERC20) clients SHOULD make sure to create user interfaces in such a way that they set the allowance first to 0 before setting it to another value for the same spender. THOUGH the contract itself shouldn't enforce it, to allow backwards compatibility with contracts deployed before.
+    // @notice Sets the allowance of a spender from the `Call.caller` to the value `amount`
+    // @param spender The account which will be allowed to spend a given amount of the owners tokens
+    // @param amount The amount of tokens allowed to be used by `spender`
+    stateful entrypoint create_allowance: (address /*spender*/, int /*amount*/) => unit
+
+
+    // Transfers value amount of tokens from address from_account to address to_account, and MUST fire the Transfer event.
+    // The transfer_allowance method is used for a withdraw workflow, allowing contracts to transfer 
+    // tokens on your behalf. This can be used for example to allow a contract to transfer tokens on your behalf 
+    // and/or to charge fees in sub-currencies. The function SHOULD abort unless the from_account account has deliberately authorized the sender of the message via some mechanism.
+    // Note: Transfers of 0 values MUST be treated as normal transfers and fire the Transfer event.
+    // @notice Transfers `amount` tokens from `sender` to `recipient` up to the allowance given to the `Call.caller`
+    // @param sender The account from which the transfer will be initiated
+    // @param recipient The recipient of the transfer
+    // @param amount The amount of the transfer
+    stateful entrypoint transfer_allowance: ( address /*sender*/, address /*recipient*/, int /*amount*/) => unit
