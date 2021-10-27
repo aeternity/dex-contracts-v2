@@ -1,0 +1,15 @@
+@compiler >= 6
+
+
+// a library for handling binary fixed point numbers (https://en.wikipedia.org/wiki/Q_(number_format))
+
+// range: [0, 2**112 - 1]
+// resolution: 1 / 2**112
+
+namespace UQ112x112 =
+
+    // encode a uint112 as a UQ112x112
+    function encode(y: int): int =
+        require(y>=0,"LP")
+        let q112 = 0x10000000000000000000000000000 // 2^112
+        y * q112 

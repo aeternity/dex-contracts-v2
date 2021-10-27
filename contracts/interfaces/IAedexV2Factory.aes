@@ -14,4 +14,3 @@ contract interface IAedexV2Factory =
 
     entrypoint setFeeTo: (address) => unit
     entrypoint setFeeToSetter: (address) => unit
-

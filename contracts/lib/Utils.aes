@@ -2,10 +2,7 @@
 
 include "String.aes"
 include "List.aes"
-include "Option.aes"
 
-//TODO: we use them temporarly to trace code from uniswap 1:1
-//after optimizations and tests we should get rid of them
 namespace AE =
     type uint   = int
     
