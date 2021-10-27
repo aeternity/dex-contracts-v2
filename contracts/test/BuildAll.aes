@@ -8,10 +8,12 @@ include "../interfaces/IAedexV2Factory.aes"
 include "../lib/SafeMath.aes"
 include "../lib/Math.aes"
 include "../lib/UQ112x112.aes"
+include "../AedexV2Factory.aes"
+include "../interfaces/IAedexV2PairlInit.aes"
 
 include "Option.aes"
 include "String.aes"
 
-contract BuildAll = 
+main contract BuildAll = 
     entrypoint init() = ()
 

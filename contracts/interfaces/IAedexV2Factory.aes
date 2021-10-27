@@ -2,15 +2,18 @@
 
 include "./IAEX9Minimal.aes"
 
+
 contract interface IAedexV2Factory =
-    entrypoint feeTo: () => address
-    entrypoint feeToSetter: () => address
+    entrypoint fee_to: () => address
+    entrypoint fee_to_setter: () => address
 
-    entrypoint getPair: (IAEX9Minimal /*tokenA*/, IAEX9Minimal /*tokenB*/) => address
-    entrypoint allPairs: (int) => address 
-    entrypoint allPairsLength: () => int
+    entrypoint get_pair: (IAEX9Minimal /*tokenA*/, IAEX9Minimal /*tokenB*/) => address
+    entrypoint all_pairs: (int) => address 
+    entrypoint all_pairs_length: () => int
 
-    entrypoint createPair: (IAEX9Minimal /*tokenA*/, IAEX9Minimal /*tokenB*/) => address /*pair*/
+    //TODO: we exclude this because of the circular reference
+    //when this_factory is removed/solved we can uncomment this
+    //entrypoint create_pair: (IAEX9Minimal [>tokenA*/, IAEX9Minimal /*tokenB*/, IAedexV2Factory) => address /*pair<]
 
-    entrypoint setFeeTo: (address) => unit
-    entrypoint setFeeToSetter: (address) => unit
+    entrypoint set_fee_to: (address) => unit
+    entrypoint set_fee_toSetter: (address) => unit
