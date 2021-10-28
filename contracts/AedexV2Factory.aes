@@ -6,7 +6,7 @@ include "./interfaces/IAedexV2Factory.aes"
 
 contract AedexV2Factory = 
     record state = {
-              fee_to: address
+              fee_to: option(address)
             , fee_to_setter: address
             , pairs: map(IAEX9Minimal,map(IAEX9Minimal,address))   
             , all_pairs: list(address)
@@ -23,9 +23,8 @@ contract AedexV2Factory =
 
     entrypoint init( 
         _fee_to_setter: address
-        , _feeTo: address
         , pool_model: IAedexV2PairlInit
-        ) = { fee_to        = _feeTo
+        ) = { fee_to        = None
             , fee_to_setter = _fee_to_setter
             , pairs         = {}
             , all_pairs     = []
@@ -45,7 +44,7 @@ contract AedexV2Factory =
 
     stateful entrypoint set_fee_to(fee_to: address) = 
         validate_fee_to_setter()
-        put( state { fee_to = fee_to})
+        put( state { fee_to = Some(fee_to)})
 
     stateful entrypoint set_fee_to_setter(fee_to_setter: address) =
         validate_fee_to_setter()

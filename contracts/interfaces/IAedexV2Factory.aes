@@ -4,7 +4,7 @@ include "./IAEX9Minimal.aes"
 
 
 contract interface IAedexV2Factory =
-    entrypoint fee_to: () => address
+    entrypoint fee_to: () => option(address)
     entrypoint fee_to_setter: () => address
 
     entrypoint get_pair: (IAEX9Minimal /*tokenA*/, IAEX9Minimal /*tokenB*/) => address
