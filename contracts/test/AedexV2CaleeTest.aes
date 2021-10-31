@@ -1,0 +1,10 @@
+@compiler >= 6
+
+include "../lib/Utils.aes"
+include "../interfaces/IAEX9Minimal.aes"
+include "../interfaces/IAedexV2Calee.aes"
+
+contract AedexV2CaleeTest = 
+    entrypoint aedexV2Call(sender: address, amount0: int, amount1: int): unit = 
+        abort("asd")
+

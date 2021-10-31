@@ -13,7 +13,6 @@ function formatPrice( price )/*: string*/ {
 }
 const MaxUint128 = BigNumber.from( 2 ).pow( 128 ).sub( 1 )
 const MaxUint256 = BigNumber.from( 2 ).pow( 256 ).sub( 1 )
-
 const getMinTick = ( tickSpacing ) => Math.ceil( -887272 / tickSpacing ) * tickSpacing
 const getMaxTick = ( tickSpacing ) => Math.floor( 887272 / tickSpacing ) * tickSpacing
 const getMaxLiquidityPerTick = ( tickSpacing ) =>
@@ -54,8 +53,13 @@ function encodePriceSqrt( reserve1, reserve0 ) {
             .toString()
     )
 }
+const makeExe = ( contract ) => async ( f, get ) => {
+    const { decodedResult } = await f( contract.methods )
+    return get ? get( decodedResult ) : decodedResult
+}
 
 module.exports = {
+    makeExe,
     encodePriceSqrt,
     expandTo18Decimals,
     TICK_SPACINGS,

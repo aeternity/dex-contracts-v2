@@ -13,6 +13,8 @@ follow-log:
 	docker-compose $(PNAME) logs -f
 testAll:
 	npm run test
+testAex9:
+	npm run test:aex9-break
 testFactoryPool:
 	npm run test:aedex-pool-factory-break
-test: testAll
+test: testAex9

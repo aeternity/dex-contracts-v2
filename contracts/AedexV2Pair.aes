@@ -296,7 +296,7 @@ contract AedexV2Pair =
         Chain.event( Transfer(from, Contract.address, value) )
 
     entrypoint meta_info(): IAEX9Minimal.meta_info = {
-          name = "Aedex  v2",
+          name = "Aedex v2",
           symbol = "AEDX-V2",
           decimals = 18
         }
@@ -376,6 +376,7 @@ contract AedexV2Pair =
         require(deadline >= Chain.timestamp, "AedexV2: EXPIRED")
         //TODO: replace this with aeternity equivalent if there is such a thing
         //WARNING: the owner is not the Call.caller ????!!!!!
+
         // should we replace the owner with Call.caller
 
         /*bytes32 digest = keccak256(*/

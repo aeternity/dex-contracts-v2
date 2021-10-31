@@ -6,6 +6,9 @@
   "scripts": {
     "deploy": "node deployment/deploy.js",
     "test": "mocha ./test/*.test.js --timeout 0 --exit",
+    "test:aex9": "mocha ./test/aex9.test.js --timeout 0 --exit",
+    "test:aex9-break": "mocha ./test/aex9.test.js  --timeout 0 --exit -b --failed-first",
+    "test:aex9-debug": "node --inspect-brk node_modules/.bin/mocha ./test/aex9.test.js --timeout 0 --exit -b",
     "test:aedex-pool-factory": "mocha ./test/aedex-pool-factory.test.js --timeout 0 --exit",
     "test:aedex-pool-factory-break": "mocha ./test/aedex-pool-factory.test.js  --timeout 0 --exit -b --failed-first",
     "test:aedex-pool-factory-debug": "node --inspect-brk node_modules/.bin/mocha ./test/aedex-pool-factory.test.js --timeout 0 --exit -b"

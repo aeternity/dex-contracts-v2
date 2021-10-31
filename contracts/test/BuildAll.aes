@@ -11,9 +11,8 @@ include "../lib/Math.aes"
 include "../lib/UQ112x112.aes"
 include "../AedexV2Factory.aes"
 include "../AedexV2Pair.aes"
-
-include "Option.aes"
-include "String.aes"
+include "./AedexV2CaleeTest.aes"
+include "./TestAEX9.aes"
 
 main contract BuildAll = 
     entrypoint init() = ()
