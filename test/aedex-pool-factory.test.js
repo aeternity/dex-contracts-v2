@@ -36,6 +36,8 @@ import {
 import {
     expandTo18Decimals,
     MaxUint256,
+    expectToRevert,
+
 } from './shared/utilities.js'
 
 const TOTAL_SUPPLY = expandTo18Decimals( 10000 )
@@ -50,11 +52,66 @@ const other = {
     ...WALLETS[1],
     address: WALLETS[1].publicKey 
 }
+var factory, token0, token1, pair 
 
 describe( 'Pair Factory', () => {
-    let contract
     beforeEach( 'first compile pool factory', async () => {
-        await pairFixture()
+        ( { factory, token0, token1, pair } = await pairFixture() )
     } )
-    it( "asda", () => {} )
+    it( 'feeTo, feeToSetter, allPairsLength', async () => {
+        const exe = factory.exe
+        expect( await exe( x => x.fee_to() ) ).to.eq( undefined )
+        expect( await exe( x => x.fee_to_setter() ) ).to.eq( wallet.address )
+        expect( await exe( x => x.all_pairs_length() ) ).to.eq( 1 )
+    } )
+    it( 'fails to create same pairs', async () => {
+        await expectToRevert(
+            () => factory.exe( x => x.create_pair( 
+                getA( token0 ),
+                getA( token1 ),
+                getA( factory )
+            ) ),
+            'AedexV2: PAIR_EXISTS'
+        )
+    } )
+    it( 'fails to create same pairs in reverse', async () => {
+        await expectToRevert(
+            () => factory.exe( x => x.create_pair( 
+                getA( token1 ),
+                getA( token0 ),
+                getA( factory )
+            ) ),
+            'AedexV2: PAIR_EXISTS'
+        )
+    } )
+    it( 'set_fee_to', async () => {
+        await expectToRevert(
+            () =>  factory.exe( x => x.set_fee_to( 
+                other.address, {
+                    onAccount: other.address,
+                } )
+            ),
+            "AedexV2: FORBIDDEN"
+        )
+        expect( await factory.exe( x => x.fee_to( ) ) ).to.eq( undefined )
+        await factory.exe( x => x.set_fee_to( wallet.address ) )
+        expect( await factory.exe( x => x.fee_to( ) ) ).to.eq( wallet.address )
+    } )
+    it( 'set_fee_to_setter', async () => {
+        await expectToRevert(
+            () =>  factory.exe( x => x.set_fee_to_setter( 
+                other.address, {
+                    onAccount: other.address,
+                } )
+            ),
+            "AedexV2: FORBIDDEN"
+        )
+
+        await factory.exe( x => x.set_fee_to_setter( other.address ) )
+        expect( await factory.exe( x => x.fee_to_setter() ) ).to.eq( other.address )
+        await expectToRevert(
+            () => factory.exe( x => x.set_fee_to_setter( wallet.address ) ),
+            "AedexV2: FORBIDDEN"
+        )
+    } )
 } )

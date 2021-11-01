@@ -57,8 +57,17 @@ const makeExe = ( contract ) => async ( f, get ) => {
     const { decodedResult } = await f( contract.methods )
     return get ? get( decodedResult ) : decodedResult
 }
+const expectToRevert = async ( f, msg ) => {
+    try {
+        await f()
+        assert.fail( 'didn\'t fail' )
+    } catch ( err ) {
+        expect( err.message ).to.includes( msg )
+    }
+}
 
 module.exports = {
+    expectToRevert,
     makeExe,
     encodePriceSqrt,
     expandTo18Decimals,
