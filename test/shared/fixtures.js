@@ -19,6 +19,7 @@ var crypto = require( 'crypto' )
 
 const {
     makeExe,
+    expandTo18Decimals,
 } = require( './utilities.js' )
 
 const { Universal, MemoryAccount, Node } = require( '@aeternity/aepp-sdk' )
@@ -27,6 +28,10 @@ const NETWORKS = require( '../../config/network.json' )
 const NETWORK_NAME = "local"
 
 const { defaultWallets: WALLETS } = require( '../../config/wallets.json' )
+const wallet0 = { 
+    ...WALLETS[0],
+    address: WALLETS[0].publicKey 
+}
 
 const contractUtils = require( '../../utils/contract-utils' )
 
@@ -94,8 +99,11 @@ const getContract = async ( source, params, contractAddress, wallet = WALLETS[0]
                 return deployment_result
             }  
         }
-    } catch ( err ) {
-        console.error( err )
+    } catch ( ex ) {
+        console.log( ex )
+        if ( ex.response.text ) {
+            console.log( JSON.parse( ex.response.text ) )
+        }
         assert.fail( 'Could not initialize contract instance' )
     }
 }
@@ -104,7 +112,73 @@ const getA = x => x.contract.deployInfo.address
 
 const cttoak = ( value ) => value.replace( "ct_", "ak_" )
 
+var pairModel
+const pairModelFixture = async () => {
+
+    const fakeAddress = 'ct_A8WVnCuJ7t1DjAJf4y8hJrAEVpt1T9ypG3nNBdbpKmpthGvUm'
+    pairModel = await getContract(
+        './contracts/AedexV2Pair.aes',
+        [
+            fakeAddress,
+            fakeAddress,
+            fakeAddress,
+        ],
+    )
+    await pairModel.deploy()
+}
+
+const factoryFixture = async ( wallet ) => {
+    if ( !pairModel ) {
+        await pairModelFixture()
+    }
+
+    const factory = await getContract(
+        './contracts/AedexV2Factory.aes',
+        [
+            wallet.address,
+            getA( pairModel ),
+        ],
+    )
+    await factory.deploy()
+    return factory
+}
+
+const tokenFixture = async ( liquidity ) => {
+    
+    const token = await getContract(
+        './contracts/test/TestAEX9.aes',
+        [ liquidity ],
+    )
+    await token.deploy()
+    return token
+}
+
+const pairFixture = async ( wallet = wallet0 ) => {
+    const factory = await factoryFixture( wallet )
+
+    const liq = expandTo18Decimals( 10000 ).toString()
+    const tokenA = await tokenFixture( liq )
+    const tokenB = await tokenFixture( liq )
+
+    const pairAddress = await factory.exe( x => x.create_pair( 
+        getA( tokenA ),
+        getA( tokenB ),
+        getA( factory )
+    ) )
+
+    const pair = await getContract( "./contracts/AedexV2Pair.aes", [], pairAddress  )
+
+    const token0Address = ( await pair.exe( x => x.token0() ) )
+
+    const token0 = tokenA.address === token0Address ? tokenA : tokenB
+    const token1 = tokenA.address === token0Address ? tokenB : tokenA
+
+    console.log( [ factory, token0, token1, pair ].map( getA ) )
+    return { factory, token0, token1, pair }
+}
 module.exports = {
+    pairFixture,
+    pairModelFixture,
     getContract,
     getA,
     cttoak,

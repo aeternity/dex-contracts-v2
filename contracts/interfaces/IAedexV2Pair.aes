@@ -1,6 +1,7 @@
 @compiler >= 6
 
 include "./IAedexV2Calee.aes"
+include "./IAEX9Minimal.aes"
 
 contract interface IAedexV2Pair =
     /*entrypoint name() external pure returns (string memory);*/
@@ -30,7 +31,7 @@ contract interface IAedexV2Pair =
 
 
     entrypoint minimum_liquidity: () => int
-    entrypoint factory: () => address //TODO: IAedexV2Factory
+    entrypoint factory: () => address //TODO: IAedexV2Factory ??
     entrypoint token0: () => IAEX9Minimal  
     entrypoint token1: () => IAEX9Minimal  
 

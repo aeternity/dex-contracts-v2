@@ -10,7 +10,7 @@ contract AedexV2Factory =
             , fee_to_setter: address
             , pairs: map(IAEX9Minimal,map(IAEX9Minimal,address))   
             , all_pairs: list(address)
-            , pool_model: IAedexV2PairlInit
+            , pair_model: IAedexV2PairlInit
             }
     
     datatype event 
@@ -23,12 +23,12 @@ contract AedexV2Factory =
 
     entrypoint init( 
         _fee_to_setter: address
-        , pool_model: IAedexV2PairlInit
+        , pair_model: IAedexV2PairlInit
         ) = { fee_to        = None
             , fee_to_setter = _fee_to_setter
             , pairs         = {}
             , all_pairs     = []
-            , pool_model    = pool_model
+            , pair_model    = pair_model
             }
 
     entrypoint all_pairs_length(): int = List.length(state.all_pairs)
@@ -76,7 +76,7 @@ contract AedexV2Factory =
                     )
         require(!has_old_value,"AedexV2: PAIR_EXISTS")
         let pair = Chain.clone( 
-                    ref=state.pool_model
+                    ref=state.pair_model
                     , this_factory
                     , token0
                     , token1

@@ -17,4 +17,4 @@ testAex9:
 	npm run test:aex9-break
 testFactoryPool:
 	npm run test:aedex-pool-factory-break
-test: testAex9
+test: testFactoryPool

@@ -77,11 +77,15 @@ const deploy = async ( secretKey, network, compiler ) => {
         return contractId
     }
 
+    const fakeAddress = 'ct_A8WVnCuJ7t1DjAJf4y8hJrAEVpt1T9ypG3nNBdbpKmpthGvUm'
     const deployments = 
         [ 
             /* 00 */ () => deployContract( './contracts/test/BuildAll.aes', [] ),
+            /* 01 */ () => deployContract( './contracts/AedexV2Pair.aes', 
+                [ fakeAddress, fakeAddress, fakeAddress ] ),
+
         ]
-    await deployments[0]()
+    await deployments[1]()
 
     //console.log(await contract.methods.getOwner())
 }

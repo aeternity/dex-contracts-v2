@@ -19,33 +19,42 @@ const { BigNumber, BigNumberish, constants, Contract, ContractTransaction, utils
 import { Decimal } from 'decimal.js'
 const { jestSnapshotPlugin } = require( "mocha-chai-jest-snapshot" )
 
+const tokenA      = 'ct_A8WVnCuJ7t1DjAJf4y8hJrAEVpt1T9ypG3nNBdbpKmpthGvUm'
+const tokenB      = 'ct_m18VKpSVhsQtjmUC7oZAJPwk36usb39B2viWzBuPjfQEsxHYL'
+const fakeFactory = 'ct_27JMp3z1pyXbfjra2VXiFU9e5jtFTyzus57S6eWbGNh3NSfabo'
+
 use( jestSnapshotPlugin() )
 
-const NETWORK_NAME = "local"
-
 const { defaultWallets: WALLETS } = require( '../config/wallets.json' )
+
+import {
+    getA,   
+    getContract,
+    pairFixture,
+} from './shared/fixtures.js'
+
+import {
+    expandTo18Decimals,
+    MaxUint256,
+} from './shared/utilities.js'
+
+const TOTAL_SUPPLY = expandTo18Decimals( 10000 )
+const TEST_AMOUNT = expandTo18Decimals( 10 )
 
 const wallet = { 
     ...WALLETS[0],
     address: WALLETS[0].publicKey 
 }
+
 const other = { 
     ...WALLETS[1],
     address: WALLETS[1].publicKey 
 }
 
-const SWAP_RECIPIENT_ADDRESS = WALLETS[2].publicKey 
-const POSITION_PROCEEDS_OUTPUT_ADDRESS = WALLETS[3].publicKey
-
-const tokenA = 'ct_A8WVnCuJ7t1DjAJf4y8hJrAEVpt1T9ypG3nNBdbpKmpthGvUm'
-const tokenB = 'ct_m18VKpSVhsQtjmUC7oZAJPwk36usb39B2viWzBuPjfQEsxHYL'
-
-const TEST_ADDRESSES = [ tokenA, tokenB ]
-
-const fakeFactory = 'ct_27JMp3z1pyXbfjra2VXiFU9e5jtFTyzus57S6eWbGNh3NSfabo'
-let poolModel
-let factory
-
-describe( 'AEDEX pool factory', () => {
-    it( "Asdsada", () => {} )
+describe( 'Pair Factory', () => {
+    let contract
+    beforeEach( 'first compile pool factory', async () => {
+        await pairFixture()
+    } )
+    it( "asda", () => {} )
 } )

@@ -50,7 +50,7 @@ const other = {
     address: WALLETS[1].publicKey 
 }
 
-describe( 'AEDEX pool factory', () => {
+describe( 'AEX9', () => {
     let contract
     beforeEach( 'first compile pool factory', async () => {
         contract = await getContract(
