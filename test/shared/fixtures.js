@@ -69,8 +69,8 @@ const getContract = async ( source, params, contractAddress, wallet = WALLETS[0]
         address     : wallet.publicKey
     } )
     try {
-        console.log( '----------------------------------------------------------------------------------------------------' )
-        console.log( `%cdeploying '${source}...'`, `color:green` )
+        console.debug( '----------------------------------------------------------------------------------------------------' )
+        console.debug( `%cdeploying '${source}...'`, `color:green` )
 
         const { 
             filesystem,
@@ -87,22 +87,22 @@ const getContract = async ( source, params, contractAddress, wallet = WALLETS[0]
                 }
             }
         )
-        console.log( `%cDEPLOYING SOURCE: '${source}...'`, `color:green` )
+        console.debug( `%cDEPLOYING SOURCE: '${source}...'`, `color:green` )
         const exe = makeExe( contract )
-        //console.log( deployment_result )
-        console.log( `-------------------------------------  END:   ---------------------------------------------------------` )
+        //console.debug( deployment_result )
+        console.debug( `-------------------------------------  END:   ---------------------------------------------------------` )
         return {
             contract, exe,  deploy: async () => {
                 const deployment_result = await contract.deploy( params )
-                console.log( `%c Contract deployed: '${source}...'`, `color:green` )
+                console.debug( `%c Contract deployed: '${source}...'`, `color:green` )
                     
                 return deployment_result
             }  
         }
     } catch ( ex ) {
-        console.log( ex )
+        console.debug( ex )
         if ( ex.response.text ) {
-            console.log( JSON.parse( ex.response.text ) )
+            console.debug( JSON.parse( ex.response.text ) )
         }
         assert.fail( 'Could not initialize contract instance' )
     }
@@ -127,6 +127,14 @@ const pairModelFixture = async () => {
     await pairModel.deploy()
 }
 
+const caleeFixture = async ( ) => {
+    const calee = await getContract(
+        './contracts/test/AedexV2CaleeTest.aes',
+        [],
+    )
+    await calee.deploy()
+    return calee
+}
 const factoryFixture = async ( wallet ) => {
     if ( !pairModel ) {
         await pairModelFixture()
@@ -144,7 +152,6 @@ const factoryFixture = async ( wallet ) => {
 }
 
 const tokenFixture = async ( liquidity ) => {
-    
     const token = await getContract(
         './contracts/test/TestAEX9.aes',
         [ liquidity ],
@@ -173,8 +180,17 @@ const pairFixture = async ( wallet = wallet0 ) => {
     const token0 = tokenA.address === token0Address ? tokenA : tokenB
     const token1 = tokenA.address === token0Address ? tokenB : tokenA
 
-    console.log( [ factory, token0, token1, pair ].map( getA ) )
-    return { factory, token0, token1, pair }
+    const calee = await caleeFixture()
+
+    const ret = { factory, token0, token1, pair, calee }
+    const addresses = Object.keys( ret ).reduce( ( acc, key ) => {
+        const value = ret[key]
+        const cloned = { ...acc }
+        cloned[key] = getA( value )
+        return cloned
+    }, {} )
+    console.debug( addresses )
+    return ret
 }
 module.exports = {
     pairFixture,

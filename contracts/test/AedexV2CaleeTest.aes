@@ -6,5 +6,6 @@ include "../interfaces/IAedexV2Calee.aes"
 
 contract AedexV2CaleeTest = 
     entrypoint aedexV2Call(sender: address, amount0: int, amount1: int): unit = 
-        abort("asd")
+        //this is callback
+        ()
 
