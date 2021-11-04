@@ -34,6 +34,7 @@ contract TestAEX9 =
         }
 
     entrypoint total_supply() = state.total_supply
+    entrypoint total_supply_str() = Int.to_str(state.total_supply)
 
     entrypoint balance(address: address): option(int) = 
         //NOTE: tests are based on 0 not on null/undefined,

@@ -60,10 +60,12 @@ const getContent = ( path ) => {
 
 const getContract = async ( source, params, contractAddress, wallet = WALLETS[0] ) => {
     const node = await Node( { url: NETWORKS[NETWORK_NAME].nodeUrl, ignoreVersion: true } )
+
     const client = await Universal( {
         nodes: [
             { name: NETWORK_NAME, instance: node },
         ],
+        deepProps   : { Ae: { defaults: { interval: 50 } } },
         compilerUrl : NETWORKS[NETWORK_NAME].compilerUrl,
         accounts    : [ MemoryAccount( { keypair: wallet } ), MemoryAccount( { keypair: WALLETS[1] } )  ],
         address     : wallet.publicKey
@@ -94,7 +96,7 @@ const getContract = async ( source, params, contractAddress, wallet = WALLETS[0]
         return {
             contract, exe,  deploy: async () => {
                 const deployment_result = await contract.deploy( params )
-                console.debug( `%c Contract deployed: '${source}...'`, `color:green` )
+                console.debug( `%cContract deployed: '${source}...'`, `color:green` )
                     
                 return deployment_result
             }  
@@ -177,8 +179,8 @@ const pairFixture = async ( wallet = wallet0 ) => {
 
     const token0Address = ( await pair.exe( x => x.token0() ) )
 
-    const token0 = tokenA.address === token0Address ? tokenA : tokenB
-    const token1 = tokenA.address === token0Address ? tokenB : tokenA
+    const token0 = getA( tokenA ) === token0Address ? tokenA : tokenB
+    const token1 = getA( tokenA ) === token0Address ? tokenB : tokenA
 
     const calee = await caleeFixture()
 

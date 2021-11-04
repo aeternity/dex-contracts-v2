@@ -66,7 +66,53 @@ const expectToRevert = async ( f, msg ) => {
     }
 }
 
+const exec = ( cmd ) => {
+    return new Promise( ( resolve, reject ) => {
+        execP( cmd, ( error, stdout, stderr ) => {
+            if ( error ) {
+                reject( error )
+                return
+            }
+            if ( stderr ) {
+                console.log( `stderr: ${stderr}` )
+                reject( stderr )
+                return
+            }
+            resolve( stdout )
+        } )
+    } )
+}
+
+const beforeEachWithSnapshot = ( str, work ) => {
+    const getBlockHeight = async () => {
+        return ( await exec( "curl -s localhost:3001/v2/status | jq '.top_block_height'" ) ).trim() * 1
+    }
+    let snapshotHeight = -1
+    before( "initial snapshot: " + str, async () => {
+        console.debug( "running initial work for snapshot... " )
+        await work()
+        console.debug( "initial work ... DONE " )
+        // get the snapshot height
+        snapshotHeight = await getBlockHeight()
+        console.debug( `snapshot block height: ${snapshotHeight}` )
+    } )
+
+    afterEach( "reset to snapshot", async () => {
+        const currentBlockHeight = await getBlockHeight()
+        console.debug( "current blockHeight: " + currentBlockHeight )
+        if ( currentBlockHeight > snapshotHeight ) {
+            console.debug( "rollingback to " + snapshotHeight + "..." )
+            const cmd = `docker exec aedex_node_1 bin/aeternity db_rollback --height ${snapshotHeight}`
+            await exec( cmd )
+            console.debug( "rollback completed" )
+        } else {
+            console.debug( "nothing to rollback" )
+        }
+    } )
+}
+
 module.exports = {
+    beforeEachWithSnapshot,
     expectToRevert,
     makeExe,
     encodePriceSqrt,
