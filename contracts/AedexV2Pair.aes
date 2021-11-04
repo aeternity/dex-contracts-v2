@@ -52,12 +52,14 @@ contract AedexV2Pair =
             , price1_cumulative_last: int
             , k_last: int // reserve0 * reserve1, as of immediately after the most recent liquidity event
             , unlocked: bool
+            , debug_time: option(int)
             }
 
     entrypoint init (
           factory: IAedexV2Factory 
         , token0: IAEX9Minimal 
         , token1: IAEX9Minimal 
+        , debug_time: option(int)
         ) = {
               total_supply = 0
             , balance_of   = {}
@@ -73,6 +75,7 @@ contract AedexV2Pair =
             , price1_cumulative_last = 0
             , k_last = 0 
             , unlocked = true
+            , debug_time = debug_time
         }
 
     // INTERNALS
@@ -94,12 +97,18 @@ contract AedexV2Pair =
         require(value >= 0,"AedexV2: TRANSFER_FAILED")
         token.transfer(to,value)
         
+    function time_stamp() = Option.default(Chain.timestamp,state.debug_time)
+
+    stateful entrypoint set_debug_time(time: int) = 
+        require(Option.is_some(state.debug_time),"Not debug mode")
+        put( state{ debug_time= Some(time)  } )
+
     // update reserves and, on the first call per block, price accumulators
     stateful function _update(balance0: int, balance1: int, reserve0: int,reserve1: int  ) =
         require( balance0 >= 0 && balance1 >= 0 && reserve0 >= 0 && reserve1 >= 0,"LP" )
 
         //TODO: is this right? uint32(block.timestamp % 2**32)
-        let block_timestamp = Chain.timestamp
+        let block_timestamp = time_stamp()
         
         let time_elapsed = block_timestamp - state.block_timestamp_last 
         if (time_elapsed > 0 && reserve0 != 0 && reserve1 != 0)
@@ -320,6 +329,12 @@ contract AedexV2Pair =
         }
 
     entrypoint total_supply() = state.total_supply
+    entrypoint price0_cumulative_last() = state.price0_cumulative_last
+    entrypoint price1_cumulative_last() = state.price1_cumulative_last
+    entrypoint price0_cumulative_last_str() =
+        Int.to_str(state.price0_cumulative_last)
+    entrypoint price1_cumulative_last_str() =
+        Int.to_str(state.price1_cumulative_last)
 
     entrypoint balance(address: address): option(int) = 
         //we replace None with 0
@@ -391,7 +406,7 @@ contract AedexV2Pair =
             /*, bytes32 r*/
             /*, bytes32 s*/
             ) =
-        require(deadline >= Chain.timestamp, "AedexV2: EXPIRED")
+        require(deadline >= time_stamp(), "AedexV2: EXPIRED")
         //TODO: replace this with aeternity equivalent if there is such a thing
         //WARNING: the owner is not the Call.caller ????!!!!!
 

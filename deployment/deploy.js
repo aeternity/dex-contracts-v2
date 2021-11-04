@@ -82,7 +82,7 @@ const deploy = async ( secretKey, network, compiler ) => {
         [ 
             /* 00 */ () => deployContract( './contracts/test/BuildAll.aes', [] ),
             /* 01 */ () => deployContract( './contracts/AedexV2Pair.aes', 
-                [ fakeAddress, fakeAddress, fakeAddress ] ),
+                [ fakeAddress, fakeAddress, fakeAddress, undefined ] ),
 
         ]
     await deployments[1]()

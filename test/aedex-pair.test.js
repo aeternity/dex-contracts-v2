@@ -39,6 +39,7 @@ import {
     MaxUint256,
     expectToRevert,
     beforeEachWithSnapshot,
+    encodePrice,
 
 } from './shared/utilities.js'
 
@@ -162,6 +163,23 @@ describe( 'Pair Factory', () => {
         console.debug( `pair.total_supply()` )
         return pair.exe( x => x.total_supply( ) )
     }
+    const  setDebugTime = ( offset ) => {
+        console.debug( `pair.set_debug_time(${offset})` )
+        return pair.exe( x => x.set_debug_time( offset ) )
+    }
+    const  sync = ( ) => {
+        console.debug( `pair.sync()` )
+        return pair.exe( x => x.sync( ) )
+    }
+    const  price0CumulativeLastStr = ( ) => {
+        console.debug( `pair.price0_cumulative_last_str()` )
+        return pair.exe( x => x.price0_cumulative_last_str( ) )
+    }
+    const  price1CumulativeLastStr = ( ) => {
+        console.debug( `pair.price1_cumulative_last_str()` )
+        return pair.exe( x => x.price1_cumulative_last_str( ) )
+    }
+
     async function addLiquidity( token0Amount, token1Amount ) {
         await token0Transfer( token0Amount.toString() )
         await token1Transfer( token1Amount.toString() )
@@ -335,7 +353,7 @@ describe( 'Pair Factory', () => {
                     .toString()
             )
     } )
-    it( 'burn', async () => {
+    it.skip( 'burn', async () => {
         const token0Amount = expandTo18Decimals( 3 )
         const token1Amount = expandTo18Decimals( 3 )
         await addLiquidity( token0Amount, token1Amount )
@@ -358,5 +376,61 @@ describe( 'Pair Factory', () => {
         expect( 
             await token1BalanceStr( wallet.address )
         ).to.eq( BigNumber.from( totalSupplyToken1 ).sub( 1000 ).toString() )
+    } )
+    it.skip( 'price{0,1}CumulativeLast', async () => {
+        const token0Amount = expandTo18Decimals( 3 )
+        const token1Amount = expandTo18Decimals( 3 )
+        const initialPrice = encodePrice( token0Amount, token1Amount )
+
+        await addLiquidity( token0Amount, token1Amount )
+
+        const { block_timestamp_last: blockTimestamp } = await getReserves()
+        await setDebugTime( blockTimestamp + 1 )
+        await sync( )
+
+        expect( await price0CumulativeLastStr() )
+            .to.eq( initialPrice[0].toString() )
+        expect( await price1CumulativeLastStr() )
+            .to.eq( initialPrice[1].toString() )
+        expect( ( await getReserves() ).block_timestamp_last )
+            .to.eq( blockTimestamp + 1 )
+
+        const swapAmount = expandTo18Decimals( 3 )
+        await token0Transfer( swapAmount )
+        await setDebugTime( blockTimestamp + 10 )
+
+        // swap to a new price eagerly instead of syncing
+        await swap( 0, expandTo18Decimals( 1 ), wallet.address )
+
+        expect( await price0CumulativeLastStr() )
+            .to.eq( initialPrice[0].mul( 10 ).toString() )
+        expect( await price1CumulativeLastStr() )
+            .to.eq( initialPrice[1].mul( 10 ).toString() )
+        expect( ( await getReserves() ).block_timestamp_last )
+            .to.eq( blockTimestamp + 10 )
+
+        await setDebugTime( blockTimestamp + 20 )
+        await sync( )
+
+        const newPrice = encodePrice(
+            expandTo18Decimals( 6 ),
+            expandTo18Decimals( 2 )
+        )
+        expect( await price0CumulativeLastStr() )
+            .to.eq( 
+                initialPrice[0]
+                    .mul( 10 )
+                    .add( newPrice[0].mul( 10 ) )
+                    .toString()
+            )
+        expect( await price1CumulativeLastStr() )
+            .to.eq(
+                initialPrice[1]
+                    .mul( 10 )
+                    .add( newPrice[1].mul( 10 ) )
+                    .toString()
+            )
+        expect( ( await getReserves() ).block_timestamp_last )
+            .to.eq( blockTimestamp + 20 )
     } )
 } )

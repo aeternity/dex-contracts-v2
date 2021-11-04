@@ -124,6 +124,7 @@ const pairModelFixture = async () => {
             fakeAddress,
             fakeAddress,
             fakeAddress,
+            undefined,
         ],
     )
     await pairModel.deploy()
@@ -172,7 +173,8 @@ const pairFixture = async ( wallet = wallet0 ) => {
     const pairAddress = await factory.exe( x => x.create_pair( 
         getA( tokenA ),
         getA( tokenB ),
-        getA( factory )
+        getA( factory ),
+        1636041331999,
     ) )
 
     const pair = await getContract( "./contracts/AedexV2Pair.aes", [], pairAddress  )

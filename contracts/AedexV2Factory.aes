@@ -60,6 +60,7 @@ contract AedexV2Factory =
           token_a: IAEX9Minimal 
         , token_b: IAEX9Minimal
         , this_factory: IAedexV2Factory
+        , debug_time: option(int)
         ): IAedexV2PairlInit =
         
         require(Contract.address == this_factory.address,"AedexV2: NOT_SAME_FACTORY")
@@ -80,6 +81,7 @@ contract AedexV2Factory =
                     , this_factory
                     , token0
                     , token1
+                    , debug_time
                     )
 
 

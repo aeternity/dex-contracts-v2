@@ -8,4 +8,5 @@ contract interface IAedexV2PairlInit =
           IAedexV2Factory 
         , IAEX9Minimal 
         , IAEX9Minimal 
+        , option(int)
         ) => void
