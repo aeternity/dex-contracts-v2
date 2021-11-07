@@ -63,35 +63,10 @@ describe( 'Pair Factory', () => {
     } )
     const pairAddress = () => getA( pair ).replace( "ct_", "ak_" )
 
-    it.skip( 'mint', async () => {
-        const token0Amount = expandTo18Decimals( 1 )
-        const token1Amount = expandTo18Decimals( 4 )
-        console.debug( `token0.exe( x => x.transfer( ${pairAddress()}, ${token0Amount.toString()} ) ) ` )
-        await token0.exe( x => x.transfer( pairAddress(), token0Amount.toString() ) )
-        console.debug( `token1.exe( x => x.transfer( ${pairAddress()}, ${token1Amount.toString()} ) ) ` )
-        await token1.exe( x => x.transfer( pairAddress(), token1Amount.toString() ) )
-
-        const expectedLiquidity = expandTo18Decimals( 2 )
-        console.debug( `pair.exe( x => x.mint(${  wallet.address }) )` )
-        await pair.exe( x => x.mint( wallet.address ) )
-
-        expect(
-            await pair.exe( x => x.total_supply() )
-        ).to.eq( expectedLiquidity.toString() * 1 )
-        expect(
-            await pair.exe( x => x.balance( wallet.address ) )
-        ).to.eq( expectedLiquidity.sub( MINIMUM_LIQUIDITY ).toString() * 1 )
-        expect(
-            await token0.exe( x => x.balance_str( pairAddress() ) )
-        ).to.eq( token0Amount.toString() )
-        expect(
-            await token1.exe( x => x.balance_str( pairAddress() ) )
-        ).to.eq( token1Amount.toString() )
-        const reserves = await pair.exe( x => x.get_reserves() )
-        expect( reserves.reserve0 ).to.eq( token0Amount.toString() * 1 )
-        expect( reserves.reserve1 ).to.eq( token1Amount.toString() * 1 )
-    } )
-
+    //------------------------------------------------------------------------------
+    // entrypoint wrappers 
+    //------------------------------------------------------------------------------
+    
     const totalSupplyStr = ( isToken0 ) => {
         const token = isToken0 ? token0 : token1
         console.debug( `token${isToken0 ? 0 : 1}.total_supply_str()` )
@@ -125,8 +100,8 @@ describe( 'Pair Factory', () => {
         console.debug( `token${isToken0 ? 0 : 1}.transfer( ${pairAddress()}, ${amount.toString()})` )
         await token.exe( x => x.transfer( pairAddress(), amount.toString() ) )
     }
-    const token0Transfer = ( amount ) => transfer( true, amount )
-    const token1Transfer = ( amount ) => transfer( false, amount )
+    const token0Transfer = ( amount ) => transfer( true, amount.toString() )
+    const token1Transfer = ( amount ) => transfer( false, amount.toString() )
 
     const pairTransfer = async ( amount ) => {
         console.debug( `pair.transfer( ${pairAddress()}, ${amount.toString()})` )
@@ -183,6 +158,38 @@ describe( 'Pair Factory', () => {
         console.debug( `factory.set_fee_to( ${address})` )
         await factory.exe( x => x.set_fee_to( address ) )
     }
+    
+    //------------------------------------------------------------------------------
+    // entrypoint wrappers 
+    //------------------------------------------------------------------------------
+    
+    it( 'mint', async () => {
+        const token0Amount = expandTo18Decimals( 1 )
+        const token1Amount = expandTo18Decimals( 4 )
+        await token0Transfer( token0Amount )
+        await token1Transfer( token1Amount )
+
+        const expectedLiquidity = expandTo18Decimals( 2 )
+        await mint( wallet.address )
+
+        expect(
+            await pairTotalSupply()
+        ).to.eq( expectedLiquidity.toString() * 1 )
+        expect(
+            await pairBalance( wallet.address )
+        ).to.eq( expectedLiquidity.sub( MINIMUM_LIQUIDITY ).toString() * 1 )
+
+        expect(
+            await token0BalanceStr( pairAddress() )
+        ).to.eq( token0Amount.toString() )
+        expect(
+            await token1BalanceStr( pairAddress() )
+        ).to.eq( token1Amount.toString() )
+
+        const reserves = await getReserves()
+        expect( reserves.reserve0 ).to.eq( token0Amount.toString() * 1 )
+        expect( reserves.reserve1 ).to.eq( token1Amount.toString() * 1 )
+    } )
 
     async function addLiquidity( token0Amount, token1Amount ) {
         await token0Transfer( token0Amount.toString() )
@@ -203,7 +210,7 @@ describe( 'Pair Factory', () => {
         typeof n === 'string' ? BigNumber.from( n ) : expandTo18Decimals( n )
     ) ) )
     swapTestCases.forEach( ( swapTestCase, i ) => {
-        it.skip( `getInputPrice:${i}`, async () => {
+        it( `getInputPrice:${i}`, async () => {
             const [
                 swapAmount,
                 token0Amount,
@@ -212,28 +219,21 @@ describe( 'Pair Factory', () => {
             ] = swapTestCase
 
             await addLiquidity( token0Amount, token1Amount )
-            console.debug( `token0.exe( x => x.transfer( ${pairAddress()}, ${swapAmount.toString()} ) )` )
-            await token0.exe( x => x.transfer( pairAddress(), swapAmount.toString() ) )
-            const caleeAddress = getA( calee )
+            token0Transfer( swapAmount )
 
-            console.debug( `pair.exe( x => x.swap( 0, ${expectedOutputAmount.add( 1 ).toString()}, ${wallet.address}, ${caleeAddress}) ) ` ) 
             await expectToRevert(
-                () => pair.exe( 
-                    x => x.swap(
-                        0,
-                        expectedOutputAmount.add( 1 ).toString(),
-                        wallet.address,
-                        caleeAddress,
-                    ) ),
+                () => swap(
+                    0,
+                    expectedOutputAmount.add( 1 ),
+                    wallet.address,
+                ),
                 "AedexV2: K"
             )
-            console.debug( `pair.exe( x => x.swap( 0, ${expectedOutputAmount.toString()}, ${wallet.address}, ${caleeAddress}) ) ` ) 
-            await pair.exe( x => x.swap(
+            await swap(
                 0,
-                expectedOutputAmount.toString(),
+                expectedOutputAmount,
                 wallet.address,
-                caleeAddress,
-            ) )
+            )
         } )
     } )
 
@@ -248,7 +248,7 @@ describe( 'Pair Factory', () => {
             : expandTo18Decimals( n )
         ) ) )
     optimisticTestCases.forEach( ( optimisticTestCase, i ) => {
-        it.skip( `optimistic:${i}`, async () => {
+        it( `optimistic:${i}`, async () => {
             const caleeAddress = getA( calee )
             const [
                 outputAmount,
@@ -257,30 +257,25 @@ describe( 'Pair Factory', () => {
                 inputAmount
             ] = optimisticTestCase
             await addLiquidity( token0Amount, token1Amount )
-            console.debug( `token0.exe( x => x.transfer( ${pairAddress()}, ${inputAmount.toString()} ) ) ` )
-            await token0.exe( x => x.transfer( pairAddress(), inputAmount.toString() ) )
+            await token0Transfer( inputAmount )
             console.debug( `swap( ${outputAmount.add( 1 ).toString()}, 0, ${wallet.address}, ${caleeAddress},) ` )
             await expectToRevert(
-                () => pair.exe( 
-                    x => x.swap(
-                        outputAmount.add( 1 ).toString(),
-                        0,
-                        wallet.address,
-                        caleeAddress,
-                    ) ),
+                () => swap(
+                    outputAmount.add( 1 ),
+                    0,
+                    wallet.address,
+                ),
                 "AedexV2: K"
             )
-            console.log( `swap( ${outputAmount.toString()}, 0, ${wallet.address}, ${caleeAddress})` )
-            await pair.exe( x => x.swap(
-                outputAmount.toString(),
+            await swap(
+                outputAmount,
                 0,
                 wallet.address,
-                caleeAddress,
-            ) )
+            )
         } )
     } )
 
-    it.skip( 'swap:token0', async () => {
+    it( 'swap:token0', async () => {
         const token0Amount = expandTo18Decimals( 5 )
         const token1Amount = expandTo18Decimals( 10 )
         await addLiquidity( token0Amount, token1Amount )
@@ -317,7 +312,7 @@ describe( 'Pair Factory', () => {
             )
     } )
 
-    it.skip( 'swap:token1', async () => {
+    it( 'swap:token1', async () => {
         const token0Amount = expandTo18Decimals( 5 )
         const token1Amount = expandTo18Decimals( 10 )
         await addLiquidity( token0Amount, token1Amount )
@@ -357,7 +352,7 @@ describe( 'Pair Factory', () => {
                     .toString()
             )
     } )
-    it.skip( 'burn', async () => {
+    it( 'burn', async () => {
         const token0Amount = expandTo18Decimals( 3 )
         const token1Amount = expandTo18Decimals( 3 )
         await addLiquidity( token0Amount, token1Amount )
@@ -381,7 +376,7 @@ describe( 'Pair Factory', () => {
             await token1BalanceStr( wallet.address )
         ).to.eq( BigNumber.from( totalSupplyToken1 ).sub( 1000 ).toString() )
     } )
-    it.skip( 'price{0,1}CumulativeLast', async () => {
+    it( 'price{0,1}CumulativeLast', async () => {
         const token0Amount = expandTo18Decimals( 3 )
         const token1Amount = expandTo18Decimals( 3 )
         const initialPrice = encodePrice( token0Amount, token1Amount )
@@ -437,7 +432,7 @@ describe( 'Pair Factory', () => {
         expect( ( await getReserves() ).block_timestamp_last )
             .to.eq( blockTimestamp + 20 )
     } )
-    it.skip( 'feeTo:off', async () => {
+    it( 'feeTo:off', async () => {
         const token0Amount = expandTo18Decimals( 1000 )
         const token1Amount = expandTo18Decimals( 1000 )
         await addLiquidity( token0Amount, token1Amount )

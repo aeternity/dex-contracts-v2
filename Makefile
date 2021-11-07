@@ -19,4 +19,4 @@ testPair:
 	npm run test:aedex-pair-break
 testFactoryPool:
 	npm run test:aedex-pool-factory-break
-test: testPair
+test: testAll

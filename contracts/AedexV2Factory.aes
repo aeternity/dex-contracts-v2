@@ -67,9 +67,6 @@ contract AedexV2Factory =
         require(token_a != token_b, "AedexV2: IDENTICAL_ADDRESSES")
         let (token0,token1) = sort_tokens(token_a,token_b)
 
-        //TODO: is there such a thing in aeternity?
-        /*require(token0 != address(0), 'AedexV2: ZERO_ADDRESS');*/
-
         let has_old_value = 
                 Map.member(
                     token1,
