@@ -55,11 +55,11 @@ const other = {
     ...WALLETS[1],
     address: WALLETS[1].publicKey 
 }
-var token0, token1, pair, calee, factory
+var token0, token1, pair, callee, factory
 
 describe( 'Pair Factory', () => {
     beforeEach( 'first compile pool factory', async () => {
-        ( { token0, token1, pair, calee, factory } = await pairFixture() )
+        ( { token0, token1, pair, callee, factory } = await pairFixture() )
     } )
     const pairAddress = () => getA( pair ).replace( "ct_", "ak_" )
 
@@ -117,13 +117,13 @@ describe( 'Pair Factory', () => {
         await pair.exe( x => x.mint( address ) )
     }
     const swap = async ( amount0, amount1, address ) => {
-        const caleeAddress = getA( calee )
-        console.debug( `pair.swap( ${amount0.toString()}, ${amount1.toString()}, ${address}, ${caleeAddress} )` )
+        const calleeAddress = getA( callee )
+        console.debug( `pair.swap( ${amount0.toString()}, ${amount1.toString()}, ${address}, ${calleeAddress} )` )
         await pair.exe( x => x.swap(
             amount0.toString(),
             amount1.toString(),
             address,
-            caleeAddress
+            calleeAddress
         ) )
     }
     const pairBalance = ( address ) => {
@@ -249,7 +249,7 @@ describe( 'Pair Factory', () => {
         ) ) )
     optimisticTestCases.forEach( ( optimisticTestCase, i ) => {
         it( `optimistic:${i}`, async () => {
-            const caleeAddress = getA( calee )
+            const calleeAddress = getA( callee )
             const [
                 outputAmount,
                 token0Amount,
@@ -258,7 +258,7 @@ describe( 'Pair Factory', () => {
             ] = optimisticTestCase
             await addLiquidity( token0Amount, token1Amount )
             await token0Transfer( inputAmount )
-            console.debug( `swap( ${outputAmount.add( 1 ).toString()}, 0, ${wallet.address}, ${caleeAddress},) ` )
+            console.debug( `swap( ${outputAmount.add( 1 ).toString()}, 0, ${wallet.address}, ${calleeAddress},) ` )
             await expectToRevert(
                 () => swap(
                     outputAmount.add( 1 ),

@@ -2,7 +2,7 @@
 
 include "../lib/Utils.aes"
 include "../interfaces/IAEX9Minimal.aes"
-include "../interfaces/IAedexV2Calee.aes"
+include "../interfaces/IAedexV2Callee.aes"
 include "../interfaces/IAedexV2Pair.aes"
 include "../interfaces/IAedexV2Factory.aes"
 include "../interfaces/IAedexV2PairlInit.aes"
@@ -10,7 +10,7 @@ include "../lib/Math.aes"
 include "../lib/UQ112x112.aes"
 include "../AedexV2Factory.aes"
 include "../AedexV2Pair.aes"
-include "./AedexV2CaleeTest.aes"
+include "./AedexV2CalleeTest.aes"
 include "./TestAEX9.aes"
 
 main contract BuildAll = 

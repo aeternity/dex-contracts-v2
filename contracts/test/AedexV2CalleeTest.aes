@@ -2,9 +2,9 @@
 
 include "../lib/Utils.aes"
 include "../interfaces/IAEX9Minimal.aes"
-include "../interfaces/IAedexV2Calee.aes"
+include "../interfaces/IAedexV2Callee.aes"
 
-contract AedexV2CaleeTest = 
+contract AedexV2CalleeTest = 
     entrypoint aedexV2Call(sender: address, amount0: int, amount1: int): unit = 
         //this is callback
         ()

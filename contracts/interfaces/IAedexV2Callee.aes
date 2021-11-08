@@ -1,6 +1,6 @@
 @compiler >= 6
 
-contract interface IAedexV2Calee = 
+contract interface IAedexV2Callee = 
 
     entrypoint aedexV2Call: (address /*sender*/, int /*amount0*/, int /*amount1*/) => unit
 

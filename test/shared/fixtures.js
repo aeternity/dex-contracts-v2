@@ -130,13 +130,13 @@ const pairModelFixture = async () => {
     await pairModel.deploy()
 }
 
-const caleeFixture = async ( ) => {
-    const calee = await getContract(
-        './contracts/test/AedexV2CaleeTest.aes',
+const calleeFixture = async ( ) => {
+    const callee = await getContract(
+        './contracts/test/AedexV2CalleeTest.aes',
         [],
     )
-    await calee.deploy()
-    return calee
+    await callee.deploy()
+    return callee
 }
 const factoryFixture = async ( wallet ) => {
     if ( !pairModel ) {
@@ -184,9 +184,9 @@ const pairFixture = async ( wallet = wallet0 ) => {
     const token0 = getA( tokenA ) === token0Address ? tokenA : tokenB
     const token1 = getA( tokenA ) === token0Address ? tokenB : tokenA
 
-    const calee = await caleeFixture()
+    const callee = await calleeFixture()
 
-    const ret = { factory, token0, token1, pair, calee }
+    const ret = { factory, token0, token1, pair, callee }
     const addresses = Object.keys( ret ).reduce( ( acc, key ) => {
         const value = ret[key]
         const cloned = { ...acc }

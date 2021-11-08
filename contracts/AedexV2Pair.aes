@@ -4,7 +4,7 @@ include "./lib/Utils.aes"
 include "./lib/UQ112x112.aes"
 include "./lib/Math.aes"
 include "./interfaces/IAedexV2Pair.aes"
-include "./interfaces/IAedexV2Calee.aes"
+include "./interfaces/IAedexV2Callee.aes"
 include "./interfaces/IAedexV2Factory.aes"
 include "Option.aes"
 
@@ -217,7 +217,7 @@ contract AedexV2Pair =
         amount0_out: int,
         amount1_out: int,
         to: address,
-        calee_opt: option(IAedexV2Calee)
+        callee_opt: option(IAedexV2Callee)
         ): unit =
         lock()
         require(amount0_out > 0 || amount1_out > 0, "AedexV2: INSUFFICIENT_OUTPUT_AMOUNT")
@@ -232,7 +232,7 @@ contract AedexV2Pair =
         if (amount0_out > 0) _safe_transfer(_token0, to, amount0_out) // optimistically transfer tokens
         if (amount1_out > 0) _safe_transfer(_token1, to, amount1_out) // optimistically transfer tokens
 
-        Option.map((calee) => calee.aedexV2Call(Call.caller,amount0_out,amount1_out),calee_opt)
+        Option.map((callee) => callee.aedexV2Call(Call.caller,amount0_out,amount1_out),callee_opt)
 
         let (balance0,balance1) = get_balances()
 
