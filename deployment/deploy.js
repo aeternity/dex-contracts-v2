@@ -70,13 +70,6 @@ const deploy = async ( secretKey, network, compiler ) => {
             throw ex
         }
     }
-    const getCId = async f => {
-        const {
-            deployment_result : { result : { contractId } },
-        } = await f()
-        return contractId
-    }
-
     const fakeAddress = 'ct_A8WVnCuJ7t1DjAJf4y8hJrAEVpt1T9ypG3nNBdbpKmpthGvUm'
     const deployments = 
         [ 
@@ -85,7 +78,7 @@ const deploy = async ( secretKey, network, compiler ) => {
                 [ fakeAddress, fakeAddress, fakeAddress, undefined ] ),
 
         ]
-    await deployments[1]()
+    await deployments[0]()
 
     //console.log(await contract.methods.getOwner())
 }
