@@ -32,13 +32,13 @@ import {
     getA,   
     getContract,
     pairFixture,
+    beforeEachWithSnapshot,
 } from './shared/fixtures.js'
 
 import {
     expandTo18Decimals,
     MaxUint256,
     expectToRevert,
-    beforeEachWithSnapshot,
     encodePrice,
 
 } from './shared/utilities.js'
@@ -58,7 +58,7 @@ const other = {
 var token0, token1, pair, callee, factory
 
 describe( 'Pair Factory', () => {
-    beforeEach( 'first compile pool factory', async () => {
+    beforeEachWithSnapshot( 'first compile pool factory', async () => {
         ( { token0, token1, pair, callee, factory } = await pairFixture() )
     } )
     const pairAddress = () => getA( pair ).replace( "ct_", "ak_" )

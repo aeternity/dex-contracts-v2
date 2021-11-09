@@ -31,6 +31,7 @@ import {
     getA,   
     getContract,
     pairFixture,
+    beforeEachWithSnapshot,
 } from './shared/fixtures.js'
 
 import {
@@ -55,7 +56,7 @@ const other = {
 var factory, token0, token1, pair 
 
 describe( 'Pair Factory', () => {
-    beforeEach( 'first compile pool factory', async () => {
+    beforeEachWithSnapshot( 'first compile pool factory', async () => {
         ( { factory, token0, token1, pair } = await pairFixture() )
     } )
     it( 'feeTo, feeToSetter, allPairsLength', async () => {

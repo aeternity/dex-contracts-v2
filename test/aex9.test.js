@@ -30,6 +30,7 @@ const { defaultWallets: WALLETS } = require( '../config/wallets.json' )
 import {
     getA,   
     getContract,
+    beforeEachWithSnapshot,
 } from './shared/fixtures.js'
 
 import {
@@ -52,7 +53,7 @@ const other = {
 
 describe( 'AEX9', () => {
     let contract
-    beforeEach( 'first compile pool factory', async () => {
+    beforeEachWithSnapshot( 'first compile pool factory', async () => {
         contract = await getContract(
             './contracts/test/TestAEX9.aes',
             [ TOTAL_SUPPLY.toString() ],

@@ -20,6 +20,7 @@
   "license": "ISC",
   "dependencies": {
     "@aeternity/aepp-sdk": "^9.0.1",
+    "axios": "^0.24.0",
     "crypto": "^1.0.1",
     "decimal.js": "^10.2.1",
     "ethers": "^5.4.3",

@@ -16,10 +16,12 @@
  */
 const { assert } = require( 'chai' )
 var crypto = require( 'crypto' )
+const axios = require( 'axios' )
 
 const {
     makeExe,
     expandTo18Decimals,
+    exec,
 } = require( './utilities.js' )
 
 const { Universal, MemoryAccount, Node } = require( '@aeternity/aepp-sdk' )
@@ -58,10 +60,10 @@ const getContent = ( path ) => {
     }
 }
 
-const getContract = async ( source, params, contractAddress, wallet = WALLETS[0] ) => {
+const createClient = async ( wallet = WALLETS[0] ) => {
     const node = await Node( { url: NETWORKS[NETWORK_NAME].nodeUrl, ignoreVersion: true } )
 
-    const client = await Universal( {
+    return Universal( {
         nodes: [
             { name: NETWORK_NAME, instance: node },
         ],
@@ -70,6 +72,11 @@ const getContract = async ( source, params, contractAddress, wallet = WALLETS[0]
         accounts    : [ MemoryAccount( { keypair: wallet } ), MemoryAccount( { keypair: WALLETS[1] } )  ],
         address     : wallet.publicKey
     } )
+}
+
+const getContract = async ( source, params, contractAddress, wallet = WALLETS[0] ) => {
+
+    const client = await createClient( wallet )
     try {
         console.debug( '----------------------------------------------------------------------------------------------------' )
         console.debug( `%cdeploying '${source}...'`, `color:green` )
@@ -196,7 +203,48 @@ const pairFixture = async ( wallet = wallet0 ) => {
     console.debug( addresses )
     return ret
 }
+const awaitOneKeyBlock = async ( client ) => {
+    const height = await client.height()
+    await axios.get( 'http://localhost:3001/emit_kb?n=1' )
+    await client.awaitHeight( height + 1 )
+}
+const beforeEachWithSnapshot = ( str, work ) => {
+    //const getBlockHeight = async () => {
+        //return ( await exec( "curl -s localhost:3001/v2/status | jq '.top_block_height'" ) ).trim() * 1
+    //}
+    let snapshotHeight = -1
+    let client
+    before( "initial snapshot: " + str, async () => {
+        client = await createClient()
+        console.debug( "running initial work for snapshot... " )
+        await work()
+        console.debug( "initial work ... DONE " )
+        // get the snapshot height
+        //snapshotHeight = await getBlockHeight()
+        snapshotHeight = await client.height()
+        console.debug( `snapshot block height: ${snapshotHeight}` )
+        await awaitOneKeyBlock( client )
+    } )
+
+    afterEach( "reset to snapshot", async () => {
+        //const currentBlockHeight = await getBlockHeight()
+        const currentBlockHeight = await client.height()
+        console.debug( "current blockHeight: " + currentBlockHeight )
+        if ( currentBlockHeight > snapshotHeight ) {
+            console.debug( "rollingback to " + snapshotHeight + "..." )
+            const cmd = `docker exec aedex_node_1 bin/aeternity db_rollback --height ${snapshotHeight}`
+            await exec( cmd )
+            console.debug( "rollback completed" )
+            await awaitOneKeyBlock( client )
+        } else {
+            console.debug( "nothing to rollback" )
+        }
+    } )
+}
+
 module.exports = {
+    beforeEachWithSnapshot,
+    createClient,
     pairFixture,
     pairModelFixture,
     getContract,
