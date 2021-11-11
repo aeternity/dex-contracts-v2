@@ -57,7 +57,7 @@ function encodePriceSqrt( reserve1, reserve0 ) {
 function encodePrice( reserve0, reserve1 ) {
     return [
         reserve1.mul( BigNumber.from( 2 ).pow( 112 ) ).div( reserve0 ),
-        reserve0.mul( BigNumber.from( 2 ).pow( 112 ) ).div( reserve1 ) 
+        reserve0.mul( BigNumber.from( 2 ).pow( 112 ) ).div( reserve1 )
     ]
 }
 const makeExe = ( contract ) => async ( f, get ) => {
@@ -100,7 +100,7 @@ module.exports = {
     MAX_SQRT_RATIO,
     MIN_SQRT_RATIO,
     getMinTick,
-    getMaxTick, 
+    getMaxTick,
     getMaxLiquidityPerTick,
     MaxUint128,
     MaxUint256,

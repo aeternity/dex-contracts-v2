@@ -30,14 +30,14 @@ const NETWORKS = require( '../../config/network.json' )
 const NETWORK_NAME = "local"
 
 const { defaultWallets: WALLETS } = require( '../../config/wallets.json' )
-const wallet0 = { 
+const wallet0 = {
     ...WALLETS[0],
-    address: WALLETS[0].publicKey 
+    address: WALLETS[0].publicKey
 }
 
 const contractUtils = require( '../../utils/contract-utils' )
 
-const hash = ( content ) => 
+const hash = ( content ) =>
     crypto.createHash( 'md5' ).update( content ).digest( 'hex' )
 
 const contents = {}
@@ -64,12 +64,11 @@ const createClient = async ( wallet = WALLETS[0] ) => {
     const node = await Node( { url: NETWORKS[NETWORK_NAME].nodeUrl, ignoreVersion: true } )
 
     return await Universal.compose( {
-        deepProps: { Ae: { defaults: { interval: 50 } } }
+        deepProps: { Ae: { defaults: { interval: 10 } } }
     } )( {
         nodes: [
             { name: NETWORK_NAME, instance: node },
         ],
-        deepProps   : { Ae: { defaults: { interval: 50 } } },
         compilerUrl : NETWORKS[NETWORK_NAME].compilerUrl,
         accounts    : [ MemoryAccount( { keypair: wallet } ), MemoryAccount( { keypair: WALLETS[1] } )  ],
         address     : wallet.publicKey
@@ -83,13 +82,13 @@ const getContract = async ( source, params, contractAddress, wallet = WALLETS[0]
         console.debug( '----------------------------------------------------------------------------------------------------' )
         console.debug( `%cdeploying '${source}...'`, `color:green` )
 
-        const { 
+        const {
             filesystem,
             contract_content,
         } = getContent( source )
 
         const contract           = await client.getContractInstance(
-            contract_content, 
+            contract_content,
             {
                 filesystem,
                 contractAddress : contractAddress || undefined,
@@ -106,9 +105,9 @@ const getContract = async ( source, params, contractAddress, wallet = WALLETS[0]
             contract, exe,  deploy: async () => {
                 const deployment_result = await contract.deploy( params )
                 console.debug( `%cContract deployed: '${source}...'`, `color:green` )
-                    
+
                 return deployment_result
-            }  
+            }
         }
     } catch ( ex ) {
         console.debug( ex )
@@ -175,11 +174,11 @@ const tokenFixture = async ( liquidity ) => {
 const pairFixture = async ( wallet = wallet0 ) => {
     const factory = await factoryFixture( wallet )
 
-    const liq = expandTo18Decimals( 10000 ).toString()
+    const liq = BigInt(expandTo18Decimals( 10000 ))
     const tokenA = await tokenFixture( liq )
     const tokenB = await tokenFixture( liq )
 
-    const pairAddress = await factory.exe( x => x.create_pair( 
+    const pairAddress = await factory.exe( x => x.create_pair(
         getA( tokenA ),
         getA( tokenB ),
         getA( factory ),

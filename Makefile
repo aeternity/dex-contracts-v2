@@ -4,11 +4,11 @@ all:
 install:
 	npm install
 run-node:
-	docker-compose $(PNAME) up 
+	docker-compose $(PNAME) up
 start-node:
-	docker-compose $(PNAME) up -d 
+	docker-compose $(PNAME) up -d
 stop-node:
-	docker-compose $(PNAME) down
+	docker-compose $(PNAME) down -v
 follow-log:
 	docker-compose $(PNAME) logs -f
 testAll:

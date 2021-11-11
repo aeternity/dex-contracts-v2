@@ -28,7 +28,7 @@ use( jestSnapshotPlugin() )
 const { defaultWallets: WALLETS } = require( '../config/wallets.json' )
 
 import {
-    getA,   
+    getA,
     getContract,
     beforeEachWithSnapshot,
 } from './shared/fixtures.js'
@@ -38,17 +38,17 @@ import {
     MaxUint256,
 } from './shared/utilities.js'
 
-const TOTAL_SUPPLY = expandTo18Decimals( 10000 )
-const TEST_AMOUNT = expandTo18Decimals( 10 )
+const TOTAL_SUPPLY = BigInt(expandTo18Decimals( 10000 ))
+const TEST_AMOUNT = BigInt(expandTo18Decimals( 10 ))
 
-const wallet = { 
+const wallet = {
     ...WALLETS[0],
-    address: WALLETS[0].publicKey 
+    address: WALLETS[0].publicKey
 }
 
-const other = { 
+const other = {
     ...WALLETS[1],
-    address: WALLETS[1].publicKey 
+    address: WALLETS[1].publicKey
 }
 
 describe( 'AEX9', () => {
@@ -68,47 +68,47 @@ describe( 'AEX9', () => {
         expect( name ).to.eq( 'TestAEX9' )
 
         expect( symbol ).to.eq( 'TAEX9' )
-        expect( decimals ).to.eq( 18 )
+        expect( decimals ).to.eq( 18n )
 
-        expect( await exe( x => x.total_supply() ) ).to.eq( TOTAL_SUPPLY.toString() * 1 )
+        expect( await exe( x => x.total_supply() ) ).to.eq( TOTAL_SUPPLY )
         expect( await exe( x => x.balance_str( wallet.address ) ) ).to.eq( TOTAL_SUPPLY.toString() )
     } )
     it( 'approve', async () => {
-        await contract.exe( x => x.create_allowance( other.address, TEST_AMOUNT.toString() ) )
+        await contract.exe( x => x.create_allowance( other.address, TEST_AMOUNT) )
 
-        expect( await contract.exe( x => x.allowance_unfolded( 
+        expect( await contract.exe( x => x.allowance_unfolded(
             wallet.address,
             other.address
-        ) ) ).to.eq( TEST_AMOUNT.toString() * 1 )
+        ) ) ).to.eq( TEST_AMOUNT )
     } )
     it( 'transfer', async () => {
-        await contract.exe( x => x.transfer( other.address, TEST_AMOUNT.toString() ) )
+        await contract.exe( x => x.transfer( other.address, TEST_AMOUNT ) )
 
-        expect( await contract.exe( x => x.balance_str( wallet.address ) ) ).to.eq(
-            TOTAL_SUPPLY.sub( TEST_AMOUNT ).toString()
+        expect( await contract.exe( x => x.balance( wallet.address ) ) ).to.eq(
+            TOTAL_SUPPLY - TEST_AMOUNT
         )
-        expect( await contract.exe( x => x.balance_str( other.address ) ) ).to.eq(
-            TEST_AMOUNT .toString()
+        expect( await contract.exe( x => x.balance( other.address ) ) ).to.eq(
+            TEST_AMOUNT
         )
 
     } )
     it( 'transferFrom', async () => {
-        await contract.exe( x => x.create_allowance( other.address, TEST_AMOUNT.toString() ) )
+        await contract.exe( x => x.create_allowance( other.address, TEST_AMOUNT ) )
         await contract.exe( x => x.transfer_allowance(
             wallet.address,
             other.address,
-            TEST_AMOUNT.toString(), {
+            TEST_AMOUNT, {
                 onAccount: other.address,
             } ) )
-        expect( await contract.exe( x => x.allowance_unfolded( 
+        expect( await contract.exe( x => x.allowance_unfolded(
             wallet.address,
             other.address
-        ) ) ).to.eq( 0 )
-        expect( await contract.exe( x => x.balance_str( wallet.address ) ) ).to.eq(
-            TOTAL_SUPPLY.sub( TEST_AMOUNT ).toString()
+        ) ) ).to.eq( 0n )
+        expect( await contract.exe( x => x.balance( wallet.address ) ) ).to.eq(
+            TOTAL_SUPPLY - TEST_AMOUNT
         )
-        expect( await contract.exe( x => x.balance_str( other.address ) ) ).to.eq(
-            TEST_AMOUNT .toString()
+        expect( await contract.exe( x => x.balance( other.address ) ) ).to.eq(
+            TEST_AMOUNT
         )
     } )
 
@@ -122,31 +122,31 @@ describe( 'AEX9', () => {
                 onAccount: other.address,
             } ) )
 
-        expect( await contract.exe( x => x.allowance_unfolded( 
+        expect( ( await contract.exe( x => x.allowance_unfolded(
             wallet.address,
             other.address
-        ) ) ).to.eq( MaxUint256.toString() * 1 )
-        expect( await contract.exe( x => x.balance_str( wallet.address ) ) ).to.eq(
-            TOTAL_SUPPLY.sub( TEST_AMOUNT ).toString()
+        ) ) ).toString() ).to.eq( (BigInt(MaxUint256) - TEST_AMOUNT).toString() )
+        expect( await contract.exe( x => x.balance( wallet.address ) ) ).to.eq(
+            TOTAL_SUPPLY - TEST_AMOUNT
         )
-        expect( await contract.exe( x => x.balance_str( other.address ) ) ).to.eq(
-            TEST_AMOUNT .toString()
+        expect( await contract.exe( x => x.balance( other.address ) ) ).to.eq(
+            TEST_AMOUNT
         )
     } )
     it( 'permit', async () => {
-        const deadline = MaxUint256.toString()
+        const deadline = BigInt(MaxUint256)
 
         await contract.exe( x => x.permit(
             wallet.address,
             other.address,
-            TEST_AMOUNT.toString(),
+            TEST_AMOUNT,
             deadline,
         ) )
 
-        expect( await contract.exe( x => x.allowance_unfolded( 
+        expect( await contract.exe( x => x.allowance_unfolded(
             wallet.address,
             other.address
-        ) ) ).to.eq( TEST_AMOUNT.toString() * 1 )
+        ) ) ).to.eq( TEST_AMOUNT )
 
     } )
 
