@@ -4,7 +4,6 @@ include "String.aes"
 include "List.aes"
 
 namespace AE =
-    type uint   = int
 
     function validate_positive(x: int) = 
         require(x >= 0,"LP")

@@ -63,7 +63,9 @@ const getContent = ( path ) => {
 const createClient = async ( wallet = WALLETS[0] ) => {
     const node = await Node( { url: NETWORKS[NETWORK_NAME].nodeUrl, ignoreVersion: true } )
 
-    return Universal( {
+    return await Universal.compose( {
+        deepProps: { Ae: { defaults: { interval: 50 } } }
+    } )( {
         nodes: [
             { name: NETWORK_NAME, instance: node },
         ],

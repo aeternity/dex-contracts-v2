@@ -2,6 +2,7 @@
 
 include "./IAedexV2Callee.aes"
 include "./IAEX9Minimal.aes"
+include "./IAedexV2Factory.aes"
 
 contract interface IAedexV2Pair =
     entrypoint domain_separator: () => bytes(32)
