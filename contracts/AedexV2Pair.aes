@@ -25,13 +25,13 @@ contract AedexV2Pair =
             , address /*indexed to*/
             , string
             /*
-            , uint amount0_in,
-            , uint amount1_in,
-            , uint amount0_out,
-            , uint amount1_out,
+            , int amount0_in,
+            , int amount1_in,
+            , int amount0_out,
+            , int amount1_out,
             */
         )
-        | Sync(int /*uint112 reserve0*/, int /*reserve1*/)
+        | Sync(int /*reserve0*/, int /*reserve1*/)
 
     record state = {
               //token area
@@ -81,8 +81,8 @@ contract AedexV2Pair =
         (balance0,balance1)
 
 
-    private function _safe_transfer(token: IAEX9Minimal, to: address, value: int) =
-        require(value >= 0,"AedexV2: TRANSFER_FAILED")
+    function _safe_transfer(token: IAEX9Minimal, to: address, value: int) =
+        require(value >= 0,"NEGATIVE_VALUE_ON_TRANSFER")
         token.transfer(to,value)
         
     function time_stamp() = Option.default(Chain.timestamp,state.debug_time)
@@ -110,12 +110,11 @@ contract AedexV2Pair =
         Chain.event( Sync(reserve0, reserve1) )
 
     // if fee is on, mint liquidity equivalent to 1/6th of the growth in sqrt(k)
-    stateful function _mint_fee(reserve0: int, reserve1: int): bool = 
+    stateful function gc(reserve0: int, reserve1: int): bool = 
         require(reserve0 >= 0 && reserve1 >= 0,"LP")
-        let fee_to_opt = state.factory.fee_to() 
         let k_last = state.k_last // gas savings
 
-        switch(fee_to_opt)
+        switch(state.factory.fee_to())
           Some(fee_to) =>
             if (k_last != 0) 
                 let root_k = Math.sqrt(reserve0 * reserve1)
@@ -157,8 +156,8 @@ contract AedexV2Pair =
         let amount0 = balance0 - _reserve0
         let amount1 = balance1 - _reserve1
 
-        let fee_on = _mint_fee(_reserve0, _reserve1)
-        let _total_supply = state.total_supply // gas savings, must be defined here since totalSupply can update in _mint_fee
+        let fee_on = gc(_reserve0, _reserve1)
+        let _total_supply = state.total_supply // gas savings, must be defined here since totalSupply can update in gc
 
         let min_liq = minimum_liquidity()
         let liquidity = 
@@ -167,7 +166,7 @@ contract AedexV2Pair =
                     Math.sqrt(amount0 * amount1) - min_liq
                 else
                     Math.min((amount0*_total_supply) / _reserve0, (amount1*_total_supply) / _reserve1)
-        require(liquidity > 0, "AedexV2: INSUFFICIENT_LIQUIDITY_MINTED")
+        require(liquidity > 0, "INSUFFICIENT_LIQUIDITY_MINTED")
         _mint(Some(to), liquidity)
 
         _update(balance0, balance1, _reserve0, _reserve1)
@@ -184,7 +183,7 @@ contract AedexV2Pair =
         let (balance0,balance1) = get_balances()
         let liquidity = Option.default(0,balance(Contract.address))
 
-        let fee_on = _mint_fee(_reserve0, _reserve1)
+        let fee_on = gc(_reserve0, _reserve1)
         let _total_supply = state.total_supply // gas savings, must be defined here since totalSupply can update in _mintFee
         let amount0 = (liquidity*balance0) / _total_supply // using balances ensures pro-rata distribution
         let amount1 = (liquidity*balance1) / _total_supply // using balances ensures pro-rata distribution
@@ -205,14 +204,14 @@ contract AedexV2Pair =
         to: address,
         callee_opt: option(IAedexV2Callee)
         ): unit =
-        require(amount0_out > 0 || amount1_out > 0, "AedexV2: INSUFFICIENT_OUTPUT_AMOUNT")
+        require(amount0_out > 0 || amount1_out > 0, "INSUFFICIENT_OUTPUT_AMOUNT")
         let (_reserve0, _reserve1) = (state.reserve0,state.reserve1) // gas savings
-        require(amount0_out < _reserve0 && amount1_out < _reserve1, "AedexV2: INSUFFICIENT_LIQUIDITY")
+        require(amount0_out < _reserve0 && amount1_out < _reserve1, "INSUFFICIENT_LIQUIDITY")
         
 
         let _token0 = state.token0
         let _token1 = state.token1
-        require(to != _token0.address && to != _token1.address, "AedexV2: INVALID_TO")
+        require(to != _token0.address && to != _token1.address, "INVALID_TO")
 
         if (amount0_out > 0) _safe_transfer(_token0, to, amount0_out) // optimistically transfer tokens
         if (amount1_out > 0) _safe_transfer(_token1, to, amount1_out) // optimistically transfer tokens
@@ -223,13 +222,13 @@ contract AedexV2Pair =
 
         let amount0_in = if(balance0 > _reserve0 - amount0_out) balance0 - (_reserve0 - amount0_out) else 0
         let amount1_in = if(balance1 > _reserve1 - amount1_out) balance1 - (_reserve1 - amount1_out) else 0
-        require(amount0_in > 0 || amount1_in > 0, "AedexV2: INSUFFICIENT_INPUT_AMOUNT")
+        require(amount0_in > 0 || amount1_in > 0, "INSUFFICIENT_INPUT_AMOUNT")
 
         let balance0_adjusted = balance0*1000 - amount0_in*3
         let balance1_adjusted = balance1*1000 - amount1_in*3
         require(
             balance0_adjusted*balance1_adjusted >= _reserve0*_reserve1*1000000,
-            "AedexV2: K"
+            "K"
             )
 
         _update(balance0, balance1, _reserve0, _reserve1)
@@ -277,7 +276,7 @@ contract AedexV2Pair =
                           })
 
     stateful function _burn(from: address,value: int) = 
-        require(value > 0, "AedexV2: INSUFFICIENT_LIQUIDITY_BURNED")
+        require(value > 0, "INSUFFICIENT_LIQUIDITY_BURNED")
         put(state { total_supply @ p = p - value
                   , balance_of[ from = 0] @ p = p - value
                   })
