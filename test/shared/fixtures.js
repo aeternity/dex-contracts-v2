@@ -141,7 +141,7 @@ const pairModelFixture = async () => {
 
 const calleeFixture = async ( ) => {
     const callee = await getContract(
-        './contracts/test/AedexV2CalleeTest.aes',
+        './contracts/test/AedexV2CallbackTest.aes',
         [],
     )
     await callee.deploy()

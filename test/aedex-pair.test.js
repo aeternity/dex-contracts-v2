@@ -227,7 +227,7 @@ describe( 'Pair Factory', () => {
                     expectedOutputAmount.add( 1 ),
                     wallet.address,
                 ),
-                "AedexV2: K"
+                "K"
             )
             await swap(
                 0,
@@ -265,7 +265,7 @@ describe( 'Pair Factory', () => {
                     0,
                     wallet.address,
                 ),
-                "AedexV2: K"
+                "K"
             )
             await swap(
                 outputAmount,

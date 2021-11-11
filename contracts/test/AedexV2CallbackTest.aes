@@ -1,0 +1,11 @@
+@compiler >= 6
+
+include "../lib/Utils.aes"
+include "../interfaces/IAEX9Minimal.aes"
+include "../interfaces/IAedexV2Callback.aes"
+
+contract AedexV2CallbackTest = 
+    entrypoint aedex_v2_call(sender: address, amount0: int, amount1: int): unit = 
+        //this is callback
+        ()
+
