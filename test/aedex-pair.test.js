@@ -16,7 +16,7 @@
  */
 const { assert, expect, use } = require( 'chai' )
 import { BigNumber } from 'ethers'
-const MINIMUM_LIQUIDITY = BigNumber.from( 10 ).pow( 3 )
+const MINIMUM_LIQUIDITY = BigInt(BigNumber.from( 10 ).pow( 3 ))
 import { Decimal } from 'decimal.js'
 const { jestSnapshotPlugin } = require( "mocha-chai-jest-snapshot" )
 
@@ -29,7 +29,7 @@ use( jestSnapshotPlugin() )
 const { defaultWallets: WALLETS } = require( '../config/wallets.json' )
 
 import {
-    getA,   
+    getA,
     getContract,
     pairFixture,
     beforeEachWithSnapshot,
@@ -46,14 +46,14 @@ import {
 const TOTAL_SUPPLY = expandTo18Decimals( 10000 )
 const TEST_AMOUNT = expandTo18Decimals( 10 )
 
-const wallet = { 
+const wallet = {
     ...WALLETS[0],
-    address: WALLETS[0].publicKey 
+    address: WALLETS[0].publicKey
 }
 
-const other = { 
+const other = {
     ...WALLETS[1],
-    address: WALLETS[1].publicKey 
+    address: WALLETS[1].publicKey
 }
 var token0, token1, pair, callee, factory
 
@@ -64,16 +64,16 @@ describe( 'Pair Factory', () => {
     const pairAddress = () => getA( pair ).replace( "ct_", "ak_" )
 
     //------------------------------------------------------------------------------
-    // entrypoint wrappers 
+    // entrypoint wrappers
     //------------------------------------------------------------------------------
-    
+
     const totalSupplyStr = ( isToken0 ) => {
         const token = isToken0 ? token0 : token1
         console.debug( `token${isToken0 ? 0 : 1}.total_supply_str()` )
 
         return token.exe( x => x.total_supply_str( ) )
     }
-    
+
     const token0TotalSupplyStr = ( address ) => totalSupplyStr( true, address )
     const token1TotalSupplyStr = ( address ) => totalSupplyStr( false, address )
 
@@ -82,7 +82,7 @@ describe( 'Pair Factory', () => {
         console.debug( `token${isToken0 ? 0 : 1}.balance_str( ${address})` )
         return token.exe( x => x.balance_str( address ) )
     }
-    
+
     const token0BalanceStr = ( address ) => balanceStr( true, address )
     const token1BalanceStr = ( address ) => balanceStr( false, address )
 
@@ -91,14 +91,14 @@ describe( 'Pair Factory', () => {
         console.debug( `token${isToken0 ? 0 : 1}.balance( ${address})` )
         return token.exe( x => x.balance( address ) )
     }
-    
+
     const token0Balance = ( address ) => balance( true, address )
     const token1Balance = ( address ) => balance( false, address )
 
     const transfer = async ( isToken0, amount ) => {
         const token = isToken0 ? token0 : token1
         console.debug( `token${isToken0 ? 0 : 1}.transfer( ${pairAddress()}, ${amount.toString()})` )
-        await token.exe( x => x.transfer( pairAddress(), amount.toString() ) )
+        await token.exe( x => x.transfer( pairAddress(), BigInt(amount) ) )
     }
     const token0Transfer = ( amount ) => transfer( true, amount.toString() )
     const token1Transfer = ( amount ) => transfer( false, amount.toString() )
@@ -109,12 +109,12 @@ describe( 'Pair Factory', () => {
     }
     const pairBurn = async ( address ) => {
         console.debug( `pair.burn( ${address})` )
-        await pair.exe( x => x.burn( address ) )
+        await pair.exe( x => x.burn( address,  { gas: 100000 }  ) )
     }
 
     const mint = async ( address ) => {
         console.debug( `pair.mint( ${address} )` )
-        await pair.exe( x => x.mint( address ) )
+        await pair.exe( x => x.mint( address,  { gas: 100000 } ) )
     }
     const swap = async ( amount0, amount1, address ) => {
         const calleeAddress = getA( callee )
@@ -123,7 +123,8 @@ describe( 'Pair Factory', () => {
             amount0.toString(),
             amount1.toString(),
             address,
-            calleeAddress
+            calleeAddress,
+            { gas: 100000 }
         ) )
     }
     const pairBalance = ( address ) => {
@@ -144,7 +145,7 @@ describe( 'Pair Factory', () => {
     }
     const  sync = ( ) => {
         console.debug( `pair.sync()` )
-        return pair.exe( x => x.sync( ) )
+        return pair.exe( x => x.sync( { gas: 100000 } ) )
     }
     const  price0CumulativeLastStr = ( ) => {
         console.debug( `pair.price0_cumulative_last_str()` )
@@ -158,26 +159,26 @@ describe( 'Pair Factory', () => {
         console.debug( `factory.set_fee_to( ${address})` )
         await factory.exe( x => x.set_fee_to( address ) )
     }
-    
+
     //------------------------------------------------------------------------------
-    // entrypoint wrappers 
+    // entrypoint wrappers
     //------------------------------------------------------------------------------
-    
+
     it( 'mint', async () => {
         const token0Amount = expandTo18Decimals( 1 )
         const token1Amount = expandTo18Decimals( 4 )
         await token0Transfer( token0Amount )
         await token1Transfer( token1Amount )
 
-        const expectedLiquidity = expandTo18Decimals( 2 )
+        const expectedLiquidity = BigInt(expandTo18Decimals( 2 ))
         await mint( wallet.address )
 
         expect(
             await pairTotalSupply()
-        ).to.eq( expectedLiquidity.toString() * 1 )
+        ).to.eq( expectedLiquidity )
         expect(
             await pairBalance( wallet.address )
-        ).to.eq( expectedLiquidity.sub( MINIMUM_LIQUIDITY ).toString() * 1 )
+        ).to.eq( expectedLiquidity - MINIMUM_LIQUIDITY )
 
         expect(
             await token0BalanceStr( pairAddress() )
@@ -187,8 +188,8 @@ describe( 'Pair Factory', () => {
         ).to.eq( token1Amount.toString() )
 
         const reserves = await getReserves()
-        expect( reserves.reserve0 ).to.eq( token0Amount.toString() * 1 )
-        expect( reserves.reserve1 ).to.eq( token1Amount.toString() * 1 )
+        expect( reserves.reserve0 ).to.eq( BigInt(token0Amount) )
+        expect( reserves.reserve1 ).to.eq( BigInt(token1Amount) )
     } )
 
     async function addLiquidity( token0Amount, token1Amount ) {
@@ -219,7 +220,7 @@ describe( 'Pair Factory', () => {
             ] = swapTestCase
 
             await addLiquidity( token0Amount, token1Amount )
-            token0Transfer( swapAmount )
+            await token0Transfer( swapAmount )
 
             await expectToRevert(
                 () => swap(
@@ -242,9 +243,9 @@ describe( 'Pair Factory', () => {
         [ '997000000000000000', 10, 5, 1 ],
         [ '997000000000000000', 5, 5, 1 ],
         [ 1, 5, 5, '1003009027081243732' ] // given amountOut, amountIn = ceiling(amountOut / .997)
-    ].map( a => a.map( n => 
-        ( typeof n === 'string' 
-            ? BigNumber.from( n ) 
+    ].map( a => a.map( n =>
+        ( typeof n === 'string'
+            ? BigNumber.from( n )
             : expandTo18Decimals( n )
         ) ) )
     optimisticTestCases.forEach( ( optimisticTestCase, i ) => {
@@ -283,32 +284,30 @@ describe( 'Pair Factory', () => {
         const swapAmount = expandTo18Decimals( 1 )
         const expectedOutputAmount = BigNumber.from( '1662497915624478906' )
         await token0Transfer( swapAmount )
-        await swap( 0, expectedOutputAmount, wallet.address ) 
+        await swap( 0, expectedOutputAmount, wallet.address )
 
         const reserves = await getReserves()
-        expect( reserves.reserve0 ).to.eq( token0Amount.add( swapAmount ).toString() * 1 )
-        expect( reserves.reserve1 ).to.eq( token1Amount.sub( expectedOutputAmount ).toString() * 1 )
+        expect( reserves.reserve0 ).to.eq( BigInt(token0Amount) + BigInt(swapAmount ) )
+        expect( reserves.reserve1 ).to.eq( BigInt(token1Amount) - BigInt(expectedOutputAmount ) )
 
         expect( await token0Balance( pairAddress() ) )
-            .to.eq( token0Amount.add( swapAmount ).toString() * 1 )
+            .to.eq( BigInt(token0Amount) + BigInt(swapAmount) )
         expect( await token1Balance( pairAddress() ) )
-            .to.eq( token1Amount.sub( expectedOutputAmount ).toString() * 1 )
+            .to.eq( BigInt(token1Amount) - BigInt(expectedOutputAmount) )
 
         const totalSupplyToken0 = await token0TotalSupplyStr()
         const totalSupplyToken1 = await token1TotalSupplyStr()
 
-        expect( await token0BalanceStr( wallet.address ) )
+        expect( await token0Balance( wallet.address ) )
             .to.eq(
-                BigNumber.from( totalSupplyToken0 )
-                    .sub( token0Amount )
-                    .sub( swapAmount )
-                    .toString()
+              BigInt(BigNumber.from( totalSupplyToken0 )) -
+                BigInt( token0Amount ) -
+                BigInt( swapAmount )
             )
-        expect( await token1BalanceStr( wallet.address ) )
-            .to.eq( BigNumber.from( totalSupplyToken1 )
-                .sub( token1Amount )
-                .add( expectedOutputAmount )
-                .toString()
+        expect( await token1Balance( wallet.address ) )
+            .to.eq( BigInt(BigNumber.from( totalSupplyToken1 )) -
+                BigInt( token1Amount ) +
+                BigInt( expectedOutputAmount )
             )
     } )
 
@@ -320,14 +319,14 @@ describe( 'Pair Factory', () => {
         const swapAmount = expandTo18Decimals( 1 )
         const expectedOutputAmount = BigNumber.from( '453305446940074565' )
         await token1Transfer(  swapAmount )
-        await swap( expectedOutputAmount, 0, wallet.address ) 
+        await swap( expectedOutputAmount, 0, wallet.address )
 
         const reserves = await getReserves()
         expect( reserves.reserve0 ).to.eq(
-            token0Amount.sub( expectedOutputAmount ).toString() * 1
+          BigInt(token0Amount) - BigInt(expectedOutputAmount)
         )
         expect( reserves.reserve1 ).to.eq(
-            token1Amount.add( swapAmount ).toString() * 1
+          BigInt(token1Amount) + BigInt(swapAmount)
         )
 
         expect( await token0BalanceStr( pairAddress() ) )
@@ -361,18 +360,18 @@ describe( 'Pair Factory', () => {
 
         await pairTransfer( expectedLiquidity.sub( MINIMUM_LIQUIDITY ) )
 
-        await pairBurn( wallet.address ) 
+        await pairBurn( wallet.address )
 
-        expect( await pairBalance( wallet.address ) ).to.eq( 0 )
-        expect( await pairTotalSupply() ).to.eq( MINIMUM_LIQUIDITY.toString() * 1 )
+        expect( await pairBalance( wallet.address ) ).to.eq( 0n )
+        expect( await pairTotalSupply() ).to.eq( MINIMUM_LIQUIDITY )
         expect( await token0BalanceStr( pairAddress() ) ).to.eq( '1000' )
         expect( await token1BalanceStr( pairAddress() ) ).to.eq( '1000' )
         const totalSupplyToken0 = await token0TotalSupplyStr()
         const totalSupplyToken1 = await token1TotalSupplyStr()
-        expect( 
+        expect(
             await token0BalanceStr( wallet.address )
         ).to.eq( BigNumber.from( totalSupplyToken0 ).sub( 1000 ).toString() )
-        expect( 
+        expect(
             await token1BalanceStr( wallet.address )
         ).to.eq( BigNumber.from( totalSupplyToken1 ).sub( 1000 ).toString() )
     } )
@@ -384,7 +383,7 @@ describe( 'Pair Factory', () => {
         await addLiquidity( token0Amount, token1Amount )
 
         const { block_timestamp_last: blockTimestamp } = await getReserves()
-        await setDebugTime( blockTimestamp + 1 )
+        await setDebugTime( blockTimestamp + 1n )
         await sync( )
 
         expect( await price0CumulativeLastStr() )
@@ -392,11 +391,11 @@ describe( 'Pair Factory', () => {
         expect( await price1CumulativeLastStr() )
             .to.eq( initialPrice[1].toString() )
         expect( ( await getReserves() ).block_timestamp_last )
-            .to.eq( blockTimestamp + 1 )
+            .to.eq( blockTimestamp + 1n )
 
         const swapAmount = expandTo18Decimals( 3 )
         await token0Transfer( swapAmount )
-        await setDebugTime( blockTimestamp + 10 )
+        await setDebugTime( blockTimestamp + 10n )
 
         // swap to a new price eagerly instead of syncing
         await swap( 0, expandTo18Decimals( 1 ), wallet.address )
@@ -406,9 +405,9 @@ describe( 'Pair Factory', () => {
         expect( await price1CumulativeLastStr() )
             .to.eq( initialPrice[1].mul( 10 ).toString() )
         expect( ( await getReserves() ).block_timestamp_last )
-            .to.eq( blockTimestamp + 10 )
+            .to.eq( blockTimestamp + 10n )
 
-        await setDebugTime( blockTimestamp + 20 )
+        await setDebugTime( blockTimestamp + 20n )
         await sync( )
 
         const newPrice = encodePrice(
@@ -416,7 +415,7 @@ describe( 'Pair Factory', () => {
             expandTo18Decimals( 2 )
         )
         expect( await price0CumulativeLastStr() )
-            .to.eq( 
+            .to.eq(
                 initialPrice[0]
                     .mul( 10 )
                     .add( newPrice[0].mul( 10 ) )
@@ -430,7 +429,7 @@ describe( 'Pair Factory', () => {
                     .toString()
             )
         expect( ( await getReserves() ).block_timestamp_last )
-            .to.eq( blockTimestamp + 20 )
+            .to.eq( blockTimestamp + 20n )
     } )
     it( 'feeTo:off', async () => {
         const token0Amount = expandTo18Decimals( 1000 )
@@ -446,7 +445,7 @@ describe( 'Pair Factory', () => {
         await pairTransfer( expectedLiquidity.sub( MINIMUM_LIQUIDITY ) )
         await pairBurn( wallet.address )
         expect( await pairTotalSupply() )
-            .to.eq( MINIMUM_LIQUIDITY.toString() * 1 )
+            .to.eq( MINIMUM_LIQUIDITY )
     } )
     it( 'feeTo:on', async () => {
         await setFeeTo( other.address )
@@ -464,9 +463,9 @@ describe( 'Pair Factory', () => {
         await pairTransfer( expectedLiquidity.sub( MINIMUM_LIQUIDITY ) )
         await pairBurn( wallet.address )
         expect( await pairTotalSupply() )
-            .to.eq( MINIMUM_LIQUIDITY.add( '249750499251388' ).toString() * 1 )
+            .to.eq( MINIMUM_LIQUIDITY + BigInt( '249750499251388' ) )
         expect( await pairBalance( other.address ) )
-            .to.eq( 249750499251388 )
+            .to.eq( 249750499251388n )
 
         // using 1000 here instead of the symbolic MINIMUM_LIQUIDITY because the amounts only happen to be equal...
         // ...because the initial liquidity amounts were equal
@@ -480,7 +479,7 @@ describe( 'Pair Factory', () => {
             .to.eq(
                 BigNumber.from( 1000 )
                     .add( '250000187312969' )
-                    .toString() 
+                    .toString()
             )
     } )
 } )

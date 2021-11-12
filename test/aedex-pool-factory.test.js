@@ -28,7 +28,7 @@ use( jestSnapshotPlugin() )
 const { defaultWallets: WALLETS } = require( '../config/wallets.json' )
 
 import {
-    getA,   
+    getA,
     getContract,
     pairFixture,
     beforeEachWithSnapshot,
@@ -44,16 +44,16 @@ import {
 const TOTAL_SUPPLY = expandTo18Decimals( 10000 )
 const TEST_AMOUNT = expandTo18Decimals( 10 )
 
-const wallet = { 
+const wallet = {
     ...WALLETS[0],
-    address: WALLETS[0].publicKey 
+    address: WALLETS[0].publicKey
 }
 
-const other = { 
+const other = {
     ...WALLETS[1],
-    address: WALLETS[1].publicKey 
+    address: WALLETS[1].publicKey
 }
-var factory, token0, token1, pair 
+var factory, token0, token1, pair
 
 describe( 'Pair Factory', () => {
     beforeEachWithSnapshot( 'first compile pool factory', async () => {
@@ -63,11 +63,11 @@ describe( 'Pair Factory', () => {
         const exe = factory.exe
         expect( await exe( x => x.fee_to() ) ).to.eq( undefined )
         expect( await exe( x => x.fee_to_setter() ) ).to.eq( wallet.address )
-        expect( await exe( x => x.all_pairs_length() ) ).to.eq( 1 )
+        expect( await exe( x => x.all_pairs_length() ) ).to.eq( 1n )
     } )
     it( 'fails to create same pairs', async () => {
         await expectToRevert(
-            () => factory.exe( x => x.create_pair( 
+            () => factory.exe( x => x.create_pair(
                 getA( token0 ),
                 getA( token1 ),
                 getA( factory ),
@@ -78,7 +78,7 @@ describe( 'Pair Factory', () => {
     } )
     it( 'fails to create same pairs in reverse', async () => {
         await expectToRevert(
-            () => factory.exe( x => x.create_pair( 
+            () => factory.exe( x => x.create_pair(
                 getA( token1 ),
                 getA( token0 ),
                 getA( factory ),
@@ -90,7 +90,7 @@ describe( 'Pair Factory', () => {
     } )
     it( 'set_fee_to', async () => {
         await expectToRevert(
-            () =>  factory.exe( x => x.set_fee_to( 
+            () =>  factory.exe( x => x.set_fee_to(
                 other.address, {
                     onAccount: other.address,
                 } )
@@ -103,7 +103,7 @@ describe( 'Pair Factory', () => {
     } )
     it( 'set_fee_to_setter', async () => {
         await expectToRevert(
-            () =>  factory.exe( x => x.set_fee_to_setter( 
+            () =>  factory.exe( x => x.set_fee_to_setter(
                 other.address, {
                     onAccount: other.address,
                 } )

@@ -1,4 +1,6 @@
 http:
+  external:
+    gas_limit: 10000000000000000
   endpoints:
     dry-run: true
 
