@@ -47,7 +47,7 @@ contract AedexV2Pair =
             , block_timestamp_last: int  // uses single storage slot, accessible via get_reserves
             , price0_cumulative_last: int
             , price1_cumulative_last: int
-            , k_last: int // reserve0 * reserve1, as of immediately after the most recent liquidity event
+            , reserves_square_last: int // reserve0 * reserve1, as of immediately after the most recent liquidity event
             , debug_time: option(int)
             }
 
@@ -69,7 +69,7 @@ contract AedexV2Pair =
             , block_timestamp_last = 0
             , price0_cumulative_last = 0
             , price1_cumulative_last = 0
-            , k_last = 0
+            , reserves_square_last = 0
             , debug_time = debug_time
         }
 
@@ -112,21 +112,21 @@ contract AedexV2Pair =
     // if fee is on, mint liquidity equivalent to 1/6th of the growth in sqrt(k)
     stateful function gc(reserve0: int, reserve1: int): bool =
         require(reserve0 >= 0 && reserve1 >= 0,"LP")
-        let k_last = state.k_last // gas savings
+        let reserves_square_last = state.reserves_square_last // gas savings
 
         switch(state.factory.fee_to())
           Some(fee_to) =>
-            if (k_last != 0)
-                let root_k = Math.sqrt(reserve0 * reserve1)
-                let root_k_last = Math.sqrt(k_last)
-                if (root_k > root_k_last)
-                    let numerator = state.total_supply * (root_k - root_k_last)
-                    let denominator = root_k*5 + root_k_last
+            if (reserves_square_last != 0)
+                let reserves_sqrt = Math.sqrt(reserve0 * reserve1)
+                let reserves_sqrt_last_last = Math.sqrt(reserves_square_last)
+                if (reserves_sqrt > reserves_sqrt_last_last)
+                    let numerator = state.total_supply * (reserves_sqrt - reserves_sqrt_last_last)
+                    let denominator = reserves_sqrt*5 + reserves_sqrt_last_last
                     let liquidity = numerator / denominator
                     if (liquidity > 0) _mint(Some(fee_to), liquidity)
             true
           None =>
-            if( k_last != 0) put( state { k_last = 0})
+            if( reserves_square_last != 0) put( state { reserves_square_last = 0})
             false
 
     // DEX
@@ -170,7 +170,7 @@ contract AedexV2Pair =
         _mint(Some(to), liquidity)
 
         _update(balance0, balance1, _reserve0, _reserve1)
-        if (fee_on)  put( state{ k_last = state.reserve0*state.reserve1 }) // reserve0 and reserve1 are up-to-date
+        if (fee_on)  put( state{ reserves_square_last = state.reserve0*state.reserve1 }) // reserve0 and reserve1 are up-to-date
         Chain.event( Mint(Call.caller, amount0, amount1) )
         liquidity
 
@@ -193,7 +193,7 @@ contract AedexV2Pair =
         let (balance0,balance1) = get_balances()
 
         _update(balance0, balance1, _reserve0, _reserve1)
-        if (fee_on)  put( state{ k_last = state.reserve0*state.reserve1 }) // reserve0 and reserve1 are up-to-date
+        if (fee_on)  put( state{ reserves_square_last = state.reserve0*state.reserve1 }) // reserve0 and reserve1 are up-to-date
         Chain.event( Burn(Call.caller, to, AE.xsToPayload([amount0, amount1])) )
         {amount0 = amount0,amount1 = amount1}
 
