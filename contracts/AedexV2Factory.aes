@@ -22,10 +22,10 @@ contract AedexV2Factory =
                 )
 
     entrypoint init( 
-        _fee_to_setter: address
+        fee_to_setter: address
         , pair_model: IAedexV2PairlInit
         ) = { fee_to        = None
-            , fee_to_setter = _fee_to_setter
+            , fee_to_setter = fee_to_setter
             , pairs         = {}
             , all_pairs     = []
             , pair_model    = pair_model
@@ -82,12 +82,12 @@ contract AedexV2Factory =
                     )
 
 
-        let update_t0_map = (p: map(IAEX9Minimal,map(IAEX9Minimal,address))) =>
+        let update_token0_map = (p: map(IAEX9Minimal,map(IAEX9Minimal,address))) =>
             let old_t0_map: map(IAEX9Minimal,address) = Map.lookup_default(token0,p,{})
             old_t0_map { [token1] = pair.address } 
 
         let new_all_pairs = pair.address::state.all_pairs
-        put( state { pairs @ p = p { [token0] = update_t0_map(p) } 
+        put( state { pairs @ p = p { [token0] = update_token0_map(p) } 
                    , all_pairs = new_all_pairs
                    })
         Chain.event( PairCreated(

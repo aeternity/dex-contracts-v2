@@ -39,5 +39,3 @@ contract interface IAedexV2Pair =
 
     entrypoint skim: (IAEX9Minimal /*to*/) => unit
     entrypoint sync: () => unit
-
-    entrypoint initialize: (IAEX9Minimal, IAEX9Minimal) => unit
