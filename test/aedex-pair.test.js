@@ -228,7 +228,7 @@ describe( 'Pair Factory', () => {
                     expectedOutputAmount.add( 1 ),
                     wallet.address,
                 ),
-                "K"
+                'INSUFFICIENT_BALANCE'
             )
             await swap(
                 0,
@@ -266,7 +266,7 @@ describe( 'Pair Factory', () => {
                     0,
                     wallet.address,
                 ),
-                "K"
+                'INSUFFICIENT_BALANCE'
             )
             await swap(
                 outputAmount,
