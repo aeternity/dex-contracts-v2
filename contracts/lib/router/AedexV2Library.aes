@@ -1,0 +1,48 @@
+@compiler >= 6
+
+include "../../interfaces/IAEX9Minimal.aes"
+include "../../interfaces/IAedexV2Factory.aes"
+include "../../interfaces/IAedexV2Pair.aes"
+namespace AedexV2Library =
+
+    // returns sorted token addresses, used to handle return values from pairs sorted in this order
+    function sort_tokens(
+              tokenA: IAEX9Minimal
+            , tokenB: IAEX9Minimal
+        ): (IAEX9Minimal*IAEX9Minimal) =
+        require(tokenA.address != tokenB.address, "AedexV2Library: IDENTICAL_ADDRESSES")
+        if(tokenA.address < tokenB.address)
+            (tokenA, tokenB)
+        else
+            (tokenB, tokenA)
+
+
+    // given some amount of an asset and pair reserves, returns an equivalent amount of the other asset
+    function quote(amountA: int, reserveA: int, reserveB: int): int /*amountB*/ =
+        require(amountA > 0, "AedexV2Library: INSUFFICIENT_AMOUNT")
+        require(reserveA > 0 && reserveB > 0, "AedexV2Library: INSUFFICIENT_LIQUIDITY")
+        amountA*reserveB / reserveA
+
+    function pair_for(
+            factory: IAedexV2Factory
+            , tokenA: IAEX9Minimal
+            , tokenB: IAEX9Minimal
+        ): IAedexV2Pair =
+        switch(factory.get_pair(tokenA,tokenB))
+            Some(pair) => pair
+            None => abort("AedexV2Library: NO_PAIR_FOUND")
+
+    // fetches and sorts the reserves for a pair
+    function get_reserves(
+            factory: IAedexV2Factory
+            , tokenA: IAEX9Minimal
+            , tokenB: IAEX9Minimal
+        ): (int /*reserveA*/ * int /*reserveB*/) =
+        let (token0,_) = sort_tokens(tokenA, tokenB)
+        let pair = pair_for(factory,tokenA,tokenB)
+        let reserves_ret = pair.get_reserves()
+        let (reserve0,reserve1) = (reserves_ret.reserve0,reserves_ret.reserve1)
+        if( tokenA == tokenB)
+            (reserve0,reserve1)
+        else
+            (reserve1,reserve0)
