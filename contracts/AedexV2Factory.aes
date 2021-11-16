@@ -1,6 +1,7 @@
 @compiler >= 6
 
 include "List.aes"
+include "Option.aes"
 include "./interfaces/IAedexV2Pair.aes"
 include "./interfaces/IAedexV2FactoryForPair.aes"
 
@@ -43,9 +44,14 @@ contract AedexV2Factory =
     entrypoint all_pairs(ix: int): address = List.get(ix,state.all_pairs)
     entrypoint fee_to() = state.fee_to
     entrypoint fee_to_setter() = state.fee_to_setter
-    entrypoint get_pair(token_a: IAEX9Minimal, token_b: IAEX9Minimal) =
+    entrypoint get_pair(
+          token_a: IAEX9Minimal
+        , token_b: IAEX9Minimal
+        ): option(IAedexV2Pair) =
         let (token0,token1) = sort_tokens(token_a,token_b)
-        state.pairs[token0][token1]
+        switch(Map.lookup(token0,state.pairs))
+            None => None
+            Some(m) => Map.lookup(token1,m)
 
     function validate_fee_to_setter() =
         require(Call.caller == state.fee_to_setter, "AedexV2: FORBIDDEN")

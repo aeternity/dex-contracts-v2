@@ -130,13 +130,7 @@ contract AedexV2Pair =
             false
 
     // DEX
-    record reserves = {
-              reserve0: int
-            , reserve1: int
-            , block_timestamp_last: int
-            }
-
-    entrypoint get_reserves(): reserves = {
+    entrypoint get_reserves(): IAedexV2Pair.reserves = {
               reserve0 = state.reserve0
             , reserve1 = state.reserve1
             , block_timestamp_last = state.block_timestamp_last

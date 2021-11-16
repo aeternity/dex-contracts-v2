@@ -46,3 +46,11 @@ contract interface IAedexV2Pair =
 
     entrypoint skim: (IAEX9Minimal /*to*/) => unit
     entrypoint sync: () => unit
+
+    record reserves = {
+              reserve0: int
+            , reserve1: int
+            , block_timestamp_last: int
+            }
+
+    entrypoint get_reserves: () => reserves
