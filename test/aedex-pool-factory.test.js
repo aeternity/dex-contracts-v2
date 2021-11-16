@@ -70,7 +70,7 @@ describe( 'Pair Factory', () => {
             () => factory.exe( x => x.create_pair(
                 getA( token0 ),
                 getA( token1 ),
-                getA( factory ),
+                //getA( factory ),
                 undefined
             ) ),
             'AedexV2: PAIR_EXISTS'
@@ -81,7 +81,7 @@ describe( 'Pair Factory', () => {
             () => factory.exe( x => x.create_pair(
                 getA( token1 ),
                 getA( token0 ),
-                getA( factory ),
+                //getA( factory ),
                 undefined
 
             ) ),

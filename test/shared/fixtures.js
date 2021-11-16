@@ -159,6 +159,7 @@ const factoryFixture = async ( wallet ) => {
         ],
     )
     await factory.deploy()
+    await factory.exe( x => x.set_this_factory( getA( factory ) ) )
     return factory
 }
 
@@ -174,14 +175,14 @@ const tokenFixture = async ( liquidity ) => {
 const pairFixture = async ( wallet = wallet0 ) => {
     const factory = await factoryFixture( wallet )
 
-    const liq = BigInt(expandTo18Decimals( 10000 ))
+    const liq = BigInt( expandTo18Decimals( 10000 ) )
     const tokenA = await tokenFixture( liq )
     const tokenB = await tokenFixture( liq )
-
+    
     const pairAddress = await factory.exe( x => x.create_pair(
         getA( tokenA ),
         getA( tokenB ),
-        getA( factory ),
+        //getA( factory ),
         1636041331999,
     ) )
 

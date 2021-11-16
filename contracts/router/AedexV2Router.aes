@@ -1,0 +1,46 @@
+@compiler >= 6
+
+include "../interfaces/router/IWAE.aes"
+include "../interfaces/IAedexV2Factory.aes"
+include "../interfaces/IAEX9Minimal.aes"
+
+contract AedexV2Router =
+    record state = {
+              factory: IAedexV2Factory
+            , weth: IWAE
+            }
+    record amounts = { amountA: int, amountB: int }
+
+    //TODO: add factory and WAE
+    entrypoint init( factory: IAedexV2Factory, weth: IWAE) = {
+              factory = factory
+            , weth = weth
+            }
+
+    stateful function _addLiquidity(
+          tokenA: address
+        , tokenB: address
+        , amountADesired: int
+        , amountBDesired: int
+        , amountAMin: int
+        , amountBMin: int
+        ): amounts =
+        // create the pair if it doesn't exist yet
+        if (IUniswapV2Factory(factory).getPair(tokenA, tokenB) == address(0)) {
+            IUniswapV2Factory(factory).createPair(tokenA, tokenB);
+        }
+        /*(uint reserveA, uint reserveB) = UniswapV2Library.getReserves(factory, tokenA, tokenB);*/
+        /*if (reserveA == 0 && reserveB == 0) {*/
+            /*(amountA, amountB) = (amountADesired, amountBDesired);*/
+        /*} else {*/
+            /*uint amountBOptimal = UniswapV2Library.quote(amountADesired, reserveA, reserveB);*/
+            /*if (amountBOptimal <= amountBDesired) {*/
+                /*require(amountBOptimal >= amountBMin, 'UniswapV2Router: INSUFFICIENT_B_AMOUNT');*/
+                /*(amountA, amountB) = (amountADesired, amountBOptimal);*/
+            /*} else {*/
+                /*uint amountAOptimal = UniswapV2Library.quote(amountBDesired, reserveB, reserveA);*/
+                /*assert(amountAOptimal <= amountADesired);*/
+                /*require(amountAOptimal >= amountAMin, 'UniswapV2Router: INSUFFICIENT_A_AMOUNT');*/
+                /*(amountA, amountB) = (amountAOptimal, amountBDesired);*/
+            /*}*/
+        /*}*/

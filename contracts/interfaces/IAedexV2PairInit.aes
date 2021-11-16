@@ -1,0 +1,12 @@
+@compiler >= 6
+
+include "./IAedexV2FactoryForPair.aes"
+include "./IAEX9Minimal.aes"
+
+contract interface IAedexV2PairInit =
+    entrypoint init : (
+          IAedexV2FactoryForPair
+        , IAEX9Minimal
+        , IAEX9Minimal
+        , option(int)
+        ) => void

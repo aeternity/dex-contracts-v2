@@ -5,7 +5,7 @@ include "./lib/UQ112x112.aes"
 include "./lib/Math.aes"
 include "./interfaces/IAedexV2Pair.aes"
 include "./interfaces/IAedexV2Callback.aes"
-include "./interfaces/IAedexV2Factory.aes"
+include "./interfaces/IAedexV2FactoryForPair.aes"
 include "Option.aes"
 
 include "./interfaces/IAEX9Minimal.aes"
@@ -39,7 +39,7 @@ contract AedexV2Pair =
             , balance_of: map(owner, int)
             , locked_liquidity: int
             , allowance: map(owner, map(spender,int))
-            , factory: IAedexV2Factory
+            , factory: IAedexV2FactoryForPair
             , token0: IAEX9Minimal
             , token1: IAEX9Minimal
             , reserve0: int           // uses single storage slot, accessible via get_reserves
@@ -52,7 +52,7 @@ contract AedexV2Pair =
             }
 
     entrypoint init (
-          factory: IAedexV2Factory
+          factory: IAedexV2FactoryForPair
         , token0: IAEX9Minimal
         , token1: IAEX9Minimal
         , debug_time: option(int)

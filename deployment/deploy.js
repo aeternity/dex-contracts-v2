@@ -34,13 +34,15 @@ const deploy = async ( secretKey, network, compiler ) => {
     }
     const NETWORK_NAME = network ? network : DEFAULT_NETWORK_NAME
 
-    const client = await Universal( {
+    const client = await Universal.compose( {
+        deepProps: { Ae: { defaults: { interval: 10 } } }
+    } )( {
         nodes: [
             {
-                name     : NETWORK_NAME, instance : await Node( { 
+                name     : NETWORK_NAME, instance : await Node( {
                     url           : NETWORKS[NETWORK_NAME].nodeUrl,
                     ignoreVersion : true
-                } ) 
+                } )
             },
         ],
         compilerUrl : compiler ? compiler : NETWORKS[NETWORK_NAME].compilerUrl,
@@ -71,12 +73,13 @@ const deploy = async ( secretKey, network, compiler ) => {
         }
     }
     const fakeAddress = 'ct_A8WVnCuJ7t1DjAJf4y8hJrAEVpt1T9ypG3nNBdbpKmpthGvUm'
-    const deployments = 
-        [ 
+    const deployments =
+        [
             /* 00 */ () => deployContract( './contracts/test/BuildAll.aes', [] ),
-            /* 01 */ () => deployContract( './contracts/AedexV2Pair.aes', 
+            /* 01 */ () => deployContract( './contracts/AedexV2Pair.aes',
                 [ fakeAddress, fakeAddress, fakeAddress, undefined ] ),
-
+            /* 02 */ () => deployContract( './contracts/router/AedexV2Router.aes',
+                [ fakeAddress, fakeAddress ] )
         ]
     await deployments[0]()
 
