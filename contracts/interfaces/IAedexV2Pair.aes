@@ -21,9 +21,9 @@ contract interface IAedexV2Pair =
         , address /*spender*/
         , int /*value*/
         , int /*deadline*/
-        , int /*v*/
-        , bytes(32) /*r*/
-        , bytes(32) /*s*/
+        /*, int [>v<]*/
+        /*, bytes(32) [>r<]*/
+        /*, bytes(32) [>s<]*/
         ) => unit
 
 
@@ -56,3 +56,7 @@ contract interface IAedexV2Pair =
             }
 
     entrypoint get_reserves: () => reserves
+
+    //IEX9
+    stateful entrypoint transfer_allowance: ( address /*sender*/, address /*recipient*/, int /*amount*/) => unit
+
