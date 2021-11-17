@@ -3,21 +3,30 @@
 include "../interfaces/router/IWAE.aes"
 include "../interfaces/IAedexV2Factory.aes"
 include "../interfaces/IAEX9Minimal.aes"
+include "../interfaces/IAedexV2Pair.aes"
 include "../lib/router/AedexV2Library.aes"
 
 contract AedexV2Router =
     record state = {
               factory: IAedexV2Factory
-            , weth: IWAE
+            , wae: IWAE
+            , wae_aex9: IAEX9Minimal
             }
     type amountA = int
     type amountB = int
+    type amountToken = int
+    type amountAE = int
+    type liquidity = int
 
     //TODO: add factory and WAE
-    entrypoint init( factory: IAedexV2Factory, weth: IWAE) = {
-              factory = factory
-            , weth = weth
-            }
+    entrypoint init( factory: IAedexV2Factory, wae: IWAE, wae_aex9: IAEX9Minimal) =
+        require(wae.address == wae_aex9.address,"AedexV2Router: DIFFERENT_WAE_ADDRESSES")
+        {   factory  = factory
+          , wae      = wae
+          , wae_aex9 = wae_aex9
+          }
+    function ensureDeadline(deadline: int) =
+        require(deadline >= Chain.timestamp, "AedexV2Router: EXPIRED")
 
     // **** ADD LIQUIDITY ****
 
@@ -50,3 +59,50 @@ contract AedexV2Router =
                 require(amountAOptimal =< amountADesired, "AedexV2Router: OPTIMAL_GREATER_THEN_DESIRED")
                 require(amountAOptimal >= amountAMin, "AedexV2Router: INSUFFICIENT_A_AMOUNT")
                 (amountAOptimal, amountBDesired)
+
+    stateful entrypoint addLiquidity(
+              tokenA: IAEX9Minimal
+            , tokenB: IAEX9Minimal
+            , amountADesired: int
+            , amountBDesired: int
+            , amountAMin: int
+            , amountBMin: int
+            , to: address
+            , deadline: int
+        ): (amountA * amountB * liquidity) =
+        ensureDeadline(deadline)
+        let (amountA, amountB) = _addLiquidity(
+                tokenA, tokenB,
+                amountADesired, amountBDesired,
+                amountAMin, amountBMin
+                )
+        //getting pair and transfer to its address the tokens
+        let pair: IAedexV2Pair = AedexV2Library.pair_for( state.factory, tokenA, tokenB )
+        tokenA.transfer_allowance( Call.caller,pair.address,amountA )
+        tokenB.transfer_allowance( Call.caller,pair.address,amountB )
+        ( amountA, amountB, pair.mint(to) )
+
+    payable stateful entrypoint addLiquidityAE(
+        token: IAEX9Minimal
+        , amountTokenDesired: int
+        , amountTokenMin: int
+        , amountAEMin: int
+        , to: address
+        , deadline: int
+        ):  (amountToken * amountAE * liquidity) =
+        let wae_aex9 = state.wae_aex9
+        let wae = state.wae
+        let (amountToken, amountAE) = _addLiquidity(
+                token, wae_aex9,
+                amountTokenDesired, Call.value,
+                amountTokenMin, amountAEMin
+                )
+        let pair: IAedexV2Pair = AedexV2Library.pair_for(state.factory, token, wae_aex9)
+        token.transfer_allowance(Call.caller, pair.address, amountToken)
+
+        wae.deposit(value=amountAE)
+        wae.transfer(pair.address,amountAE)
+        let liquidity = pair.mint(to)
+        if (Call.value > amountAE)
+            Chain.spend(Call.caller,Call.value - amountAE) // refund dust ae, if any
+        (amountToken,amountAE,liquidity)

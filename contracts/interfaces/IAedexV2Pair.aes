@@ -28,6 +28,7 @@ contract interface IAedexV2Pair =
 
 
     entrypoint minimum_liquidity: () => int
+    entrypoint do_minimum_liquidity: () => int
     /*entrypoint factory: () => address //TODO: IAedexV2Factory ??*/
     entrypoint token0: () => IAEX9Minimal
     entrypoint token1: () => IAEX9Minimal
@@ -38,14 +39,15 @@ contract interface IAedexV2Pair =
     entrypoint price1_cumulativeLast: () => int
     entrypoint k_last: () => int
 
-    entrypoint mint: (address /*to*/) => int /*liquidity*/
+    stateful entrypoint mint: (address) => int
+    stateful entrypoint mint2: (address) => int
     record amounts =  { amount0: int,amount1: int }
-    entrypoint burn: (address /*to*/) => amounts
+    stateful entrypoint burn: (address /*to*/) => amounts
 
-    entrypoint swap: (int /*amount0Out*/, int /*amount1Out*/, address /*to*/, option(IAedexV2Callback) /*calle*/) => int
+    stateful entrypoint swap: (int /*amount0Out*/, int /*amount1Out*/, address /*to*/, option(IAedexV2Callback) /*calle*/) => int
 
-    entrypoint skim: (IAEX9Minimal /*to*/) => unit
-    entrypoint sync: () => unit
+    stateful entrypoint skim: (IAEX9Minimal /*to*/) => unit
+    stateful entrypoint sync: () => unit
 
     record reserves = {
               reserve0: int
