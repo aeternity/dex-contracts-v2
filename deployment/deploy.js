@@ -59,7 +59,7 @@ const deploy = async ( secretKey, network, compiler ) => {
             const filesystem       = contractUtils.getFilesystem( source )
             const contract_content = contractUtils.getContractContent( source )
 
-            const contract          = await client.getContractInstance( contract_content, { filesystem } )
+            const contract          = await client.getContractInstance( { source: contract_content, filesystem } )
             const deployment_result = await contract.deploy( params )
             console.log( deployment_result )
             console.log( '-------------------------------------  END  ---------------------------------------------------------' )

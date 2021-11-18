@@ -88,8 +88,8 @@ const getContract = async ( source, params, contractAddress, wallet = WALLETS[0]
         } = getContent( source )
 
         const contract           = await client.getContractInstance(
-            contract_content,
             {
+                source: contract_content,
                 filesystem,
                 contractAddress : contractAddress || undefined,
                 opt             : {
@@ -178,7 +178,7 @@ const pairFixture = async ( wallet = wallet0 ) => {
     const liq = BigInt( expandTo18Decimals( 10000 ) )
     const tokenA = await tokenFixture( liq )
     const tokenB = await tokenFixture( liq )
-    
+
     const pairAddress = await factory.exe( x => x.create_pair(
         getA( tokenA ),
         getA( tokenB ),

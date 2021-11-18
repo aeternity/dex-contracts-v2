@@ -19,7 +19,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@aeternity/aepp-sdk": "github:aeternity/aepp-sdk-js.git#feature/calldata",
+    "@aeternity/aepp-sdk": "github:aeternity/aepp-sdk-js.git#develop",
     "axios": "^0.24.0",
     "crypto": "^1.0.1",
     "decimal.js": "^10.2.1",
