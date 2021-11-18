@@ -148,7 +148,7 @@ contract AedexV2Router =
                 deadline
                 )
         token.transfer(to,amountToken)
-        //TODO: be sure we is the right thing to do
+        //TODO: be sure is the right thing to do
         wae.withdraw(amountAE)
         Chain.spend(to,amountAE)
         (amountToken,amountAE)
@@ -296,6 +296,7 @@ contract AedexV2Router =
             )
         _swap(amounts, path, Contract.address, factory, callback)
         let last_amount = last(amounts)
+        //TODO: be sure is the right thing to do
         wae.withdraw(last_amount)
         Chain.spend(to,last_amount)
         amounts
@@ -319,6 +320,7 @@ contract AedexV2Router =
             )
         _swap(amounts, path, Contract.address, factory, callback)
         let last_amount = last(amounts)
+        //TODO: be sure is the right thing to do
         wae.withdraw(last_amount)
         Chain.spend(to,last_amount)
         amounts
