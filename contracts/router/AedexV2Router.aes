@@ -3,6 +3,7 @@
 include "../interfaces/router/IWAE.aes"
 include "../interfaces/IAedexV2Factory.aes"
 include "../interfaces/IAEX9Minimal.aes"
+include "../interfaces/IAedexV2Callback.aes"
 include "../interfaces/IAedexV2Pair.aes"
 include "../lib/router/AedexV2Library.aes"
 
@@ -17,6 +18,11 @@ contract AedexV2Router =
     type amountToken = int
     type amountAE = int
     type liquidity = int
+
+    //TODO: what to do whith this?
+    /*receive() external payable {*/
+        /*assert(msg.sender == WETH) // only accept ETH via fallback from the WETH contract*/
+    /*}*/
 
     //TODO: add factory and WAE
     entrypoint init( factory: IAedexV2Factory, wae: IWAE, wae_aex9: IAEX9Minimal) =
@@ -189,3 +195,125 @@ contract AedexV2Router =
         //TODO: permit is not yet implemented
         pair.permit(Call.caller, Contract.address, value, deadline )
         removeLiquidityAE(token, liquidity, amountTokenMin, amountAEMin, to, deadline)
+
+    function _invalidAmounts() =
+        abort("AedexV2Router: AMOUNT_LIST_IS_SHORTER")
+    // **** SWAP ****
+    // requires the initial amount to have already been sent to the first pair
+    stateful function _swap(
+            amounts: list(int)
+            , path: list(IAEX9Minimal)
+            , _to: address
+            , factory: IAedexV2Factory
+            , callback: option(IAedexV2Callback)
+        ): unit =
+        switch((path,amounts))
+            (input::output::_path,_::amountOut::_amounts) =>
+                let (token0,_) = AedexV2Library.sort_tokens(input,output)
+                let (amount0Out, amount1Out) = if (input == token0) (0, amountOut) else (amountOut, 0)
+                let to = switch(_path)
+                            [] => _to
+                            (nexOutput::_) => AedexV2Library.pair_for(factory,output,nexOutput).address
+                let pair: IAedexV2Pair = AedexV2Library.pair_for(factory,input,output)
+
+                pair.swap(amount0Out, amount1Out, to,callback)
+                _swap(amountOut::_amounts,output::_path,_to,factory,callback)
+            (_::_::_,_::[]) => _invalidAmounts()
+            (_::_::_,[]) => _invalidAmounts()
+            (_,_) => ()
+
+    stateful entrypoint swap_exact_tokens_for_tokens(
+              amount_in: int
+            , amount_out_min: int
+            , path: list(IAEX9Minimal)
+            , to: address
+            , deadline: int
+            , callback: option(IAedexV2Callback)
+        ): list(int) =
+        ensure_deadline(deadline)
+        let factory = state.factory
+        let amounts = AedexV2Library.get_amounts_out(factory, amount_in, path)
+        require( List.get(List.length(amounts)-1,amounts) >= amount_out_min,
+                 "AedexV2Router: INSUFFICIENT_OUTPUT_AMOUNT"
+               )
+
+        List.get(0,path).transfer_allowance(
+            Call.caller,
+            fst_pair(factory,path).address,
+            List.get(0,amounts)
+            )
+        _swap(amounts, path, to, factory, callback)
+        amounts
+
+    stateful entrypoint swap_tokens_for_exact_tokens(
+              amount_out: int
+            , amount_in_max: int
+            , path: list(IAEX9Minimal)
+            , to: address
+            , deadline: int
+            , callback: option(IAedexV2Callback)
+        ): list(int) =
+        ensure_deadline(deadline)
+        let factory = state.factory
+        let amounts = AedexV2Library.get_amounts_in(factory, amount_out, path)
+        require(List.get(0,amounts) =< amount_in_max, "AedexV2Router: EXCESSIVE_INPUT_AMOUNT")
+        List.get(0,path).transfer_allowance(
+            Call.caller,
+            fst_pair(factory,path).address,
+            List.get(0,amounts)
+            )
+        _swap(amounts, path, to, factory, callback)
+        amounts
+
+    payable stateful entrypoint swap_exact_ae_for_tokens(
+              amount_out_min: int
+            , path: list(IAEX9Minimal)
+            , to: address
+            , deadline: int
+            , callback: option(IAedexV2Callback)
+        ): list(int) =
+        ensure_deadline(deadline)
+        let wae_aex9 = state.wae_aex9
+        let wae = state.wae
+        let factory = state.factory
+        require(List.get(0,path) == wae_aex9, "AedexV2Router: INVALID_PATH")
+        let amounts = AedexV2Library.get_amounts_out(factory, Call.value, path)
+        require(List.get(List.length(amounts)-1,amounts) >= amount_out_min,
+                 "AedexV2Router: INSUFFICIENT_OUTPUT_AMOUNT")
+        wae.deposit(value=List.get(0,amounts))
+        let pair = fst_pair(factory,path)
+        //TODO: is bool ok for transfer?
+        require(wae.transfer(pair.address,List.get(0,amounts)),
+                 "AedexV2Library: AE_TRANSFER_FAILED")
+        _swap(amounts, path, to, factory, callback )
+        amounts
+
+    stateful entrypoint swap_tokens_for_exact_ae(
+              amount_out: int
+            , amount_in_max: int
+            , path: list(IAEX9Minimal)
+            , to: address
+            , deadline: int
+            , callback: option(IAedexV2Callback)
+        ): list(int) =
+        ensure_deadline(deadline)
+        let wae_aex9 = state.wae_aex9
+        let wae = state.wae
+        let factory = state.factory
+        let last_in_path = List.get(List.length(path)-1,path)
+        require(last_in_path == wae_aex9, "AedexV2Router: INVALID_PATH")
+        let amounts = AedexV2Library.get_amounts_in(factory, amount_out, path)
+        require(List.get(0,amounts) =< amount_in_max, "AedexV2Router: EXCESSIVE_INPUT_AMOUNT")
+        List.get(0,path).transfer_allowance(
+            Call.caller,
+            fst_pair(factory,path).address,
+            List.get(0,amounts)
+            )
+        _swap(amounts, path, Contract.address, factory, callback)
+        let last_amount = List.get(List.length(amounts)-1,amounts)
+        wae.withdraw(last_amount)
+        Chain.spend(to,last_amount)
+        amounts
+
+    function fst_pair( factory: IAedexV2Factory, path: list(IAEX9Minimal)): IAedexV2Pair =
+        AedexV2Library.pair_for(factory, List.get(0,path), List.get(1,path))
