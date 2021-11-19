@@ -2,5 +2,5 @@
 
 contract interface IWAE =
     payable stateful entrypoint deposit: () => unit
-    stateful entrypoint transfer: (address /*to*/,  int /*value*/) => bool
+    stateful entrypoint transfer: (address /*to*/,  int /*value*/) => unit
     stateful entrypoint withdraw: (int /*amount: uint*/) => unit

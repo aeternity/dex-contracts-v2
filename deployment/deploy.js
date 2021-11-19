@@ -82,7 +82,7 @@ const deploy = async ( secretKey, network, compiler ) => {
                 [ fakeAddress, fakeAddress ] ),
             /* 03 */ () => deployContract( './contracts/test/WAE.aes', [] ),
         ]
-    await deployments[3]()
+    await deployments[0]()
 
     //console.log(await contract.methods.getOwner())
 }

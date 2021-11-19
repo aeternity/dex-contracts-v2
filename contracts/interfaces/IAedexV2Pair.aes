@@ -8,6 +8,7 @@ contract interface IAedexV2Pair =
     entrypoint domain_separator: () => bytes(32)
     entrypoint permit_typehash: () => bytes(32)
     entrypoint nonces: (address /*owner*/) => int
+    entrypoint balance: (address) => option(int)
 
     entrypoint init : (
           IAedexV2FactoryForPair

@@ -64,7 +64,7 @@ contract WAE =
 
         put( state { balance_of @ b = b {
                 [ src ] @ s = s - wad,
-                [ dst = 0 ] @ d = d + 1
+                [ dst = 0 ] @ d = d + wad
             } })
         Chain.event( Transfer( src, dst, wad ) )
 

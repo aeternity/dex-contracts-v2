@@ -12,6 +12,9 @@
     "test:aedex-pool-factory": "mocha ./test/aedex-pool-factory.test.js --timeout 0 --exit",
     "test:aedex-pool-factory-break": "mocha ./test/aedex-pool-factory.test.js  --timeout 0 --exit -b --failed-first",
     "test:aedex-pool-factory-debug": "node --inspect-brk node_modules/.bin/mocha ./test/aedex-pool-factory.test.js --timeout 0 --exit -b",
+    "test:aedex-router": "mocha ./test/aedex-router.test.js --timeout 0 --exit",
+    "test:aedex-router-break": "mocha ./test/aedex-router.test.js  --timeout 0 --exit -b --failed-first",
+    "test:aedex-router-debug": "node --inspect-brk node_modules/.bin/mocha ./test/aedex-router.test.js --timeout 0 --exit -b",
     "test:aedex-pair": "mocha ./test/aedex-pair.test.js --timeout 0 --exit",
     "test:aedex-pair-break": "mocha ./test/aedex-pair.test.js  --timeout 0 --exit -b --failed-first",
     "test:aedex-pair-debug": "node --inspect-brk node_modules/.bin/mocha ./test/aedex-pair.test.js --timeout 0 --exit -b"
@@ -19,7 +22,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@aeternity/aepp-sdk": "github:aeternity/aepp-sdk-js.git#feature/calldata",
+    "@aeternity/aepp-sdk": "github:aeternity/aepp-sdk-js.git#develop",
     "axios": "^0.24.0",
     "crypto": "^1.0.1",
     "decimal.js": "^10.2.1",
@@ -36,7 +39,7 @@
     "babel-eslint": "^10.0.3",
     "babel-jest": "^25.1.0",
     "chai": "^4.3.4",
-    "eslint": "^6.5.1",
+    "eslint": "^8.2.0",
     "eslint-plugin-import": "^2.20.0",
     "eslint-plugin-jest": "^23.6.0",
     "mocha": "^9.0.3",

@@ -7,7 +7,9 @@ include "../interfaces/IAedexV2Callback.aes"
 include "../interfaces/IAedexV2Pair.aes"
 include "../lib/router/AedexV2Library.aes"
 
-contract AedexV2Router =
+include "Option.aes"
+
+payable contract AedexV2Router =
     record state = {
               factory: IAedexV2Factory
             , wae: IWAE
@@ -32,11 +34,16 @@ contract AedexV2Router =
           , wae_aex9 = wae_aex9
           }
 
+    entrypoint balance() = Contract.balance
+    entrypoint factory() = state.factory
+    entrypoint wae() = state.wae
+    entrypoint wae_aex9() = state.wae_aex9
+
     // **** ADD LIQUIDITY ****
 
     //just creates the pair if it is the case and calculates the amount
     // based on parameters and pair reserves
-    stateful function _addLiquidity(
+    stateful function _add_liquidity(
           tokenA: IAEX9Minimal
         , tokenB: IAEX9Minimal
         , amountADesired: int
@@ -64,7 +71,7 @@ contract AedexV2Router =
                 require(amountAOptimal >= amountAMin, "AedexV2Router: INSUFFICIENT_A_AMOUNT")
                 (amountAOptimal, amountBDesired)
 
-    stateful entrypoint addLiquidity(
+    stateful entrypoint add_liquidity(
               tokenA: IAEX9Minimal
             , tokenB: IAEX9Minimal
             , amountADesired: int
@@ -74,19 +81,24 @@ contract AedexV2Router =
             , to: address
             , deadline: int
         ): (amountA * amountB * liquidity) =
+        /*let gasBefore = Call.gas_left()*/
+        /*let abortWithGas = () =>*/
+            /*abort(Int.to_str(gasBefore - Call.gas_left()))*/
         ensure_deadline(deadline)
-        let (amountA, amountB) = _addLiquidity(
+        let (amountA, amountB) = _add_liquidity(
                 tokenA, tokenB,
                 amountADesired, amountBDesired,
                 amountAMin, amountBMin
                 )
         //getting pair and transfer to its address the tokens
         let pair: IAedexV2Pair = AedexV2Library.pair_for( state.factory, tokenA, tokenB )
+        /*abortWithGas()*/
+        /*abort(Int.to_str(tokenA.total_supply()))*/
         tokenA.transfer_allowance( Call.caller,pair.address,amountA )
         tokenB.transfer_allowance( Call.caller,pair.address,amountB )
         ( amountA, amountB, pair.mint(to) )
 
-    payable stateful entrypoint addLiquidityAE(
+    payable stateful entrypoint add_liquidity_ae(
         token: IAEX9Minimal
         , amountTokenDesired: int
         , amountTokenMin: int
@@ -95,7 +107,7 @@ contract AedexV2Router =
         , deadline: int
         ):  (amountToken * amountAE * liquidity) =
         let (wae_aex9,wae,_) = trio(deadline)
-        let (amountToken, amountAE) = _addLiquidity(
+        let (amountToken, amountAE) = _add_liquidity(
                 token, wae_aex9,
                 amountTokenDesired, Call.value,
                 amountTokenMin, amountAEMin
@@ -111,7 +123,7 @@ contract AedexV2Router =
         (amountToken,amountAE,liquidity)
 
     // **** REMOVE LIQUIDITY ****
-    stateful entrypoint removeLiquidity(
+    stateful entrypoint remove_liquidity(
               tokenA: IAEX9Minimal
             , tokenB: IAEX9Minimal
             , liquidity: int
@@ -131,7 +143,7 @@ contract AedexV2Router =
         require(amountB >= amountBMin, "AedexV2Router: INSUFFICIENT_B_AMOUNT")
         (amountA,amountB)
 
-    stateful entrypoint removeLiquidityAE(
+    stateful entrypoint remove_liquidity_ae(
             token: IAEX9Minimal
             , liquidity: int
             , amountTokenMin: int
@@ -140,7 +152,7 @@ contract AedexV2Router =
             , deadline: int
         ): (amountToken * amountAE) =
         let (wae_aex9,wae,_) = trio(deadline)
-        let (amountToken, amountAE) = removeLiquidity(
+        let (amountToken, amountAE) = remove_liquidity(
                 token, wae_aex9,
                 liquidity,
                 amountTokenMin, amountAEMin,
@@ -153,7 +165,7 @@ contract AedexV2Router =
         Chain.spend(to,amountAE)
         (amountToken,amountAE)
 
-    stateful entrypoint removeLiquidityWithPermit(
+    stateful entrypoint remove_liquidity_with_permit(
             tokenA: IAEX9Minimal
             , tokenB: IAEX9Minimal
             , liquidity: int
@@ -169,9 +181,9 @@ contract AedexV2Router =
         let value = if(approveMax) max else liquidity
         //TODO: permit is not yet implemented
         pair.permit(Call.caller,Contract.address,value,deadline)
-        removeLiquidity(tokenA, tokenB, liquidity, amountAMin, amountBMin, to, deadline)
+        remove_liquidity(tokenA, tokenB, liquidity, amountAMin, amountBMin, to, deadline)
 
-    stateful entrypoint removeLiquidityAEWithPermit(
+    stateful entrypoint remove_liquidity_ae_with_permit(
               token: IAEX9Minimal
             , liquidity: int
             , amountTokenMin: int
@@ -188,7 +200,7 @@ contract AedexV2Router =
         let value = if(approveMax) max else liquidity
         //TODO: permit is not yet implemented
         pair.permit(Call.caller, Contract.address, value, deadline )
-        removeLiquidityAE(token, liquidity, amountTokenMin, amountAEMin, to, deadline)
+        remove_liquidity_ae(token, liquidity, amountTokenMin, amountAEMin, to, deadline)
 
     // **** SWAP ****
     // requires the initial amount to have already been sent to the first pair
@@ -272,8 +284,7 @@ contract AedexV2Router =
         wae.deposit(value=List.get(0,amounts))
         let pair = first_pair(factory,path)
         //TODO: is bool ok for transfer?
-        require(wae.transfer(pair.address,List.get(0,amounts)),
-                 "AedexV2Library: AE_TRANSFER_FAILED")
+        wae.transfer(pair.address,List.get(0,amounts))
         _swap(amounts, path, to, factory, callback )
         amounts
 
