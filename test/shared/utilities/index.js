@@ -3,6 +3,7 @@ const { BigNumber } =  require( 'ethers' )
 import { Decimal } from 'decimal.js'
 const { expect, assert } = require( 'chai' )
 const { exec : execP } = require( "child_process" )
+import { emits } from './events'
 
 function formatTokenAmount( num )/*: string*/ {
     return new Decimal( num.toString() ).dividedBy( new Decimal( 10 ).pow( 18 ) ).toPrecision( 5 )
@@ -61,9 +62,23 @@ function encodePrice( reserve0, reserve1 ) {
     ]
 }
 const makeExe = ( contract ) => async ( f, get ) => {
-    const { decodedResult } = await f( contract.methods )
-    return get ? get( decodedResult ) : decodedResult
+    const tx = await f( contract.methods )
+
+    if ( get && typeof get == 'object' ) {
+        // client is an instance of the Universal Stamp
+        //tx.decodedEvents && console.log( tx.decodedEvents )
+        if ( get.events ) {
+            await get.events( tx.decodedEvents )
+        }
+        if ( get.results ) {
+            return await get.results( tx.decodedResult )
+        }
+        return tx.decodedResult
+    }
+
+    return get ? get( tx.decodedResult ) : tx.decodedResult
 }
+
 const expectToRevert = async ( f, msg ) => {
     try {
         await f()
@@ -90,6 +105,14 @@ const exec = ( cmd ) => {
     } )
 }
 
+const events = ( tests ) => {
+    return {
+        events: ( xs ) => tests.events( {
+            tail : xs,
+            head : null,
+        } )
+    }
+}
 module.exports = {
     exec,
     expectToRevert,
@@ -108,5 +131,7 @@ module.exports = {
     formatTokenAmount,
     formatPrice,
     encodePrice,
+    emits,
+    events,
 }
 

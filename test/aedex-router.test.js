@@ -34,15 +34,15 @@ import {
     routerFixture,
     beforeEachWithSnapshot,
     getAK,
-} from './shared/fixtures.js'
+} from './shared/fixtures'
 
 import {
     expandTo18Decimals,
     MaxUint256 as MaxUint256BN,
-    expectToRevert,
-    encodePrice,
-
-} from './shared/utilities.js'
+    emits,
+    events,
+} from './shared/utilities'
+const expand18 = ( n ) => BigInt( expandTo18Decimals( n ) )
 const MaxUint256 = BigInt( MaxUint256BN )
 const TOTAL_SUPPLY = expandTo18Decimals( 10000 )
 const TEST_AMOUNT = expandTo18Decimals( 10 )
@@ -85,12 +85,12 @@ describe( 'Pair Router', () => {
     } )
     const routerAddr = () =>  getAK( router ) 
 
-    it( 'factory, WAE', async () => {
+    it.skip( 'factory, WAE', async () => {
         expect( await router.exe( x => x.factory() ) ).to.eq( getA( factory ) )
         expect( await router.exe( x => x.wae() ) ).to.eq( getA( wae ) )
         expect( await router.exe( x => x.wae_aex9() ) ).to.eq( getA( wae ) )
     } )
-    it( 'add_liquidity', async () => {
+    it.skip( 'add_liquidity', async () => {
         const token0Amount = expandTo18Decimals( 1 ) 
         const token1Amount = expandTo18Decimals( 4 ) 
 
@@ -114,7 +114,7 @@ describe( 'Pair Router', () => {
         ).to.eq( BigInt( expectedLiquidity.sub( MINIMUM_LIQUIDITY ) ) )
     } )
 
-    it( 'add_liquidity_ae', async () => {
+    it.skip( 'add_liquidity_ae', async () => {
         const waePartnerAmount = BigInt( expandTo18Decimals( 1 ) )
         const aeAmount = BigInt( expandTo18Decimals( 4 ) )
 
@@ -143,7 +143,7 @@ describe( 'Pair Router', () => {
         await token1.exe( x => x.transfer( getAK( pair ), BigInt( token1Amount ) ) )
         await pair.exe( x => x.mint( wallet.address, extraGas ) )
     }
-    it( 'remove_liquidity', async () => {
+    it.skip( 'remove_liquidity', async () => {
         const token0Amount = expandTo18Decimals( 1 )
         const token1Amount = expandTo18Decimals( 4 )
         await addLiquidity( token0Amount, token1Amount )
@@ -172,7 +172,7 @@ describe( 'Pair Router', () => {
             .to.eq(  totalSupplyToken1 - 2000n )  
     } )
 
-    it( 'remove_liquidity_ae', async () => {
+    it.skip( 'remove_liquidity_ae', async () => {
         const waePartnerAmount = BigInt( expandTo18Decimals( 1 ) )
         const aeAmount = BigInt( expandTo18Decimals( 4 ) ) 
 
@@ -211,7 +211,7 @@ describe( 'Pair Router', () => {
         ).to.eq( totalSupplywae - 2000n )
     } )
 
-    it( 'remove_liquidity_with_permit', async () => {
+    it.skip( 'remove_liquidity_with_permit', async () => {
         const token0Amount = BigInt( expandTo18Decimals( 1 ) )
         const token1Amount = BigInt( expandTo18Decimals( 4 ) ) 
         await addLiquidity( token0Amount, token1Amount )
@@ -231,7 +231,7 @@ describe( 'Pair Router', () => {
         ) )
     } )
 
-    it( 'remove_liquidity_ae_with_permit', async () => {
+    it.skip( 'remove_liquidity_ae_with_permit', async () => {
         const waePartnerAmount = BigInt( expandTo18Decimals( 1 ) )
         const aeAmount = BigInt( expandTo18Decimals( 4 ) )
         await waePartner.exe( x => x.transfer( getAK( waePair ), waePartnerAmount ) )
@@ -252,4 +252,30 @@ describe( 'Pair Router', () => {
             { ...extraGas, callStatic: true }
         ) )
     } )
+    describe( 'swapExactTokensForTokens', () => {
+        const token0Amount = expand18( 5 )
+        const token1Amount = expand18( 10 )
+        const swapAmount = expand18( 1 )
+        const expectedOutputAmount = 1662497915624478906n
+        beforeEach( async () => {
+            await addLiquidity( token0Amount, token1Amount )
+            await token0.exe( x => x.create_allowance( routerAddr(), MaxUint256 ) )
+        } )
+        it( 'happy path', async () => {
+            await router.exe( x => x.swap_exact_tokens_for_tokens(
+                swapAmount,
+                0,
+                [ getA( token0 ), getA( token1 ) ],
+                wallet.address,
+                MaxUint256, 
+                undefined,
+                {
+                    ...extraGas,
+                }
+            ), events( emits( 'Transfer' ) )
+            )
+        } )
+
+    } )
+
 } )

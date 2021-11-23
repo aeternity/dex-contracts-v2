@@ -33,7 +33,7 @@ import {
     getContract,
     pairFixture,
     beforeEachWithSnapshot,
-} from './shared/fixtures.js'
+} from './shared/fixtures'
 
 import {
     expandTo18Decimals,
@@ -41,7 +41,7 @@ import {
     expectToRevert,
     encodePrice,
 
-} from './shared/utilities.js'
+} from './shared/utilities'
 
 const TOTAL_SUPPLY = expandTo18Decimals( 10000 )
 const TEST_AMOUNT = expandTo18Decimals( 10 )

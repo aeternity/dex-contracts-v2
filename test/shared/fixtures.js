@@ -22,7 +22,7 @@ import {
     makeExe,
     expandTo18Decimals,
     exec,
-} from './utilities.js'
+} from './utilities'
 
 import { Universal, MemoryAccount, Node } from '@aeternity/aepp-sdk'
 
@@ -94,7 +94,7 @@ const getContract = async ( source, params, contractAddress, wallet = WALLETS[0]
                 }
             }
         )
-        const exe = makeExe( contract )
+        const exe = makeExe( contract, client )
         return {
             contract, exe,  deploy: async () => {
                 const deployment_result = await contract.deploy( params )
@@ -193,7 +193,7 @@ const routerFixture = async ( wallet = wallet0 ) => {
     const waePartner = await tokenFixture( liq )
 
     const factory = await factoryFixture( wallet )
-    
+
     // deploy routers
     const router = await router01Fixture( factory, wae )
     //
@@ -236,7 +236,7 @@ const pairFixture = async ( wallet = wallet0 ) => {
     const liq = BigInt( expandTo18Decimals( 10000 ) )
     const tokenA = await tokenFixture( liq )
     const tokenB = await tokenFixture( liq )
-    
+
     const pairAddress = await factory.exe( x => x.create_pair(
         getA( tokenA ),
         getA( tokenB ),

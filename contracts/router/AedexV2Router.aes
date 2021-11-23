@@ -15,13 +15,15 @@ payable contract AedexV2Router =
             , wae: IWAE
             , wae_aex9: IAEX9Minimal
             }
+    /*datatype event = SomeEvent(int)*/
+
     type amountA = int
     type amountB = int
     type amountToken = int
     type amountAE = int
     type liquidity = int
 
-    //TODO: what to do whith this?
+    //TODO: can we restrict from whom should this contract receive AE?
     /*receive() external payable {*/
         /*assert(msg.sender == WETH) // only accept ETH via fallback from the WETH contract*/
     /*}*/
@@ -81,9 +83,6 @@ payable contract AedexV2Router =
             , to: address
             , deadline: int
         ): (amountA * amountB * liquidity) =
-        /*let gasBefore = Call.gas_left()*/
-        /*let abortWithGas = () =>*/
-            /*abort(Int.to_str(gasBefore - Call.gas_left()))*/
         ensure_deadline(deadline)
         let (amountA, amountB) = _add_liquidity(
                 tokenA, tokenB,
@@ -92,8 +91,6 @@ payable contract AedexV2Router =
                 )
         //getting pair and transfer to its address the tokens
         let pair: IAedexV2Pair = AedexV2Library.pair_for( state.factory, tokenA, tokenB )
-        /*abortWithGas()*/
-        /*abort(Int.to_str(tokenA.total_supply()))*/
         tokenA.transfer_allowance( Call.caller,pair.address,amountA )
         tokenB.transfer_allowance( Call.caller,pair.address,amountB )
         ( amountA, amountB, pair.mint(to) )
@@ -226,6 +223,9 @@ payable contract AedexV2Router =
             (_::_::_,[]) => _invalidAmounts()
             (_,_) => ()
 
+    /*datatype event*/
+        /*= TestEvent(int)*/
+        /*| Test2Event(int)*/
     stateful entrypoint swap_exact_tokens_for_tokens(
               amount_in: int
             , amount_out_min: int
@@ -240,7 +240,7 @@ payable contract AedexV2Router =
         require( last(amounts) >= amount_out_min,
                  "AedexV2Router: INSUFFICIENT_OUTPUT_AMOUNT"
                )
-
+        /*Chain.event(SomeEvent)*/
         List.get(0,path).transfer_allowance(
             Call.caller,
             first_pair(factory,path).address,
@@ -376,7 +376,7 @@ payable contract AedexV2Router =
     function first_pair( factory: IAedexV2Factory, path: list(IAEX9Minimal)): IAedexV2Pair =
         AedexV2Library.pair_for(factory, List.get(0,path), List.get(1,path))
 
-    function last(xs: list('a)): 'a = List.get(List.length(xs),xs)
+    function last(xs: list('a)): 'a = List.get(List.length(xs)-1,xs)
     function first(xs: list('a)): 'a = List.get(0,xs)
 
     function trio(deadline: int) =
@@ -387,3 +387,4 @@ payable contract AedexV2Router =
         require(deadline >= Chain.timestamp, "AedexV2Router: EXPIRED")
     function _invalidAmounts() =
         abort("AedexV2Router: AMOUNT_LIST_IS_SHORTER")
+
