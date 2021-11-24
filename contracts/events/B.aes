@@ -2,6 +2,6 @@
 
 contract B =
     datatype event = Transfer(address)
-    stateful entrypoint methodB() =
+    entrypoint methodB() =
         Chain.event(Transfer(Contract.address))
 

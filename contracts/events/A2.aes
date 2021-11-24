@@ -7,5 +7,5 @@ contract A2 =
     //This will cause an error in sdk when methodA is been called
     datatype event = SomeEvent(address)
 
-    stateful entrypoint methodA2(b: IB) =
+    entrypoint methodA2(b: IB) =
         b.methodB()

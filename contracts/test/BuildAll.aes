@@ -14,7 +14,8 @@ include "../AedexV2Pair.aes"
 include "./AedexV2CallbackTest.aes"
 include "./TestAEX9.aes"
 include "../router/AedexV2Router.aes"
-include "../events/A.aes"
+include "../events/A1.aes"
+include "../events/A2.aes"
 include "../events/B.aes"
 
 main contract BuildAll =

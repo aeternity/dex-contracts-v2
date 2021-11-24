@@ -1,4 +1,4 @@
 @compiler >= 6
 
 contract interface IB =
-    stateful entrypoint methodB: () => unit
+    entrypoint methodB: () => unit

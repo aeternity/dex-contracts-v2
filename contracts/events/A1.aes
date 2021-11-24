@@ -4,5 +4,5 @@ include "./IB.aes"
 contract A1 =
     entrypoint init() = ()
 
-    stateful entrypoint methodA1(b: IB) =
+    entrypoint methodA1(b: IB) =
         b.methodB()
