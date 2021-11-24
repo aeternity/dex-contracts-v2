@@ -1,0 +1,8 @@
+@compiler >= 6
+
+include "./IB.aes"
+contract A1 =
+    entrypoint init() = ()
+
+    stateful entrypoint methodA1(b: IB) =
+        b.methodB()

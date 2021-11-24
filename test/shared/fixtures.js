@@ -75,9 +75,12 @@ const createClient = async ( wallet = WALLETS[0] ) => {
     } )
 }
 
+let client
 const getContract = async ( source, params, contractAddress, wallet = WALLETS[0] ) => {
 
-    const client = await createClient( wallet )
+    if ( !client ) {
+        client = await createClient( wallet )
+    }
     try {
         const {
             filesystem,
@@ -86,7 +89,7 @@ const getContract = async ( source, params, contractAddress, wallet = WALLETS[0]
 
         const contract           = await client.getContractInstance(
             {
-                source: contract_content,
+                source          : contract_content,
                 filesystem,
                 contractAddress : contractAddress || undefined,
                 opt             : {

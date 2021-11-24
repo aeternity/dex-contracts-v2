@@ -1,0 +1,7 @@
+@compiler >= 6
+
+contract B =
+    datatype event = Transfer(address)
+    stateful entrypoint methodB() =
+        Chain.event(Transfer(Contract.address))
+

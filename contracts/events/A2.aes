@@ -1,0 +1,11 @@
+@compiler >= 6
+
+include "./IB.aes"
+contract A2 =
+    entrypoint init() = ()
+
+    //This will cause an error in sdk when methodA is been called
+    datatype event = SomeEvent(address)
+
+    stateful entrypoint methodA2(b: IB) =
+        b.methodB()
