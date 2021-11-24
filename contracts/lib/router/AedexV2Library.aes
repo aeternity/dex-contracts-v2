@@ -3,6 +3,7 @@
 include "../../interfaces/IAEX9Minimal.aes"
 include "../../interfaces/IAedexV2Factory.aes"
 include "../../interfaces/IAedexV2Pair.aes"
+include "../../lib/Utils.aes"
 
 include "List.aes"
 namespace AedexV2Library =
@@ -44,7 +45,7 @@ namespace AedexV2Library =
         let pair = pair_for(factory,tokenA,tokenB)
         let reserves_ret = pair.get_reserves()
         let (reserve0,reserve1) = (reserves_ret.reserve0,reserves_ret.reserve1)
-        if( tokenA == tokenB)
+        if( tokenA == token0)
             (reserve0,reserve1)
         else
             (reserve1,reserve0)

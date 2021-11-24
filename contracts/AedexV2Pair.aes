@@ -85,7 +85,7 @@ contract AedexV2Pair =
         require(value >= 0,"NEGATIVE_VALUE_ON_TRANSFER")
         token.transfer(to,value)
 
-    function time_stamp() = Option.default(Chain.timestamp,state.debug_time)
+    function timestamp() = Option.default(Chain.timestamp,state.debug_time)
 
     stateful entrypoint set_debug_time(time: int) =
         require(Option.is_some(state.debug_time),"Not debug mode")
@@ -95,7 +95,7 @@ contract AedexV2Pair =
     stateful function _update(balance0: int, balance1: int, reserve0: int,reserve1: int  ) =
         require( balance0 >= 0 && balance1 >= 0 && reserve0 >= 0 && reserve1 >= 0,"LP" )
 
-        let block_timestamp = time_stamp()
+        let block_timestamp = timestamp()
 
         let time_elapsed = block_timestamp - state.block_timestamp_last
         if (time_elapsed > 0 && reserve0 != 0 && reserve1 != 0)
@@ -349,3 +349,24 @@ contract AedexV2Pair =
             })
 
         Chain.event( Transfer(sender, recipient, amount) )
+    stateful entrypoint permit(
+              owner: address
+            , spender: address
+            , value: int
+            , deadline: int
+            /*, int [>v<]*/
+            /*, bytes(32) [>r<]*/
+            /*, bytes(32) [>s<]*/
+        ) =
+        require(deadline >= timestamp(), "AedexV2: EXPIRED")
+        //TODO: what's this
+        /*bytes32 digest = keccak256(*/
+            /*abi.encodePacked(*/
+                /*'\x19\x01',*/
+                /*DOMAIN_SEPARATOR,*/
+                /*keccak256(abi.encode(PERMIT_TYPEHASH, owner, spender, value, nonces[owner]++, deadline))*/
+            /*)*/
+        /*);*/
+        /*address recoveredAddress = ecrecover(digest, v, r, s);*/
+        /*require(recoveredAddress != address(0) && recoveredAddress == owner, 'UniswapV2: INVALID_SIGNATURE');*/
+        _create_allowance(owner, spender, value)

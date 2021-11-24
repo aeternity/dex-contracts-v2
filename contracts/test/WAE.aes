@@ -1,0 +1,100 @@
+@compiler >= 6
+
+include "Option.aes"
+include "String.aes"
+include "../interfaces/IAEX9Minimal.aes"
+include "../lib/Utils.aes"
+
+
+contract WAE =
+    type owner = address
+    type spender = address
+
+    record state =
+        { balance_of: map(owner, int)
+        , allowance: map(owner, map(spender,int))
+        }
+
+    entrypoint init() = {
+          balance_of= {}
+        , allowance = {}
+        }
+
+    //------------------------------------------------------------------------------
+    // viewers
+    //------------------------------------------------------------------------------
+
+    entrypoint meta_info(): IAEX9Minimal.meta_info = {
+          name = "Wrapped Aeternity",
+          symbol = "WAE",
+          decimals = 18
+        }
+
+    payable stateful entrypoint deposit(): unit =
+        put(state{balance_of @ b = b { [ Call.caller = 0] @ value = value + Call.value} })
+        Chain.event( Deposit(Call.caller, Call.value) )
+
+    stateful entrypoint withdraw(wad: int): unit =
+        let caller_balance: int = Map.lookup_default(Call.caller,state.balance_of,0)
+        require(caller_balance >= wad, "WAE: LOW_BALANCE")
+        put(state{balance_of @ b = b { [ Call.caller ] = caller_balance - wad} })
+        Chain.spend( Call.caller,wad )
+        Chain.event( Withdrawal(Call.caller, wad) )
+
+    entrypoint total_supply() = Contract.balance
+    entrypoint total_supply_str() = Int.to_str(Contract.balance)
+
+    stateful entrypoint create_allowance(guy: address, wad: int): unit =
+        put( state{allowance @ a = a{ [Call.caller = {} ] @ p = p { [guy] = wad }}})
+        Chain.event(Allowance(Call.caller, guy, wad))
+
+
+    stateful entrypoint transfer(dst: address , wad: int): unit =
+        transfer_allowance(Call.caller, dst, wad)
+
+    stateful entrypoint transfer_allowance(src: address, dst: address, wad: int) =
+        let src_balance = Map.lookup_default(src,state.balance_of,0)
+        require(src_balance >= wad, "WAE: LOW_BALANCE")
+
+        if (src != Call.caller)
+            let src_allowance_map = Map.lookup_default(src,state.allowance,{})
+            let src_allowance = Map.lookup_default(Call.caller,src_allowance_map,0)
+            require(src_allowance >= wad, "WAE: LOW_ALLOWANCE")
+            put( state{ allowance @ a = a { [src = {}] @ s = s { [Call.caller] @ p = p - wad}}})
+
+        put( state { balance_of @ b = b {
+                [ src ] @ s = s - wad,
+                [ dst = 0 ] @ d = d + wad
+            } })
+        Chain.event( Transfer( src, dst, wad ) )
+
+
+    entrypoint balance(address: address): option(int) =
+        //NOTE: tests are based on 0 not on null/undefined,
+        //we make this hack replacing None with Some(0)
+        Some(Map.lookup_default(address,state.balance_of,0))
+
+    entrypoint balance_str(address: address): option(string) =
+        Option.map(Int.to_str,balance(address))
+
+    entrypoint allowance(accounts: IAEX9Minimal.allowance_accounts): option(int) =
+        let (owner,spender) = (accounts.from_account,accounts.for_account)
+        let spenderA = Map.lookup_default(owner,state.allowance,{})
+        Map.lookup(spender,spenderA)
+
+    entrypoint allowance_unfolded(
+             from_account: address,
+             for_account: address
+        ): option(int) = allowance({from_account = from_account, for_account = for_account})
+
+    datatype event
+        = Transfer(address /*indexed from*/, address /*indexed to*/, int /*value*/)
+
+        | Allowance(address /*indexed owner*/, address /*indexed spender*/, int /*value*/)
+
+        | Deposit(address /*indexed dst*/, int /*ae*/)
+
+        | Withdrawal(address /*indexed src*/, int /*wad*/)
+
+
+

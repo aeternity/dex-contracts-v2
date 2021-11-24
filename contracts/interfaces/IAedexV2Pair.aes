@@ -8,6 +8,7 @@ contract interface IAedexV2Pair =
     entrypoint domain_separator: () => bytes(32)
     entrypoint permit_typehash: () => bytes(32)
     entrypoint nonces: (address /*owner*/) => int
+    entrypoint balance: (address) => option(int)
 
     entrypoint init : (
           IAedexV2FactoryForPair
@@ -44,7 +45,12 @@ contract interface IAedexV2Pair =
     record amounts =  { amount0: int,amount1: int }
     stateful entrypoint burn: (address /*to*/) => amounts
 
-    stateful entrypoint swap: (int /*amount0Out*/, int /*amount1Out*/, address /*to*/, option(IAedexV2Callback) /*callback*/) => int
+    stateful entrypoint swap: (
+        int /*amount0Out*/
+        , int /*amount1Out*/
+        , address /*to*/
+        , option(IAedexV2Callback) /*callback*/
+        ) => unit
 
     stateful entrypoint skim: (IAEX9Minimal /*to*/) => unit
     stateful entrypoint sync: () => unit

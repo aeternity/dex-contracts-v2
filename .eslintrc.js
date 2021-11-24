@@ -2,18 +2,15 @@
 module.exports = {
     "root": true,
     "env": {
-        "es6": true,
+        "es2020": true,
         "node": true,
-        "jest": true,
+        "jest": true
     },
     "extends": [
         "eslint:recommended",
     ],
     "parserOptions": {
-        "ecmaVersion": 9,
         "ecmaFeatures": {
-            //"experimentalObjectRestSpread": true,
-            //"ecmaVersion": 6,
             "jsx": true
         },
         "sourceType": "module"

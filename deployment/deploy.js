@@ -79,7 +79,8 @@ const deploy = async ( secretKey, network, compiler ) => {
             /* 01 */ () => deployContract( './contracts/AedexV2Pair.aes',
                 [ fakeAddress, fakeAddress, fakeAddress, undefined ] ),
             /* 02 */ () => deployContract( './contracts/router/AedexV2Router.aes',
-                [ fakeAddress, fakeAddress ] )
+                [ fakeAddress, fakeAddress ] ),
+            /* 03 */ () => deployContract( './contracts/test/WAE.aes', [] ),
         ]
     await deployments[0]()
 
