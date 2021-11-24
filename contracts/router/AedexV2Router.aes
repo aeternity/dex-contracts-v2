@@ -15,7 +15,6 @@ payable contract AedexV2Router =
             , wae: IWAE
             , wae_aex9: IAEX9Minimal
             }
-    /*datatype event = SomeEvent(int)*/
 
     type amountA = int
     type amountB = int
@@ -161,42 +160,7 @@ payable contract AedexV2Router =
         Chain.spend(to,amountAE)
         (amountToken,amountAE)
 
-    stateful entrypoint remove_liquidity_with_permit(
-            tokenA: IAEX9Minimal
-            , tokenB: IAEX9Minimal
-            , liquidity: int
-            , amountAMin: int
-            , amountBMin: int
-            , to: address
-            , deadline: int
-            , approveMax: bool
-        ): (amountA * amountB) =
-        let pair: IAedexV2Pair = AedexV2Library.pair_for(state.factory, tokenA, tokenB)
-        // TODO: decide a max, in solidity is uint(-1)
-        let max = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
-        let value = if(approveMax) max else liquidity
-        //TODO: permit is not yet implemented
-        pair.permit(Call.caller,Contract.address,value,deadline)
-        remove_liquidity(tokenA, tokenB, liquidity, amountAMin, amountBMin, to, deadline)
 
-    stateful entrypoint remove_liquidity_ae_with_permit(
-              token: IAEX9Minimal
-            , liquidity: int
-            , amountTokenMin: int
-            , amountAEMin: int
-            , to: address
-            , deadline: int
-            , approveMax: bool
-        ): (amountToken * amountAE) =
-        let wae_aex9 = state.wae_aex9
-        let wae = state.wae
-        let pair = AedexV2Library.pair_for(state.factory, token, wae_aex9)
-        // TODO: decide a max, in solidity is uint(-1)
-        let max = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
-        let value = if(approveMax) max else liquidity
-        //TODO: permit is not yet implemented
-        pair.permit(Call.caller, Contract.address, value, deadline )
-        remove_liquidity_ae(token, liquidity, amountTokenMin, amountAEMin, to, deadline)
 
     // **** SWAP ****
     // requires the initial amount to have already been sent to the first pair
@@ -222,9 +186,6 @@ payable contract AedexV2Router =
             (_::_::_,[]) => _invalidAmounts()
             (_,_) => ()
 
-    /*datatype event*/
-        /*= TestEvent(int)*/
-        /*| Test2Event(int)*/
     stateful entrypoint swap_exact_tokens_for_tokens(
               amount_in: int
             , amount_out_min: int
@@ -239,7 +200,6 @@ payable contract AedexV2Router =
         require( last(amounts) >= amount_out_min,
                  "AedexV2Router: INSUFFICIENT_OUTPUT_AMOUNT"
                )
-        /*Chain.event(SomeEvent(1))*/
         List.get(0,path).transfer_allowance(
             Call.caller,
             first_pair(factory,path).address,
@@ -282,7 +242,6 @@ payable contract AedexV2Router =
                  "AedexV2Router: INSUFFICIENT_OUTPUT_AMOUNT")
         wae.deposit(value=List.get(0,amounts))
         let pair = first_pair(factory,path)
-        //TODO: is bool ok for transfer?
         wae.transfer(pair.address,List.get(0,amounts))
         _swap(amounts, path, to, factory, callback )
         amounts
@@ -306,7 +265,6 @@ payable contract AedexV2Router =
             )
         _swap(amounts, path, Contract.address, factory, callback)
         let last_amount = last(amounts)
-        //TODO: be sure is the right thing to do
         wae.withdraw(last_amount)
         Chain.spend(to,last_amount)
         amounts
@@ -330,7 +288,6 @@ payable contract AedexV2Router =
             )
         _swap(amounts, path, Contract.address, factory, callback)
         let last_amount = last(amounts)
-        //TODO: be sure is the right thing to do
         wae.withdraw(last_amount)
         Chain.spend(to,last_amount)
         amounts

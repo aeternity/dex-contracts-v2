@@ -66,7 +66,7 @@ const deploy = async ( secretKey, network, compiler ) => {
             return { deployment_result, contract }
         } catch ( ex ) {
             console.log( ex )
-            if ( ex.response.text ) {
+            if ( ex.response && ex.response.text ) {
                 console.log( JSON.parse( ex.response.text ) )
             }
             throw ex

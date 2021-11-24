@@ -105,7 +105,7 @@ const getContract = async ( source, params, contractAddress, wallet = WALLETS[0]
         }
     } catch ( ex ) {
         console.debug( ex )
-        if ( ex.response.text ) {
+        if ( ex.response && ex.response.text ) {
             console.debug( JSON.parse( ex.response.text ) )
         }
         assert.fail( 'Could not initialize contract instance' )
