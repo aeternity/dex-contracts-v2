@@ -6,7 +6,6 @@ include "./IAedexV2FactoryForPair.aes"
 
 contract interface IAedexV2Pair =
     entrypoint domain_separator: () => bytes(32)
-    entrypoint permit_typehash: () => bytes(32)
     entrypoint nonces: (address /*owner*/) => int
     entrypoint balance: (address) => option(int)
 
@@ -17,20 +16,9 @@ contract interface IAedexV2Pair =
         , option(int)
         ) => void
 
-    entrypoint permit: (
-          address /*owner*/
-        , address /*spender*/
-        , int /*value*/
-        , int /*deadline*/
-        /*, int [>v<]*/
-        /*, bytes(32) [>r<]*/
-        /*, bytes(32) [>s<]*/
-        ) => unit
-
-
     entrypoint minimum_liquidity: () => int
     entrypoint do_minimum_liquidity: () => int
-    /*entrypoint factory: () => address //TODO: IAedexV2Factory ??*/
+    entrypoint factory: () => IAedexV2FactoryForPair
     entrypoint token0: () => IAEX9Minimal
     entrypoint token1: () => IAEX9Minimal
 

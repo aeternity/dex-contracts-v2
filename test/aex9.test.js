@@ -147,21 +147,5 @@ describe( 'AEX9', () => {
             TEST_AMOUNT
         )
     } )
-    it( 'permit', async () => {
-        const deadline = BigInt( MaxUint256 )
-
-        await contract.exe( x => x.permit(
-            wallet.address,
-            other.address,
-            TEST_AMOUNT,
-            deadline,
-        ) )
-
-        expect( await contract.exe( x => x.allowance_unfolded(
-            wallet.address,
-            other.address
-        ) ) ).to.eq( TEST_AMOUNT )
-
-    } )
 
 } )

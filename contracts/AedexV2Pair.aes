@@ -349,24 +349,3 @@ contract AedexV2Pair =
             })
 
         Chain.event( Transfer(sender, recipient, amount) )
-    stateful entrypoint permit(
-              owner: address
-            , spender: address
-            , value: int
-            , deadline: int
-            /*, int [>v<]*/
-            /*, bytes(32) [>r<]*/
-            /*, bytes(32) [>s<]*/
-        ) =
-        require(deadline >= timestamp(), "AedexV2: EXPIRED")
-        //TODO: what's this
-        /*bytes32 digest = keccak256(*/
-            /*abi.encodePacked(*/
-                /*'\x19\x01',*/
-                /*DOMAIN_SEPARATOR,*/
-                /*keccak256(abi.encode(PERMIT_TYPEHASH, owner, spender, value, nonces[owner]++, deadline))*/
-            /*)*/
-        /*);*/
-        /*address recoveredAddress = ecrecover(digest, v, r, s);*/
-        /*require(recoveredAddress != address(0) && recoveredAddress == owner, 'UniswapV2: INVALID_SIGNATURE');*/
-        _create_allowance(owner, spender, value)

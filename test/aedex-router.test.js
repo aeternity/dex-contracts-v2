@@ -14,23 +14,13 @@
  *  OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
  *  PERFORMANCE OF THIS SOFTWARE.
  */
-const { assert, expect, use } = require( 'chai' )
-import { BigNumber } from 'ethers'
-const MINIMUM_LIQUIDITY = BigInt( BigNumber.from( 10 ).pow( 3 ) )
-import { Decimal } from 'decimal.js'
-const { jestSnapshotPlugin } = require( "mocha-chai-jest-snapshot" )
-
-const tokenA      = 'ct_A8WVnCuJ7t1DjAJf4y8hJrAEVpt1T9ypG3nNBdbpKmpthGvUm'
-const tokenB      = 'ct_m18VKpSVhsQtjmUC7oZAJPwk36usb39B2viWzBuPjfQEsxHYL'
-const fakeFactory = 'ct_27JMp3z1pyXbfjra2VXiFU9e5jtFTyzus57S6eWbGNh3NSfabo'
-
-use( jestSnapshotPlugin() )
+const { expect } = require( 'chai' )
+const MINIMUM_LIQUIDITY = 1000n //BigInt( BigNumber.from( 10 ).pow( 3 ) )
 
 const { defaultWallets: WALLETS } = require( '../config/wallets.json' )
 
 import {
     getA,
-    getContract,
     routerFixture,
     beforeEachWithSnapshot,
     getAK,
@@ -39,24 +29,14 @@ import {
 import {
     expandTo18Decimals,
     MaxUint256 as MaxUint256BN,
-    emits,
-    events,
 } from './shared/utilities'
 const expand18 = ( n ) => BigInt( expandTo18Decimals( n ) )
 const MaxUint256 = BigInt( MaxUint256BN )
-const TOTAL_SUPPLY = expandTo18Decimals( 10000 )
-const TEST_AMOUNT = expandTo18Decimals( 10 )
 
 const wallet = {
     ...WALLETS[0],
     address: WALLETS[0].publicKey
 }
-
-const other = {
-    ...WALLETS[1],
-    address: WALLETS[1].publicKey
-}
-var token0, token1, pair, callee, factory
 
 const extraGas = { gas: 150000 }
 describe( 'Pair Router', () => {
@@ -211,47 +191,6 @@ describe( 'Pair Router', () => {
         ).to.eq( totalSupplywae - 2000n )
     } )
 
-    it( 'remove_liquidity_with_permit', async () => {
-        const token0Amount = BigInt( expandTo18Decimals( 1 ) )
-        const token1Amount = BigInt( expandTo18Decimals( 4 ) ) 
-        await addLiquidity( token0Amount, token1Amount )
-
-        const expectedLiquidity = BigInt( expandTo18Decimals( 2 ) )
-
-        await router.exe( x => x.remove_liquidity_with_permit(
-            getA( token0 ),
-            getA( token1 ),
-            expectedLiquidity - MINIMUM_LIQUIDITY,
-            0,
-            0,
-            wallet.address,
-            MaxUint256,
-            false,
-            { ...extraGas, callStatic: true }
-        ) )
-    } )
-
-    it( 'remove_liquidity_ae_with_permit', async () => {
-        const waePartnerAmount = BigInt( expandTo18Decimals( 1 ) )
-        const aeAmount = BigInt( expandTo18Decimals( 4 ) )
-        await waePartner.exe( x => x.transfer( getAK( waePair ), waePartnerAmount ) )
-        await wae.exe( x => x.deposit( { amount: aeAmount.toString() } ) )
-        await wae.exe( x => x.transfer( getAK( waePair ), aeAmount ) )
-        await waePair.exe( x => x.mint( wallet.address, extraGas ) )
-
-        const expectedLiquidity = BigInt( expandTo18Decimals( 2 ) )
-
-        await router.exe( x => x.remove_liquidity_ae_with_permit(
-            getA( waePartner ),
-            expectedLiquidity - MINIMUM_LIQUIDITY,
-            0,
-            0,
-            wallet.address,
-            MaxUint256,
-            false,
-            { ...extraGas, callStatic: true }
-        ) )
-    } )
     describe( 'swap_exact_tokens_for_tokens', () => {
         const token0Amount = expand18( 5 )
         const token1Amount = expand18( 10 )

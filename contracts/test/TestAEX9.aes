@@ -107,20 +107,6 @@ contract TestAEX9 =
 
         Chain.event( Transfer(sender, recipient, amount) )
 
-    //NOTE: the owner is not the Call.caller but is just for testing
-    stateful entrypoint permit(
-            owner: address
-            , spender: address
-            , value: int
-            , deadline: int
-            /*, uint8 v*/
-            /*, bytes32 r*/
-            /*, bytes32 s*/
-            ) =
-        require(deadline >= Chain.timestamp, "EXPIRED")
-        _create_allowance(owner,spender,value)
-
-
     datatype event
         = Transfer(address /*indexed from*/, address /*indexed to*/, int /*value*/)
 
