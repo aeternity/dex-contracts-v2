@@ -85,8 +85,8 @@ const getContract = async ( source, params, contractAddress, wallet = WALLETS[0]
         } = getContent( source )
 
         const contract           = await client.getContractInstance(
-            contract_content,
             {
+                source: contract_content,
                 filesystem,
                 contractAddress : contractAddress || undefined,
                 opt             : {
