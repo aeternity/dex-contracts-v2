@@ -28,7 +28,6 @@ payable contract AedexV2Router =
         /*assert(msg.sender == WETH) // only accept ETH via fallback from the WETH contract*/
     /*}*/
 
-    //TODO: add factory and WAE
     entrypoint init( factory: IAedexV2Factory, wae: IWAE, wae_aex9: IAEX9Minimal) =
         require(wae.address == wae_aex9.address,"AedexV2Router: DIFFERENT_WAE_ADDRESSES")
         {   factory  = factory
@@ -240,7 +239,7 @@ payable contract AedexV2Router =
         require( last(amounts) >= amount_out_min,
                  "AedexV2Router: INSUFFICIENT_OUTPUT_AMOUNT"
                )
-        /*Chain.event(SomeEvent)*/
+        /*Chain.event(SomeEvent(1))*/
         List.get(0,path).transfer_allowance(
             Call.caller,
             first_pair(factory,path).address,
