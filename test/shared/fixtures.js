@@ -86,7 +86,7 @@ const getContract = async ( source, params, contractAddress, wallet = WALLETS[0]
 
         const contract           = await client.getContractInstance(
             {
-                source: contract_content,
+                source          : contract_content,
                 filesystem,
                 contractAddress : contractAddress || undefined,
                 opt             : {
@@ -219,7 +219,7 @@ const routerFixture = async ( wallet = wallet0 ) => {
 
     const waePair = await getContract( "./contracts/AedexV2Pair.aes", [], waePairAddress  )
 
-    return {
+    const ret = {
         token0,
         token1,
         wae,
@@ -229,6 +229,14 @@ const routerFixture = async ( wallet = wallet0 ) => {
         pair,
         waePair
     }
+    const addresses = Object.keys( ret ).reduce( ( acc, key ) => {
+        const value = ret[key]
+        const cloned = { ...acc }
+        cloned[key] = getA( value )
+        return cloned
+    }, {} )
+    console.debug( addresses )
+    return ret
 }
 const pairFixture = async ( wallet = wallet0 ) => {
     const factory = await factoryFixture( wallet )

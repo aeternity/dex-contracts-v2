@@ -6,6 +6,7 @@
   "scripts": {
     "deploy": "node deployment/deploy.js",
     "test": "mocha ./test/*.test.js --timeout 0 --exit",
+    "postinstall": "node ./scripts/postinstall.js",
     "test:aex9": "mocha ./test/aex9.test.js --timeout 0 --exit",
     "test:aex9-break": "mocha ./test/aex9.test.js  --timeout 0 --exit -b --failed-first",
     "test:aex9-debug": "node --inspect-brk node_modules/.bin/mocha ./test/aex9.test.js --timeout 0 --exit -b",
