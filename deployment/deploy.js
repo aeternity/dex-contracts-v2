@@ -85,7 +85,7 @@ const deploy = async ( secretKey, network, compiler ) => {
     const fakeAddress = 'ct_A8WVnCuJ7t1DjAJf4y8hJrAEVpt1T9ypG3nNBdbpKmpthGvUm'
     const deployments =
         [
-            /* 00 */ () => deployContract( './contracts/test/BuildAll.aes', [], 'XXX.aes' ),
+            /* 00 */ () => deployContract( './contracts/test/BuildAll.aes', []  ),
             /* 01 */ () => deployContract( './contracts/AedexV2Pair.aes',
                 [ fakeAddress, fakeAddress, fakeAddress, undefined ] ),
             /* 02 */ () => deployContract(
@@ -93,7 +93,7 @@ const deploy = async ( secretKey, network, compiler ) => {
                 [ fakeAddress, fakeAddress, fakeAddress ],
                 'IAedexV2Router.aes',
             ),
-            /* 03 */ () => deployContract( './contracts/test/WAE.aes', [] ),
+            /* 03 */ () => deployContract( './contracts/test/WAE.aes', [], 'IWAE.aes' ),
         ]
     await deployments[2]()
 

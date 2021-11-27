@@ -1,11 +1,18 @@
 const fs = require( 'fs' )
-var dir = './build'
-const contractUtils = require( '../utils/contract-utils.js' )
+var dir = __dirname + '/../build/'
 
 if ( !fs.existsSync( dir ) ) {
     fs.mkdirSync( dir )
 }
 
-const path = __dirname + '/../contracts/interfaces/for-export/IAedexV2Router.aes'
-const contract_content = contractUtils.getContractContent( path )
-fs.writeFileSync( __dirname + '/../build/IAedexV2Router.aes.js', `module.exports = \`\n${contract_content}\`;\n`, 'utf-8' )
+function exportContract ( fileName ) {
+    const parent = __dirname + '/../contracts/interfaces/for-export/'
+
+    const contract_content = fs.readFileSync( parent + fileName + ".aes", 'utf-8' )
+    const exportFileDest = dir + `/${fileName}.aes.js`
+    fs.writeFileSync( exportFileDest, `module.exports = \`\n${contract_content}\`;\n`, 'utf-8' )
+    console.log( `'${exportFileDest}' written` )
+}
+
+exportContract( 'IAedexV2Router' )
+exportContract( 'IWAE' )
