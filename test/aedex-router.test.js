@@ -261,6 +261,7 @@ describe( 'Pair Router', () => {
             await wae.exe( x => x.transfer( getAK( waePair ), aeAmount ) )
             await waePair.exe( x => x.mint( wallet.address, extraGas ) )
 
+            //TODO: why that?
             await token0.exe( x => x.create_allowance( getAK( router ), MaxUint256 ) )
         } )
 

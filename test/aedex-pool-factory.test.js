@@ -14,11 +14,7 @@
  *  OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
  *  PERFORMANCE OF THIS SOFTWARE.
  */
-const { expect, use } = require( 'chai' )
-const { jestSnapshotPlugin } = require( "mocha-chai-jest-snapshot" )
-
-use( jestSnapshotPlugin() )
-
+const { expect } = require( 'chai' )
 const { defaultWallets: WALLETS } = require( '../config/wallets.json' )
 
 import {

@@ -1,6 +1,6 @@
 @compiler >= 6
 
-contract interface IAEX9Minimal = 
+contract interface IAEX9Minimal =
     record allowance_accounts = { from_account: address, for_account: address }
 
     record meta_info = { name : string , symbol : string , decimals : int }
@@ -41,8 +41,8 @@ contract interface IAEX9Minimal =
 
 
     // Transfers value amount of tokens from address from_account to address to_account, and MUST fire the Transfer event.
-    // The transfer_allowance method is used for a withdraw workflow, allowing contracts to transfer 
-    // tokens on your behalf. This can be used for example to allow a contract to transfer tokens on your behalf 
+    // The transfer_allowance method is used for a withdraw workflow, allowing contracts to transfer
+    // tokens on your behalf. This can be used for example to allow a contract to transfer tokens on your behalf
     // and/or to charge fees in sub-currencies. The function SHOULD abort unless the from_account account has deliberately authorized the sender of the message via some mechanism.
     // Note: Transfers of 0 values MUST be treated as normal transfers and fire the Transfer event.
     // @notice Transfers `amount` tokens from `sender` to `recipient` up to the allowance given to the `Call.caller`

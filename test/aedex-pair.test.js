@@ -14,37 +14,24 @@
  *  OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
  *  PERFORMANCE OF THIS SOFTWARE.
  */
-const { assert, expect, use } = require( 'chai' )
+const { expect } = require( 'chai' )
 import { BigNumber } from 'ethers'
 const MINIMUM_LIQUIDITY = BigInt( BigNumber.from( 10 ).pow( 3 ) )
-import { Decimal } from 'decimal.js'
-const { jestSnapshotPlugin } = require( "mocha-chai-jest-snapshot" )
-
-const tokenA      = 'ct_A8WVnCuJ7t1DjAJf4y8hJrAEVpt1T9ypG3nNBdbpKmpthGvUm'
-const tokenB      = 'ct_m18VKpSVhsQtjmUC7oZAJPwk36usb39B2viWzBuPjfQEsxHYL'
-const fakeFactory = 'ct_27JMp3z1pyXbfjra2VXiFU9e5jtFTyzus57S6eWbGNh3NSfabo'
-
-use( jestSnapshotPlugin() )
 
 const { defaultWallets: WALLETS } = require( '../config/wallets.json' )
 
 import {
     getA,
-    getContract,
     pairFixture,
     beforeEachWithSnapshot,
 } from './shared/fixtures'
 
 import {
     expandTo18Decimals,
-    MaxUint256,
     expectToRevert,
     encodePrice,
 
 } from './shared/utilities'
-
-const TOTAL_SUPPLY = expandTo18Decimals( 10000 )
-const TEST_AMOUNT = expandTo18Decimals( 10 )
 
 const wallet = {
     ...WALLETS[0],

@@ -14,21 +14,11 @@
  *  OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
  *  PERFORMANCE OF THIS SOFTWARE.
  */
-const { assert, expect, use } = require( 'chai' )
-const { BigNumber, BigNumberish, constants, Contract, ContractTransaction, utils, Wallet } =  require( 'ethers' )
-import { Decimal } from 'decimal.js'
-const { jestSnapshotPlugin } = require( "mocha-chai-jest-snapshot" )
-
-const tokenA      = 'ct_A8WVnCuJ7t1DjAJf4y8hJrAEVpt1T9ypG3nNBdbpKmpthGvUm'
-const tokenB      = 'ct_m18VKpSVhsQtjmUC7oZAJPwk36usb39B2viWzBuPjfQEsxHYL'
-const fakeFactory = 'ct_27JMp3z1pyXbfjra2VXiFU9e5jtFTyzus57S6eWbGNh3NSfabo'
-
-use( jestSnapshotPlugin() )
+const { expect } = require( 'chai' )
 
 const { defaultWallets: WALLETS } = require( '../config/wallets.json' )
 
 import {
-    getA,
     getContract,
     beforeEachWithSnapshot,
 } from './shared/fixtures.js'
@@ -36,8 +26,6 @@ import {
 import {
     expandTo18Decimals,
     MaxUint256,
-    events,
-    emits,
 } from './shared/utilities'
 
 const TOTAL_SUPPLY = BigInt( expandTo18Decimals( 10000 ) )

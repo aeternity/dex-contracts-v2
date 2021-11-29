@@ -2,6 +2,6 @@
 
 contract interface IAedexV2Callback =
 
-    //to be called from swap after token transfers 
+    //to be called from swap after token transfers
     entrypoint aedex_v2_call: (address /*sender*/, int /*amount0*/, int /*amount1*/) => unit
 
