@@ -5,7 +5,7 @@ include "./lib/UQ112x112.aes"
 include "./lib/Math.aes"
 include "./interfaces/IAedexV2Pair.aes"
 include "./interfaces/IAedexV2Callback.aes"
-include "./interfaces/IAedexV2Factory.aes"
+include "./interfaces/IAedexV2FactoryForPair.aes"
 include "Option.aes"
 
 include "./interfaces/IAEX9Minimal.aes"
@@ -39,7 +39,7 @@ contract AedexV2Pair =
             , balance_of: map(owner, int)
             , locked_liquidity: int
             , allowance: map(owner, map(spender,int))
-            , factory: IAedexV2Factory
+            , factory: IAedexV2FactoryForPair
             , token0: IAEX9Minimal
             , token1: IAEX9Minimal
             , reserve0: int           // uses single storage slot, accessible via get_reserves
@@ -52,7 +52,7 @@ contract AedexV2Pair =
             }
 
     entrypoint init (
-          factory: IAedexV2Factory
+          factory: IAedexV2FactoryForPair
         , token0: IAEX9Minimal
         , token1: IAEX9Minimal
         , debug_time: option(int)
@@ -85,7 +85,7 @@ contract AedexV2Pair =
         require(value >= 0,"NEGATIVE_VALUE_ON_TRANSFER")
         token.transfer(to,value)
 
-    function time_stamp() = Option.default(Chain.timestamp,state.debug_time)
+    function timestamp() = Option.default(Chain.timestamp,state.debug_time)
 
     stateful entrypoint set_debug_time(time: int) =
         require(Option.is_some(state.debug_time),"Not debug mode")
@@ -95,7 +95,7 @@ contract AedexV2Pair =
     stateful function _update(balance0: int, balance1: int, reserve0: int,reserve1: int  ) =
         require( balance0 >= 0 && balance1 >= 0 && reserve0 >= 0 && reserve1 >= 0,"LP" )
 
-        let block_timestamp = time_stamp()
+        let block_timestamp = timestamp()
 
         let time_elapsed = block_timestamp - state.block_timestamp_last
         if (time_elapsed > 0 && reserve0 != 0 && reserve1 != 0)
@@ -130,13 +130,7 @@ contract AedexV2Pair =
             false
 
     // DEX
-    record reserves = {
-              reserve0: int
-            , reserve1: int
-            , block_timestamp_last: int
-            }
-
-    entrypoint get_reserves(): reserves = {
+    entrypoint get_reserves(): IAedexV2Pair.reserves = {
               reserve0 = state.reserve0
             , reserve1 = state.reserve1
             , block_timestamp_last = state.block_timestamp_last

@@ -1,16 +1,18 @@
 @compiler >= 6
 
 include "List.aes"
-include "./interfaces/IAedexV2PairlInit.aes"
-include "./interfaces/IAedexV2Factory.aes"
+include "Option.aes"
+include "./interfaces/IAedexV2Pair.aes"
+include "./interfaces/IAedexV2FactoryForPair.aes"
 
 contract AedexV2Factory =
     record state = {
               fee_to: option(address)
             , fee_to_setter: address
-            , pairs: map(IAEX9Minimal,map(IAEX9Minimal,address))
+            , pairs: map(IAEX9Minimal,map(IAEX9Minimal,IAedexV2Pair))
             , all_pairs: list(address)
-            , pair_model: IAedexV2PairlInit
+            , pair_model: IAedexV2Pair
+            , this_factory: option(IAedexV2FactoryForPair)
             }
 
     datatype event
@@ -21,23 +23,35 @@ contract AedexV2Factory =
                 , string /*uint*/
                 )
 
-    entrypoint init( 
+    entrypoint init(
         fee_to_setter: address
-        , pair_model: IAedexV2PairlInit
+        , pair_model: IAedexV2Pair
         ) = { fee_to        = None
             , fee_to_setter = fee_to_setter
             , pairs         = {}
             , all_pairs     = []
             , pair_model    = pair_model
+            , this_factory = None
             }
+
+    //TODO: this is a hack to store it's own address into state as a IAedexV2Factory
+    //try finding something more suitable
+    stateful entrypoint set_this_factory( this_factory: IAedexV2FactoryForPair ) =
+        require(Contract.address == this_factory.address,"AedexV2: NOT_SAME_FACTORY")
+        put( state { this_factory = Some(this_factory) })
 
     entrypoint all_pairs_length(): int = List.length(state.all_pairs)
     entrypoint all_pairs(ix: int): address = List.get(ix,state.all_pairs)
     entrypoint fee_to() = state.fee_to
     entrypoint fee_to_setter() = state.fee_to_setter
-    entrypoint get_pair(token_a: IAEX9Minimal, token_b: IAEX9Minimal) =
+    entrypoint get_pair(
+          token_a: IAEX9Minimal
+        , token_b: IAEX9Minimal
+        ): option(IAedexV2Pair) =
         let (token0,token1) = sort_tokens(token_a,token_b)
-        state.pairs[token0][token1]
+        switch(Map.lookup(token0,state.pairs))
+            None => None
+            Some(m) => Map.lookup(token1,m)
 
     function validate_fee_to_setter() =
         require(Call.caller == state.fee_to_setter, "AedexV2: FORBIDDEN")
@@ -59,9 +73,12 @@ contract AedexV2Factory =
     stateful entrypoint create_pair(
           token_a: IAEX9Minimal
         , token_b: IAEX9Minimal
-        , this_factory: IAedexV2Factory
         , debug_time: option(int)
-        ): IAedexV2PairlInit =
+        ): IAedexV2Pair =
+
+        let this_factory = switch(state.this_factory)
+          Some(x) => x
+          None => abort("AedexV2: FACTORY_NOT_SET")
 
         require(Contract.address == this_factory.address,"AedexV2: NOT_SAME_FACTORY")
         require(token_a != token_b, "AedexV2: IDENTICAL_ADDRESSES")
@@ -82,12 +99,12 @@ contract AedexV2Factory =
                     )
 
 
-        let update_token0_map = (p: map(IAEX9Minimal,map(IAEX9Minimal,address))) =>
-            let old_t0_map: map(IAEX9Minimal,address) = Map.lookup_default(token0,p,{})
-            old_t0_map { [token1] = pair.address }
+        let update_token0_map = (p: map(IAEX9Minimal,map(IAEX9Minimal,IAedexV2Pair))) =>
+            let old_t0_map: map(IAEX9Minimal,IAedexV2Pair) = Map.lookup_default(token0,p,{})
+            old_t0_map { [token1] = pair }
 
         let new_all_pairs = pair.address::state.all_pairs
-        put( state { pairs @ p = p { [token0] = update_token0_map(p) } 
+        put( state { pairs @ p = p { [token0] = update_token0_map(p) }
                    , all_pairs = new_all_pairs
                    })
         Chain.event( PairCreated(

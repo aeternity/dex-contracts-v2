@@ -1,0 +1,4 @@
+@compiler >= 6
+
+contract interface IAedexV2FactoryForPair =
+    entrypoint fee_to: () => option(address)

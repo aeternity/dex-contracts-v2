@@ -14,28 +14,28 @@
  *  OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
  *  PERFORMANCE OF THIS SOFTWARE.
  */
-const { assert } = require( 'chai' )
-var crypto = require( 'crypto' )
-const axios = require( 'axios' )
+import { assert } from 'chai'
+import crypto from 'crypto'
+import axios from 'axios'
 
-const {
+import {
     makeExe,
     expandTo18Decimals,
     exec,
-} = require( './utilities.js' )
+} from './utilities'
 
-const { Universal, MemoryAccount, Node } = require( '@aeternity/aepp-sdk' )
+import { Universal, MemoryAccount, Node } from '@aeternity/aepp-sdk'
 
-const NETWORKS = require( '../../config/network.json' )
+import NETWORKS from '../../config/network.json'
+
+import { defaultWallets as WALLETS } from '../../config/wallets.json'
+import contractUtils from '../../utils/contract-utils'
+
 const NETWORK_NAME = "local"
-
-const { defaultWallets: WALLETS } = require( '../../config/wallets.json' )
 const wallet0 = {
     ...WALLETS[0],
     address: WALLETS[0].publicKey
 }
-
-const contractUtils = require( '../../utils/contract-utils' )
 
 const hash = ( content ) =>
     crypto.createHash( 'md5' ).update( content ).digest( 'hex' )
@@ -79,17 +79,14 @@ const getContract = async ( source, params, contractAddress, wallet = WALLETS[0]
 
     const client = await createClient( wallet )
     try {
-        console.debug( '----------------------------------------------------------------------------------------------------' )
-        console.debug( `%cdeploying '${source}...'`, `color:green` )
-
         const {
             filesystem,
             contract_content,
         } = getContent( source )
 
         const contract           = await client.getContractInstance(
-            contract_content,
             {
+                source          : contract_content,
                 filesystem,
                 contractAddress : contractAddress || undefined,
                 opt             : {
@@ -97,21 +94,18 @@ const getContract = async ( source, params, contractAddress, wallet = WALLETS[0]
                 }
             }
         )
-        console.debug( `%cDEPLOYING SOURCE: '${source}...'`, `color:green` )
-        const exe = makeExe( contract )
-        //console.debug( deployment_result )
-        console.debug( `-------------------------------------  END:   ---------------------------------------------------------` )
+        const exe = makeExe( contract, client )
         return {
             contract, exe,  deploy: async () => {
                 const deployment_result = await contract.deploy( params )
-                console.debug( `%cContract deployed: '${source}...'`, `color:green` )
+                console.debug( `%c----> Contract deployed: '${source}...'`, `color:green` )
 
                 return deployment_result
             }
         }
     } catch ( ex ) {
         console.debug( ex )
-        if ( ex.response.text ) {
+        if ( ex.response && ex.response.text ) {
             console.debug( JSON.parse( ex.response.text ) )
         }
         assert.fail( 'Could not initialize contract instance' )
@@ -159,6 +153,7 @@ const factoryFixture = async ( wallet ) => {
         ],
     )
     await factory.deploy()
+    await factory.exe( x => x.set_this_factory( getA( factory ) ) )
     return factory
 }
 
@@ -170,19 +165,100 @@ const tokenFixture = async ( liquidity ) => {
     await token.deploy()
     return token
 }
+const waeFixture = async ( ) => {
+    const token = await getContract(
+        './contracts/test/WAE.aes',
+        [ ],
+    )
+    await token.deploy()
+    return token
+}
 
+const router01Fixture = async ( factory, wae ) => {
+    const waeAddr = getA( wae )
+    const token = await getContract(
+        './contracts/router/AedexV2Router.aes',
+        [ getA( factory ), waeAddr, waeAddr ],
+    )
+    await token.deploy()
+    return token
+}
+
+const routerFixture = async ( wallet = wallet0 ) => {
+    const liq = BigInt( expandTo18Decimals( 10000 ) )
+    const tokenA = await tokenFixture( liq )
+    const tokenB = await tokenFixture( liq )
+    const tokenC = await tokenFixture( liq )
+
+    const wae = await waeFixture()
+    const waePartner = await tokenFixture( liq )
+
+    const factory = await factoryFixture( wallet )
+
+    // deploy routers
+    const router = await router01Fixture( factory, wae )
+
+    const pair01Address = await factory.exe( x => x.create_pair(
+        getA( tokenA ),
+        getA( tokenB ),
+    ) )
+
+    const pair01 = await getContract( "./contracts/AedexV2Pair.aes", [], pair01Address  )
+
+    const token0Address = ( await pair01.exe( x => x.token0() ) )
+
+    const token0 = getA( tokenA ) === token0Address ? tokenA : tokenB
+    const token1 = getA( tokenA ) === token0Address ? tokenB : tokenA
+
+    const pair1CAddress = await factory.exe( x => x.create_pair(
+        getA( token1 ),
+        getA( tokenC ),
+    ) )
+
+    //this should be used on longer path tests
+    const pair1C = await getContract( "./contracts/AedexV2Pair.aes", [], pair1CAddress  )
+
+    const waePairAddress = await factory.exe( x => x.create_pair(
+        getA( wae ),
+        getA( waePartner ),
+    ) )
+
+    const waePair = await getContract( "./contracts/AedexV2Pair.aes", [], waePairAddress  )
+
+    const ret = {
+        token0,
+        token1,
+        tokenC,
+        wae,
+        waePartner,
+        factory,
+        router,
+        pair: pair01,
+        pair01,
+        pair1C,
+        waePair
+    }
+    const addresses = Object.keys( ret ).reduce( ( acc, key ) => {
+        const value = ret[key]
+        const cloned = { ...acc }
+        cloned[key] = getA( value )
+        return cloned
+    }, {} )
+    console.debug( addresses )
+    return ret
+}
 const pairFixture = async ( wallet = wallet0 ) => {
     const factory = await factoryFixture( wallet )
 
-    const liq = BigInt(expandTo18Decimals( 10000 ))
+    const liq = BigInt( expandTo18Decimals( 10000 ) )
     const tokenA = await tokenFixture( liq )
     const tokenB = await tokenFixture( liq )
 
     const pairAddress = await factory.exe( x => x.create_pair(
         getA( tokenA ),
         getA( tokenB ),
-        getA( factory ),
-        1636041331999,
+        //getA( factory ),
+        1636041331999, //debug time
     ) )
 
     const pair = await getContract( "./contracts/AedexV2Pair.aes", [], pairAddress  )
@@ -247,9 +323,11 @@ module.exports = {
     beforeEachWithSnapshot,
     createClient,
     pairFixture,
+    routerFixture,
     pairModelFixture,
     getContract,
     getA,
+    getAK: ( contract ) => cttoak( getA( contract ) ),
     cttoak,
 }
 

@@ -1,7 +1,7 @@
 @compiler >= 6
 
 namespace Math =
-    function min(x: int, y: int): int = 
+    function min(x: int, y: int): int =
         if(x < y) x else y
 
     // babylonian method (https://en.wikipedia.org/wiki/Methods_of_computing_square_roots#Babylonian_method)
@@ -15,7 +15,7 @@ namespace Math =
         else
             0
 
-    private function loop_sqrt_(y: int,x: int,z: int) = 
+    private function loop_sqrt_(y: int,x: int,z: int) =
         if(x < z)
             let newX = (y / x + x) / 2
             loop_sqrt_(y,newX,x)

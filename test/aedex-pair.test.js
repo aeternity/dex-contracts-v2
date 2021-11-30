@@ -14,37 +14,24 @@
  *  OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
  *  PERFORMANCE OF THIS SOFTWARE.
  */
-const { assert, expect, use } = require( 'chai' )
+const { expect } = require( 'chai' )
 import { BigNumber } from 'ethers'
-const MINIMUM_LIQUIDITY = BigInt(BigNumber.from( 10 ).pow( 3 ))
-import { Decimal } from 'decimal.js'
-const { jestSnapshotPlugin } = require( "mocha-chai-jest-snapshot" )
-
-const tokenA      = 'ct_A8WVnCuJ7t1DjAJf4y8hJrAEVpt1T9ypG3nNBdbpKmpthGvUm'
-const tokenB      = 'ct_m18VKpSVhsQtjmUC7oZAJPwk36usb39B2viWzBuPjfQEsxHYL'
-const fakeFactory = 'ct_27JMp3z1pyXbfjra2VXiFU9e5jtFTyzus57S6eWbGNh3NSfabo'
-
-use( jestSnapshotPlugin() )
+const MINIMUM_LIQUIDITY = BigInt( BigNumber.from( 10 ).pow( 3 ) )
 
 const { defaultWallets: WALLETS } = require( '../config/wallets.json' )
 
 import {
     getA,
-    getContract,
     pairFixture,
     beforeEachWithSnapshot,
-} from './shared/fixtures.js'
+} from './shared/fixtures'
 
 import {
     expandTo18Decimals,
-    MaxUint256,
     expectToRevert,
     encodePrice,
 
-} from './shared/utilities.js'
-
-const TOTAL_SUPPLY = expandTo18Decimals( 10000 )
-const TEST_AMOUNT = expandTo18Decimals( 10 )
+} from './shared/utilities'
 
 const wallet = {
     ...WALLETS[0],
@@ -98,7 +85,7 @@ describe( 'Pair Factory', () => {
     const transfer = async ( isToken0, amount ) => {
         const token = isToken0 ? token0 : token1
         console.debug( `token${isToken0 ? 0 : 1}.transfer( ${pairAddress()}, ${amount.toString()})` )
-        await token.exe( x => x.transfer( pairAddress(), BigInt(amount) ) )
+        await token.exe( x => x.transfer( pairAddress(), BigInt( amount ) ) )
     }
     const token0Transfer = ( amount ) => transfer( true, amount.toString() )
     const token1Transfer = ( amount ) => transfer( false, amount.toString() )
@@ -170,7 +157,7 @@ describe( 'Pair Factory', () => {
         await token0Transfer( token0Amount )
         await token1Transfer( token1Amount )
 
-        const expectedLiquidity = BigInt(expandTo18Decimals( 2 ))
+        const expectedLiquidity = BigInt( expandTo18Decimals( 2 ) )
         await mint( wallet.address )
 
         expect(
@@ -188,8 +175,8 @@ describe( 'Pair Factory', () => {
         ).to.eq( token1Amount.toString() )
 
         const reserves = await getReserves()
-        expect( reserves.reserve0 ).to.eq( BigInt(token0Amount) )
-        expect( reserves.reserve1 ).to.eq( BigInt(token1Amount) )
+        expect( reserves.reserve0 ).to.eq( BigInt( token0Amount ) )
+        expect( reserves.reserve1 ).to.eq( BigInt( token1Amount ) )
     } )
 
     async function addLiquidity( token0Amount, token1Amount ) {
@@ -287,25 +274,25 @@ describe( 'Pair Factory', () => {
         await swap( 0, expectedOutputAmount, wallet.address )
 
         const reserves = await getReserves()
-        expect( reserves.reserve0 ).to.eq( BigInt(token0Amount) + BigInt(swapAmount ) )
-        expect( reserves.reserve1 ).to.eq( BigInt(token1Amount) - BigInt(expectedOutputAmount ) )
+        expect( reserves.reserve0 ).to.eq( BigInt( token0Amount ) + BigInt( swapAmount ) )
+        expect( reserves.reserve1 ).to.eq( BigInt( token1Amount ) - BigInt( expectedOutputAmount ) )
 
         expect( await token0Balance( pairAddress() ) )
-            .to.eq( BigInt(token0Amount) + BigInt(swapAmount) )
+            .to.eq( BigInt( token0Amount ) + BigInt( swapAmount ) )
         expect( await token1Balance( pairAddress() ) )
-            .to.eq( BigInt(token1Amount) - BigInt(expectedOutputAmount) )
+            .to.eq( BigInt( token1Amount ) - BigInt( expectedOutputAmount ) )
 
         const totalSupplyToken0 = await token0TotalSupplyStr()
         const totalSupplyToken1 = await token1TotalSupplyStr()
 
         expect( await token0Balance( wallet.address ) )
             .to.eq(
-              BigInt(BigNumber.from( totalSupplyToken0 )) -
+                BigInt( BigNumber.from( totalSupplyToken0 ) ) -
                 BigInt( token0Amount ) -
                 BigInt( swapAmount )
             )
         expect( await token1Balance( wallet.address ) )
-            .to.eq( BigInt(BigNumber.from( totalSupplyToken1 )) -
+            .to.eq( BigInt( BigNumber.from( totalSupplyToken1 ) ) -
                 BigInt( token1Amount ) +
                 BigInt( expectedOutputAmount )
             )
@@ -323,10 +310,10 @@ describe( 'Pair Factory', () => {
 
         const reserves = await getReserves()
         expect( reserves.reserve0 ).to.eq(
-          BigInt(token0Amount) - BigInt(expectedOutputAmount)
+            BigInt( token0Amount ) - BigInt( expectedOutputAmount )
         )
         expect( reserves.reserve1 ).to.eq(
-          BigInt(token1Amount) + BigInt(swapAmount)
+            BigInt( token1Amount ) + BigInt( swapAmount )
         )
 
         expect( await token0BalanceStr( pairAddress() ) )

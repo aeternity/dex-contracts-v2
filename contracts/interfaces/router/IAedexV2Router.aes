@@ -1,0 +1,148 @@
+@compiler >= 6
+
+include "./IWAE.aes"
+include "../IAedexV2Factory.aes"
+include "../IAEX9Minimal.aes"
+include "../IAedexV2Callback.aes"
+include "../IAedexV2Pair.aes"
+
+payable contract interface IAedexV2Router =
+
+    type amountA = int
+    type amountB = int
+    type amountToken = int
+    type amountAE = int
+    type liquidity = int
+
+    entrypoint balance: () => int
+    entrypoint factory: () => IAedexV2Factory
+    entrypoint wae: () => IWAE
+    entrypoint wae_aex9: () => IAEX9Minimal
+
+    // **** ADD LIQUIDITY ****
+
+    stateful entrypoint add_liquidity: (
+              /*tokenA: */ IAEX9Minimal
+            , /*tokenB: */ IAEX9Minimal
+            , /*amountADesired: */ int
+            , /*amountBDesired: */ int
+            , /*amountAMin: */ int
+            , /*amountBMin: */ int
+            , /*to: */ address
+            , /*deadline: */ int
+        ) => (amountA * amountB * liquidity)
+
+    payable stateful entrypoint add_liquidity_ae: (
+          /*token: */ IAEX9Minimal
+        , /*amountTokenDesired: */ int
+        , /*amountTokenMin: */ int
+        , /*amountAEMin: */ int
+        , /*to: */ address
+        , /*deadline: */ int
+        ) =>  (amountToken * amountAE * liquidity)
+
+    // **** REMOVE LIQUIDITY ****
+    stateful entrypoint remove_liquidity: (
+              /*tokenA: */ IAEX9Minimal
+            , /*tokenB: */ IAEX9Minimal
+            , /*liquidity: */ int
+            , /*amountAMin: */ int
+            , /*amountBMin: */ int
+            , /*to: */ address
+            , /*deadline: */ int
+        ) => (amountA * amountB)
+
+    stateful entrypoint remove_liquidity_ae: (
+              /*token: */ IAEX9Minimal
+            , /*liquidity: */ int
+            , /*amountTokenMin: */ int
+            , /*amountAEMin: */ int
+            , /*to: */ address
+            , /*deadline: */ int
+        ) => (amountToken * amountAE)
+
+    // **** SWAP ****
+    stateful entrypoint swap_exact_tokens_for_tokens: (
+              /*amount_in: */ int
+            , /*amount_out_min: */ int
+            , /*path: */ list(IAEX9Minimal)
+            , /*to: */ address
+            , /*deadline: */ int
+            , /*callback: */ option(IAedexV2Callback)
+        ) => list(int)
+
+    stateful entrypoint swap_tokens_for_exact_tokens: (
+              /*amount_out: */ int
+            , /*amount_in_max: */ int
+            , /*path: */ list(IAEX9Minimal)
+            , /*to: */ address
+            , /*deadline: */ int
+            , /*callback: */ option(IAedexV2Callback)
+        ) => list(int)
+
+    payable stateful entrypoint swap_exact_ae_for_tokens: (
+              /*amount_out_min: */ int
+            , /*path: */ list(IAEX9Minimal)
+            , /*to: */ address
+            , /*deadline: */ int
+            , /*callback: */ option(IAedexV2Callback)
+        ) => list(int)
+
+    stateful entrypoint swap_tokens_for_exact_ae: (
+              /*amount_out: */ int
+            , /*amount_in_max: */ int
+            , /*path: */ list(IAEX9Minimal)
+            , /*to: */ address
+            , /*deadline: */ int
+            , /*callback: */ option(IAedexV2Callback)
+        ) => list(int)
+
+    stateful entrypoint swap_exact_tokens_for_ae: (
+          /*amount_in: */ int
+        , /*amount_out_min: */ int
+        , /*path: */ list(IAEX9Minimal)
+        , /*to: */ address
+        , /*deadline: */ int
+        , /*callback: */ option(IAedexV2Callback)
+        ) => list(int)
+
+    payable stateful entrypoint swap_ae_for_exact_tokens: (
+              /*amount_out: */ int
+            , /*path: */ list(IAEX9Minimal)
+            , /*to: */ address
+            , /*deadline: */ int
+            , /*callback: */ option(IAedexV2Callback)
+        ) => list(int)
+
+    // **** LIB EXPOSURE ****
+    entrypoint quote: (
+              /*amountA: */ int
+            , /*reserveA: */ int
+            , /*reserveB: */ int
+        ) => int
+
+    entrypoint get_amount_out: (
+              /*amount_in: */ int
+            , /*reserve_in: */ int
+            , /*reserve_out: */ int
+        ) => int
+
+    entrypoint get_amount_in: (
+              /*amount_out: */ int
+            , /*reserve_in: */ int
+            , /*reserve_out: */ int
+        ) => int
+
+    entrypoint get_amounts_out: (
+               /*factory: */ IAedexV2Factory
+            , /*amount_in: */ int
+            , /*path: */ list(IAEX9Minimal)
+        ) => list(int)
+
+    entrypoint get_amounts_in: (
+              /*factory: */ IAedexV2Factory
+            , /*amount_out: */ int
+            , /*path: */ list(IAEX9Minimal)
+        ) => list(int)
+
+

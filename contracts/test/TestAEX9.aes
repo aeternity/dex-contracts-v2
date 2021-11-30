@@ -6,18 +6,18 @@ include "../interfaces/IAEX9Minimal.aes"
 include "../lib/Utils.aes"
 
 
-contract TestAEX9 = 
+contract TestAEX9 =
     type owner = address
     type spender = address
 
-    record state = 
+    record state =
         { balanceOf: map(owner, int)
         , allowance: map(owner, map(spender,int))
         , total_supply: int
         }
 
     entrypoint init(amountToMint: int) =
-        let state: state = { balanceOf= {[Call.caller] = amountToMint} 
+        let state: state = { balanceOf= {[Call.caller] = amountToMint}
                            , allowance = {}
                            , total_supply = amountToMint
                            }
@@ -36,15 +36,15 @@ contract TestAEX9 =
     entrypoint total_supply() = state.total_supply
     entrypoint total_supply_str() = Int.to_str(state.total_supply)
 
-    entrypoint balance(address: address): option(int) = 
+    entrypoint balance(address: address): option(int) =
         //NOTE: tests are based on 0 not on null/undefined,
         //we make this hack replacing None with Some(0)
         Some(Map.lookup_default(address,state.balanceOf,0))
 
-    entrypoint balance_str(address: address): option(string) = 
+    entrypoint balance_str(address: address): option(string) =
         Option.map(Int.to_str,balance(address))
 
-    entrypoint allowance(accounts: IAEX9Minimal.allowance_accounts): option(int) = 
+    entrypoint allowance(accounts: IAEX9Minimal.allowance_accounts): option(int) =
         let (owner,spender) = (accounts.from_account,accounts.for_account)
         let spenderA = Map.lookup_default(owner,state.allowance,{})
         Map.lookup(spender,spenderA)
@@ -52,7 +52,7 @@ contract TestAEX9 =
     entrypoint allowance_unfolded(
              from_account: address,
              for_account: address
-        ): option(int) = allowance({from_account = from_account, for_account = for_account}) 
+        ): option(int) = allowance({from_account = from_account, for_account = for_account})
 
     //------------------------------------------------------------------------------
     // writers
@@ -61,10 +61,10 @@ contract TestAEX9 =
     stateful entrypoint transfer(recipient: address , amount: int): unit =
         let balanceBefore = Map.lookup_default(Call.caller,state.balanceOf,0)
         require(balanceBefore >= amount, String.concat( "insufficient balance for: ",Address.to_str(Call.caller)))
-        if(Call.caller != recipient) 
+        if(Call.caller != recipient)
             let balanceRecipient = Map.lookup_default(recipient,state.balanceOf,0)
 
-            put(state { balanceOf @ b = b 
+            put(state { balanceOf @ b = b
                             { [Call.caller] = balanceBefore - amount
                             , [recipient] = balanceRecipient + amount
                             }
@@ -81,7 +81,7 @@ contract TestAEX9 =
         put( state { allowance @ x = x { [owner] = old { [spender] = amount } } } )
         Chain.event( Allowance(owner, spender, amount) )
 
-    stateful entrypoint transfer_allowance(sender: address, recipient: address, amount: int) = 
+    stateful entrypoint transfer_allowance(sender: address, recipient: address, amount: int) =
         let allowanceBefore = Map.lookup_default(
                 Call.caller,
                 Map.lookup_default(sender,state.allowance,{}),
@@ -104,24 +104,10 @@ contract TestAEX9 =
                                 , [sender] = balanceSender - amount
                                 }
             })
-        
+
         Chain.event( Transfer(sender, recipient, amount) )
 
-    //NOTE: the owner is not the Call.caller but is just for testing
-    stateful entrypoint permit(
-            owner: address
-            , spender: address
-            , value: int
-            , deadline: int
-            /*, uint8 v*/
-            /*, bytes32 r*/
-            /*, bytes32 s*/
-            ) =
-        require(deadline >= Chain.timestamp, "EXPIRED")
-        _create_allowance(owner,spender,value)
-
-
-    datatype event 
+    datatype event
         = Transfer(address /*indexed from*/, address /*indexed to*/, int /*value*/)
 
         | Allowance(address /*indexed owner*/, address /*indexed spender*/, int /*value*/)
