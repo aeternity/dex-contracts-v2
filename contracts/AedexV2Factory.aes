@@ -13,6 +13,7 @@ contract AedexV2Factory =
             , all_pairs: list(address)
             , pair_model: IAedexV2Pair
             , this_factory: option(IAedexV2FactoryForPair)
+            , allow_debug_mode: bool
             }
 
     datatype event
@@ -23,27 +24,32 @@ contract AedexV2Factory =
                 , string /*uint*/
                 )
 
+    //WARNING: use allow_debug_mode (= Some(true)) only in development.
+    //Never initialize a factory in production/mainnet with debug_mode activated
     entrypoint init(
         fee_to_setter: address
         , pair_model: IAedexV2Pair
+        , allow_debug_mode: option(bool)
         ) = { fee_to        = None
             , fee_to_setter = fee_to_setter
             , pairs         = {}
             , all_pairs     = []
             , pair_model    = pair_model
             , this_factory = None
+            , allow_debug_mode = Option.default(false,allow_debug_mode)
             }
 
     //TODO: this is a hack to store it's own address into state as a IAedexV2Factory
     //try finding something more suitable
     stateful entrypoint set_this_factory( this_factory: IAedexV2FactoryForPair ) =
-        require(Contract.address == this_factory.address,"AedexV2: NOT_SAME_FACTORY")
+        require(Contract.address == this_factory.address,"AedexV2Factory: NOT_SAME_FACTORY")
         put( state { this_factory = Some(this_factory) })
 
     entrypoint all_pairs_length(): int = List.length(state.all_pairs)
     entrypoint all_pairs(ix: int): address = List.get(ix,state.all_pairs)
     entrypoint fee_to() = state.fee_to
     entrypoint fee_to_setter() = state.fee_to_setter
+    entrypoint allow_debug_mode() = state.allow_debug_mode
     entrypoint get_pair(
           token_a: IAEX9Minimal
         , token_b: IAEX9Minimal
@@ -54,7 +60,7 @@ contract AedexV2Factory =
             Some(m) => Map.lookup(token1,m)
 
     function validate_fee_to_setter() =
-        require(Call.caller == state.fee_to_setter, "AedexV2: FORBIDDEN")
+        require(Call.caller == state.fee_to_setter, "AedexV2Factory: FORBIDDEN")
 
     stateful entrypoint set_fee_to(fee_to: address) =
         validate_fee_to_setter()
@@ -78,10 +84,10 @@ contract AedexV2Factory =
 
         let this_factory = switch(state.this_factory)
           Some(x) => x
-          None => abort("AedexV2: FACTORY_NOT_SET")
+          None => abort("AedexV2Factory: FACTORY_NOT_SET")
 
-        require(Contract.address == this_factory.address,"AedexV2: NOT_SAME_FACTORY")
-        require(token_a != token_b, "AedexV2: IDENTICAL_ADDRESSES")
+        require(Contract.address == this_factory.address,"AedexV2Factory: NOT_SAME_FACTORY")
+        require(token_a != token_b, "AedexV2Factory: IDENTICAL_ADDRESSES")
         let (token0,token1) = sort_tokens(token_a,token_b)
 
         let has_old_value =
@@ -89,7 +95,8 @@ contract AedexV2Factory =
                     token1,
                     Map.lookup_default(token0,state.pairs,{})
                     )
-        require(!has_old_value,"AedexV2: PAIR_EXISTS")
+        require(!has_old_value,"AedexV2Factory: PAIR_EXISTS")
+        require(state.allow_debug_mode || Option.is_none(debug_time),"AedexV2Factory: NOT_DEBUG_MODE")
         let pair = Chain.clone(
                     ref=state.pair_model
                     , this_factory

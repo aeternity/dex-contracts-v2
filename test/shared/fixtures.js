@@ -96,8 +96,8 @@ const getContract = async ( source, params, contractAddress, wallet = WALLETS[0]
         )
         const exe = makeExe( contract, client )
         return {
-            contract, exe,  deploy: async () => {
-                const deployment_result = await contract.deploy( params )
+            contract, exe,  deploy: async ( extra ) => {
+                const deployment_result = await contract.deploy( params, extra )
                 console.debug( `%c----> Contract deployed: '${source}...'`, `color:green` )
 
                 return deployment_result
@@ -140,7 +140,7 @@ const calleeFixture = async ( ) => {
     await callee.deploy()
     return callee
 }
-const factoryFixture = async ( wallet ) => {
+const factoryFixture = async ( wallet, debugMode ) => {
     if ( !pairModel ) {
         await pairModelFixture()
     }
@@ -150,6 +150,7 @@ const factoryFixture = async ( wallet ) => {
         [
             wallet.address,
             getA( pairModel ),
+            debugMode,
         ],
     )
     await factory.deploy()
@@ -221,6 +222,9 @@ const routerFixture = async ( wallet = wallet0 ) => {
     const waePairAddress = await factory.exe( x => x.create_pair(
         getA( wae ),
         getA( waePartner ),
+        undefined, {
+            gas: 150000
+        }
     ) )
 
     const waePair = await getContract( "./contracts/AedexV2Pair.aes", [], waePairAddress  )
@@ -248,7 +252,7 @@ const routerFixture = async ( wallet = wallet0 ) => {
     return ret
 }
 const pairFixture = async ( wallet = wallet0 ) => {
-    const factory = await factoryFixture( wallet )
+    const factory = await factoryFixture( wallet, true )
 
     const liq = BigInt( expandTo18Decimals( 10000 ) )
     const tokenA = await tokenFixture( liq )

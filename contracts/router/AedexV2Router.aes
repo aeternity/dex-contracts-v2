@@ -236,7 +236,7 @@ payable contract AedexV2Router =
             , callback: option(IAedexV2Callback)
         ): list(int) =
         let (wae_aex9,wae,factory) = trio(deadline)
-        require(first(path) == wae_aex9, "AedexV2Router: INVALID_PATH")
+        require(first(path) == wae_aex9, "AedexV2Router: INVALID_PATH_FIRST")
         let amounts = AedexV2Library.get_amounts_out(factory, Call.value, path)
         require(last(amounts) >= amount_out_min,
                  "AedexV2Router: INSUFFICIENT_OUTPUT_AMOUNT")
@@ -255,7 +255,7 @@ payable contract AedexV2Router =
             , callback: option(IAedexV2Callback)
         ): list(int) =
         let (wae_aex9,wae,factory) = trio(deadline)
-        require(last(path) == wae_aex9, "AedexV2Router: INVALID_PATH")
+        require(last(path) == wae_aex9, "AedexV2Router: INVALID_PATH_LAST")
         let amounts = AedexV2Library.get_amounts_in(factory, amount_out, path)
         require(List.get(0,amounts) =< amount_in_max, "AedexV2Router: EXCESSIVE_INPUT_AMOUNT")
         List.get(0,path).transfer_allowance(
@@ -278,7 +278,7 @@ payable contract AedexV2Router =
         , callback: option(IAedexV2Callback)
         ): list(int) =
         let (wae_aex9,wae,factory) = trio(deadline)
-        require(last(path) == wae_aex9, "AedexV2Router: INVALID_PATH")
+        require(last(path) == wae_aex9, "AedexV2Router: INVALID_PATH_LAST")
         let amounts = AedexV2Library.get_amounts_out(factory, amount_in, path)
         require(last(amounts)>= amount_out_min, "AedexV2Router: INSUFFICIENT_OUTPUT_AMOUNT")
         first(path).transfer_allowance(
@@ -300,7 +300,7 @@ payable contract AedexV2Router =
             , callback: option(IAedexV2Callback)
         ): list(int) =
         let (wae_aex9,wae,factory) = trio(deadline)
-        require(first(path) == wae_aex9, "AedexV2Router: INVALID_PATH")
+        require(first(path) == wae_aex9, "AedexV2Router: INVALID_PATH_FIRST")
         let amounts = AedexV2Library.get_amounts_in(factory, amount_out, path)
         let fst_amount = first(amounts)
         require(first(amounts) =< Call.value, "AedexV2Router: EXCESSIVE_INPUT_AMOUNT")

@@ -56,7 +56,7 @@ describe( 'Pair Factory', () => {
                 //getA( factory ),
                 undefined
             ) ),
-            'AedexV2: PAIR_EXISTS'
+            'AedexV2Factory: PAIR_EXISTS'
         )
     } )
     it( 'fails to create same pairs in reverse', async () => {
@@ -68,7 +68,7 @@ describe( 'Pair Factory', () => {
                 undefined
 
             ) ),
-            'AedexV2: PAIR_EXISTS'
+            'AedexV2Factory: PAIR_EXISTS'
         )
     } )
     it( 'set_fee_to', async () => {
@@ -78,7 +78,7 @@ describe( 'Pair Factory', () => {
                     onAccount: other.address,
                 } )
             ),
-            "AedexV2: FORBIDDEN"
+            "AedexV2Factory: FORBIDDEN"
         )
         expect( await factory.exe( x => x.fee_to( ) ) ).to.eq( undefined )
         await factory.exe( x => x.set_fee_to( wallet.address ) )
@@ -91,14 +91,14 @@ describe( 'Pair Factory', () => {
                     onAccount: other.address,
                 } )
             ),
-            "AedexV2: FORBIDDEN"
+            "AedexV2Factory: FORBIDDEN"
         )
 
         await factory.exe( x => x.set_fee_to_setter( other.address ) )
         expect( await factory.exe( x => x.fee_to_setter() ) ).to.eq( other.address )
         await expectToRevert(
             () => factory.exe( x => x.set_fee_to_setter( wallet.address ) ),
-            "AedexV2: FORBIDDEN"
+            "AedexV2Factory: FORBIDDEN"
         )
     } )
 } )
