@@ -188,6 +188,7 @@ const routerFixture = async ( wallet = wallet0 ) => {
     const liq = BigInt( expandTo18Decimals( 10000 ) )
     const tokenA = await tokenFixture( liq )
     const tokenB = await tokenFixture( liq )
+    const tokenC = await tokenFixture( liq )
 
     const wae = await waeFixture()
     const waePartner = await tokenFixture( liq )
@@ -196,21 +197,26 @@ const routerFixture = async ( wallet = wallet0 ) => {
 
     // deploy routers
     const router = await router01Fixture( factory, wae )
-    //
-    // initialize V2
-    //
 
-    const pairAddress = await factory.exe( x => x.create_pair(
+    const pair01Address = await factory.exe( x => x.create_pair(
         getA( tokenA ),
         getA( tokenB ),
     ) )
 
-    const pair = await getContract( "./contracts/AedexV2Pair.aes", [], pairAddress  )
+    const pair01 = await getContract( "./contracts/AedexV2Pair.aes", [], pair01Address  )
 
-    const token0Address = ( await pair.exe( x => x.token0() ) )
+    const token0Address = ( await pair01.exe( x => x.token0() ) )
 
     const token0 = getA( tokenA ) === token0Address ? tokenA : tokenB
     const token1 = getA( tokenA ) === token0Address ? tokenB : tokenA
+
+    const pair1CAddress = await factory.exe( x => x.create_pair(
+        getA( token1 ),
+        getA( tokenC ),
+    ) )
+
+    //this should be used on longer path tests
+    const pair1C = await getContract( "./contracts/AedexV2Pair.aes", [], pair1CAddress  )
 
     const waePairAddress = await factory.exe( x => x.create_pair(
         getA( wae ),
@@ -222,11 +228,14 @@ const routerFixture = async ( wallet = wallet0 ) => {
     const ret = {
         token0,
         token1,
+        tokenC,
         wae,
         waePartner,
         factory,
         router,
-        pair,
+        pair: pair01,
+        pair01,
+        pair1C,
         waePair
     }
     const addresses = Object.keys( ret ).reduce( ( acc, key ) => {

@@ -42,11 +42,13 @@ const extraGas = { gas: 150000 }
 describe( 'Pair Router', () => {
     let token0
     let token1
+    let tokenC
     let wae
     let waePartner
     let factory
     let router
     let pair
+    let pair1C
     let waePair
     afterEach( async function() {
         expect( await router.exe( x => x.balance() ) ).to.eq( 0n )
@@ -55,15 +57,17 @@ describe( 'Pair Router', () => {
         ( {
             token0,
             token1,
+            tokenC,
             wae,
             waePartner,
             factory,
             router,
             pair,
             waePair,
+            pair1C,
         } = await routerFixture() )
     } )
-    const routerAddr = () =>  getAK( router ) 
+    const routerAddr = () =>  getAK( router )
 
     it( 'factory, WAE', async () => {
         expect( await router.exe( x => x.factory() ) ).to.eq( getA( factory ) )
@@ -71,8 +75,8 @@ describe( 'Pair Router', () => {
         expect( await router.exe( x => x.wae_aex9() ) ).to.eq( getA( wae ) )
     } )
     it( 'add_liquidity', async () => {
-        const token0Amount = expandTo18Decimals( 1 ) 
-        const token1Amount = expandTo18Decimals( 4 ) 
+        const token0Amount = expandTo18Decimals( 1 )
+        const token1Amount = expandTo18Decimals( 4 )
 
         const expectedLiquidity = expandTo18Decimals( 2 )
         await token0.exe( x => x.create_allowance( routerAddr(), MaxUint256 ) )
@@ -86,10 +90,10 @@ describe( 'Pair Router', () => {
             0n,
             0n,
             wallet.address,
-            MaxUint256, 
+            MaxUint256,
             extraGas,
         ) )
-        expect( 
+        expect(
             await pair.exe( x => x.balance( wallet.address ) )
         ).to.eq( BigInt( expectedLiquidity.sub( MINIMUM_LIQUIDITY ) ) )
     } )
@@ -108,7 +112,7 @@ describe( 'Pair Router', () => {
             aeAmount,
             wallet.address,
             MaxUint256,
-            { 
+            {
                 ...extraGas,
                 amount: aeAmount.toString(),
             }
@@ -118,10 +122,20 @@ describe( 'Pair Router', () => {
             await waePair.exe( x => x.balance( wallet.address ) )
         ).to.eq( BigInt(  expectedLiquidity.sub( MINIMUM_LIQUIDITY ) ) )
     } )
-    async function addLiquidity( token0Amount, token1Amount ) {
+    async function addLiquidity(
+        token0Amount,
+        token1Amount,
+        tokenCAmount,
+    ) {
         await token0.exe( x => x.transfer( getAK( pair ), BigInt( token0Amount ) ) )
         await token1.exe( x => x.transfer( getAK( pair ), BigInt( token1Amount ) ) )
         await pair.exe( x => x.mint( wallet.address, extraGas ) )
+        //add liquidity for the third pair if it is the case
+        if ( tokenCAmount ) {
+            await token1.exe( x => x.transfer( getAK( pair1C ), BigInt( token1Amount ) ) )
+            await tokenC.exe( x => x.transfer( getAK( pair1C ), BigInt( token1Amount ) ) )
+            await pair1C.exe( x => x.mint( wallet.address, extraGas ) )
+        }
     }
     it( 'remove_liquidity', async () => {
         const token0Amount = expandTo18Decimals( 1 )
@@ -147,18 +161,18 @@ describe( 'Pair Router', () => {
         const totalSupplyToken1 = BigInt( await token1.exe( x => x.total_supply() ) )
 
         expect( await token0.exe( x => x.balance( wallet.address ) ) )
-            .to.eq(  totalSupplyToken0 - 500n )  
+            .to.eq(  totalSupplyToken0 - 500n )
         expect( await token1.exe( x => x.balance( wallet.address ) ) )
-            .to.eq(  totalSupplyToken1 - 2000n )  
+            .to.eq(  totalSupplyToken1 - 2000n )
     } )
 
     it( 'remove_liquidity_ae', async () => {
         const waePartnerAmount = BigInt( expandTo18Decimals( 1 ) )
-        const aeAmount = BigInt( expandTo18Decimals( 4 ) ) 
+        const aeAmount = BigInt( expandTo18Decimals( 4 ) )
 
-        await waePartner.exe( x => x.transfer( 
+        await waePartner.exe( x => x.transfer(
             getAK( waePair ),
-            waePartnerAmount 
+            waePartnerAmount
         ) )
         await wae.exe( x => x.deposit( { amount: aeAmount.toString() } ) )
         await wae.exe( x => x.transfer( getAK( waePair ), aeAmount ) )
@@ -207,7 +221,7 @@ describe( 'Pair Router', () => {
                     0,
                     [ getA( token0 ), getA( token1 ) ],
                     wallet.address,
-                    MaxUint256, 
+                    MaxUint256,
                     undefined,
                     {
                         ...extraGas,
@@ -217,7 +231,41 @@ describe( 'Pair Router', () => {
             )
 
             expect( swapAmountRet ).to.eq( swapAmount )
-            expect( expectedOutputAmountRet ).to.eq( expectedOutputAmountRet )
+            expect( expectedOutputAmountRet ).to.eq( expectedOutputAmount )
+        } )
+
+    } )
+
+    describe( 'longer_path: swap_exact_tokens_for_tokens', () => {
+        const token0Amount = expand18( 5 )
+        const token1Amount = expand18( 10 )
+        const tokenCAmount = expand18( 20 )
+        const swapAmount = expand18( 1 )
+        const expected1OutputAmount = 1662497915624478906n
+        const expectedCOutputAmount = 1421839107917040301n
+
+        beforeEach( async () => {
+            await addLiquidity( token0Amount, token1Amount, tokenCAmount )
+            await token0.exe( x => x.create_allowance( routerAddr(), MaxUint256 ) )
+        } )
+        it( 'happy path', async () => {
+            const amounts = await router.exe(
+                x => x.swap_exact_tokens_for_tokens(
+                    swapAmount,
+                    0,
+                    [ getA( token0 ), getA( token1 ), getA( tokenC ) ],
+                    wallet.address,
+                    MaxUint256,
+                    undefined,
+                    {
+                        ...extraGas,
+                    }
+                ),
+            )
+
+            expect( amounts[0] ).to.eq( swapAmount )
+            expect( amounts[1] ).to.eq( expected1OutputAmount )
+            expect( amounts[2] ).to.eq( expectedCOutputAmount )
         } )
 
     } )
@@ -239,13 +287,44 @@ describe( 'Pair Router', () => {
                 MaxUint256,
                 [ getA( token0 ), getA( token1 ) ],
                 wallet.address,
-                MaxUint256, 
+                MaxUint256,
                 undefined,
                 extraGas,
             ) )
 
             expect( amounts[0] ).to.eq( expectedSwapAmount )
             expect( amounts[1] ).to.eq( outputAmount )
+        } )
+
+    } )
+    describe( 'longer_path: swap_tokens_for_exact_tokens', () => {
+        const token0Amount = expand18( 5 )
+        const token1Amount = expand18( 10 )
+        const tokenCAmount = expand18( 20 )
+        const expectedSwapAmount = 629003528835597474n
+        const expected1InAmount = 1114454474534715257n
+        const outputAmount = expand18( 1 )
+
+        beforeEach( async () => {
+            await addLiquidity( token0Amount, token1Amount, tokenCAmount )
+        } )
+
+        it( 'happy path', async () => {
+            await token0.exe( x => x.create_allowance( getAK( router ), MaxUint256 ) )
+
+            const amounts = await router.exe( x => x.swap_tokens_for_exact_tokens(
+                outputAmount,
+                MaxUint256,
+                [ getA( token0 ), getA( token1 ), getA( tokenC ) ],
+                wallet.address,
+                MaxUint256,
+                undefined,
+                extraGas,
+            ) )
+
+            expect( amounts[0] ).to.eq( expectedSwapAmount )
+            expect( amounts[1] ).to.eq( expected1InAmount )
+            expect( amounts[2] ).to.eq( outputAmount )
         } )
 
     } )
@@ -266,7 +345,6 @@ describe( 'Pair Router', () => {
         } )
 
         it( 'happy path', async () => {
-            const waePairToken0 = await waePair.exe( x => x.token0() )
             const amounts = await router.exe( x => x.swap_exact_ae_for_tokens(
                 0,
                 [ getA( wae ), getA( waePartner ) ]
@@ -298,14 +376,13 @@ describe( 'Pair Router', () => {
 
         it( 'happy path', async () => {
             await waePartner.exe( x => x.create_allowance( getAK( router ), MaxUint256 ) )
-            const waePairToken0 = await waePair.exe( x => x.token0() )
             const amounts = await router.exe( x => x.swap_tokens_for_exact_ae(
                 outputAmount,
                 MaxUint256,
                 [ getA( waePartner ), getA( wae ) ],
                 wallet.address,
                 MaxUint256,
-                undefined, 
+                undefined,
                 extraGas
             ) )
             expect( amounts[0] ).to.eq( expectedSwapAmount )
@@ -328,10 +405,9 @@ describe( 'Pair Router', () => {
         } )
 
         it( 'happy path', async () => {
-            await waePartner.exe( x => 
+            await waePartner.exe( x =>
                 x.create_allowance( getAK( router ), MaxUint256 )
             )
-            const waePairToken0 = await waePair.exe( x => x.token0() )
             const amounts = await router.exe( x => x.swap_exact_tokens_for_ae(
                 swapAmount,
                 0,
@@ -355,7 +431,7 @@ describe( 'Pair Router', () => {
         beforeEach( async () => {
             await waePartner.exe( x => x.transfer(
                 getAK( waePair ),
-                waePartnerAmount 
+                waePartnerAmount
             ) )
             await wae.exe( x => x.deposit( { amount: aeAmount.toString() } ) )
             await wae.exe( x => x.transfer( getAK( waePair ), aeAmount ) )
@@ -363,7 +439,6 @@ describe( 'Pair Router', () => {
         } )
 
         it( 'happy path', async () => {
-            const waePairToken0 = await waePair.exe( x => x.token0() )
             const amounts = await router.exe( x => x.swap_ae_for_exact_tokens(
                 outputAmount,
                 [ getA( wae ), getA( waePartner ) ],
