@@ -95,13 +95,29 @@ const getContract = async ( source, params, contractAddress, wallet = WALLETS[0]
             }
         )
         const exe = makeExe( contract, client )
+
         return {
             contract, exe,  deploy: async ( extra ) => {
                 const deployment_result = await contract.deploy( params, extra )
                 console.debug( `%c----> Contract deployed: '${source}...'`, `color:green` )
 
                 return deployment_result
-            }
+            },
+            ...createWrappedMethods( contract ),
+            expectEvents: ( { result:{ log } }, tests ) => {
+                const events = contract.decodeEvents( log )
+                const filtered = ( events || [] ).filter(
+                    x =>  x.address == contract.deployInfo.address
+                ).reverse()
+                //console.debug( filtered )
+                if ( tests ) {
+                    tests.events( {
+                        tail : filtered,
+                        head : null,
+                    } )
+                }
+            },
+
         }
     } catch ( ex ) {
         console.debug( ex )
@@ -110,6 +126,29 @@ const getContract = async ( source, params, contractAddress, wallet = WALLETS[0]
         }
         assert.fail( 'Could not initialize contract instance' )
     }
+}
+
+const formatMethodName = ( str ) => {
+    const reservedWords = [ 'expectEvents', 'contract', 'deploy' ]
+    return reservedWords.some( x => str === x )
+        ? str + '2'
+        : str
+}
+//move
+const createWrappedMethods =  ( contract, extractor ) => {
+    const methods = contract.methods
+    const keys = Object.keys( methods )
+    const wrappedMethods = keys.reduce( ( acc, key ) => {
+        const method = methods[key]
+        const wrappedMethod = async ( ...args ) => {
+            const ret = await method.apply( contract, args )
+            return extractor ? extractor( ret ) : ret.decodedResult
+        }
+        const cloned = { ...acc }
+        cloned[formatMethodName( key )] = wrappedMethod
+        return cloned
+    }, {} )
+    return wrappedMethods
 }
 
 const getA = x => x.contract.deployInfo.address

@@ -18,6 +18,8 @@ contract AedexV2Pair =
         | Approval(address /*indexed owner*/, address /*indexed spender*/, int /*value*/)
         | Allowance(address /*indexed owner*/, address /*indexed spender*/, int /*value*/)
 
+
+        | LockLiquidity(int)
         | Mint(address /*indexed sender*/, int /*amount0*/, int /*amount1*/)
         | Burn(address /*indexed sender*/, address /*indexed to*/, string /*int amount0 | int amount1*/ )
         | Swap(
@@ -111,7 +113,7 @@ contract AedexV2Pair =
                    , reserve1 = balance1
                    , block_timestamp_last = block_timestamp
                    })
-        Chain.event( Sync(reserve0, reserve1) )
+        Chain.event( Sync(balance0, balance1) ) // actually new reserve0&reserve1
 
     // if fee is on, mint liquidity equivalent to 1/6th of the growth in sqrt(k)
     stateful function _mint_fee(reserve0: int, reserve1: int): bool =
@@ -261,17 +263,22 @@ contract AedexV2Pair =
     //AEX9 PART
 
     stateful function _mint(to_opt: option(address),value: int) =
+        //TODO: in uniswap there is a void/zero address for the source,
+        // find a replacement here or if Contract.address is ok just remove 
+        // this comment
+        let zero_address : address = Contract.address
         AE.validate_positive(value)
         switch(to_opt)
             Some(to) =>
                 put(state { total_supply @ p = p + value
                           , balance_of[ to = 0] @ p = p + value
                           })
-                Chain.event( Transfer(Contract.address, to, value) )
+                Chain.event( Transfer(zero_address, to, value) )
             None =>
                 put(state { total_supply @ p = p + value
                           , locked_liquidity @ p = p + value
                           })
+                Chain.event( LockLiquidity(value) )
 
     stateful function _burn(from: address,value: int) =
         require(value > 0, "AedexV2Pair: INSUFFICIENT_LIQUIDITY_BURNED")

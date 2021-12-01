@@ -91,7 +91,8 @@ payable contract AedexV2Router =
         let pair: IAedexV2Pair = AedexV2Library.pair_for( state.factory, token_a, token_b )
         token_a.transfer_allowance( Call.caller,pair.address,amount_a )
         token_b.transfer_allowance( Call.caller,pair.address,amount_b )
-        ( amount_a, amount_b, pair.mint(to) )
+        let minted_liquidity = pair.mint(to)
+        ( amount_a, amount_b, minted_liquidity )
 
     payable stateful entrypoint add_liquidity_ae(
         token: IAEX9Minimal

@@ -29,6 +29,7 @@ import {
 import {
     expandTo18Decimals,
     MaxUint256 as MaxUint256BN,
+    emits,
 } from './shared/utilities'
 const expand18 = ( n ) => BigInt( expandTo18Decimals( n ) )
 const MaxUint256 = BigInt( MaxUint256BN )
@@ -78,11 +79,11 @@ describe( 'Pair Router', () => {
         const token0Amount = expandTo18Decimals( 1 )
         const token1Amount = expandTo18Decimals( 4 )
 
-        const expectedLiquidity = expandTo18Decimals( 2 )
-        await token0.exe( x => x.create_allowance( routerAddr(), MaxUint256 ) )
-        await token1.exe( x => x.create_allowance( routerAddr(), MaxUint256 ) )
+        const expectedLiquidity = expand18( 2 )
+        await token0.create_allowance( routerAddr(), MaxUint256 )
+        await token1.create_allowance( routerAddr(), MaxUint256 )
 
-        await router.exe( x => x.add_liquidity(
+        const ret = await router.contract.methods.add_liquidity(
             getA( token0 ),
             getA( token1 ),
             BigInt( token0Amount ),
@@ -92,20 +93,46 @@ describe( 'Pair Router', () => {
             wallet.address,
             MaxUint256,
             extraGas,
-        ) )
+        )
+        //TODO: this should be replaced in accordance
+        //with decision from _mint comment from the AedexV2Pair.aes
+        const addressZero = getAK( pair )
+        token0.expectEvents( ret,
+            emits( "Transfer" ).withArgs(
+                wallet.address, getAK( pair ), token0Amount
+            ) )
+        token1.expectEvents( ret,
+            emits( "Transfer" ).withArgs(
+                wallet.address, getAK( pair ), token1Amount
+            ) )
+        pair.expectEvents( ret,
+            emits( "LockLiquidity" ).withArgs(
+                MINIMUM_LIQUIDITY
+            ).emits( "Transfer" ).withArgs(
+                addressZero,
+                wallet.address,
+                expectedLiquidity - MINIMUM_LIQUIDITY,
+            ).emits( "Sync" ).withArgs(
+                token0Amount, token1Amount
+            ).emits( "Mint" ).withArgs(
+                getAK( router ), token0Amount, token1Amount
+            )
+        )
+
         expect(
-            await pair.exe( x => x.balance( wallet.address ) )
-        ).to.eq( BigInt( expectedLiquidity.sub( MINIMUM_LIQUIDITY ) ) )
+            await pair.balance( wallet.address )
+        ).to.eq( BigInt( expectedLiquidity - MINIMUM_LIQUIDITY ) )
     } )
 
     it( 'add_liquidity_ae', async () => {
-        const waePartnerAmount = BigInt( expandTo18Decimals( 1 ) )
-        const aeAmount = BigInt( expandTo18Decimals( 4 ) )
+        const waePartnerAmount = expand18( 1 )
+        const aeAmount = expand18( 4 )
 
-        const expectedLiquidity = expandTo18Decimals( 2 )
-        await waePartner.exe( x => x.create_allowance( routerAddr(), MaxUint256 ) )
+        const expectedLiquidity = expand18( 2 )
+        await waePartner.create_allowance( routerAddr(), MaxUint256 )
 
-        await router.exe( x => x.add_liquidity_ae(
+        const waePairToken0 = await waePair.token0()
+        const ret = await router.contract.methods.add_liquidity_ae(
             getA( waePartner ),
             waePartnerAmount,
             waePartnerAmount,
@@ -116,92 +143,183 @@ describe( 'Pair Router', () => {
                 ...extraGas,
                 amount: aeAmount.toString(),
             }
-        ) )
+        )
+
+        //TODO: this should be replaced in accordance
+        //with decision from _mint comment from the AedexV2Pair.aes
+        const addressZero = getAK( waePair )
+        waePair.expectEvents( ret,
+            emits( "LockLiquidity" ).withArgs(
+                MINIMUM_LIQUIDITY
+            ).emits( 'Transfer' ).withArgs(
+                addressZero, wallet.address, expectedLiquidity - MINIMUM_LIQUIDITY
+            ).emits( 'Sync' ).withArgs(
+                waePairToken0 === getA( waePartner ) ? waePartnerAmount : aeAmount,
+                waePairToken0 === getA( waePartner ) ? aeAmount : waePartnerAmount,
+            ).emits( 'Mint' ).withArgs(
+                getAK( router ),
+                waePairToken0 === getA( waePartner ) ? waePartnerAmount : aeAmount,
+                waePairToken0 === getA( waePartner ) ? aeAmount : waePartnerAmount,
+            )
+        )
 
         expect(
-            await waePair.exe( x => x.balance( wallet.address ) )
-        ).to.eq( BigInt(  expectedLiquidity.sub( MINIMUM_LIQUIDITY ) ) )
+            await waePair.balance( wallet.address )
+        ).to.eq( expectedLiquidity - MINIMUM_LIQUIDITY )
     } )
+
     async function addLiquidity(
         token0Amount,
         token1Amount,
         tokenCAmount,
     ) {
-        await token0.exe( x => x.transfer( getAK( pair ), BigInt( token0Amount ) ) )
-        await token1.exe( x => x.transfer( getAK( pair ), BigInt( token1Amount ) ) )
-        await pair.exe( x => x.mint( wallet.address, extraGas ) )
+        await token0.transfer( getAK( pair ), BigInt( token0Amount ) )
+        await token1.transfer( getAK( pair ), BigInt( token1Amount ) )
+        await pair.mint( wallet.address, extraGas )
         //add liquidity for the third pair if it is the case
         if ( tokenCAmount ) {
-            await token1.exe( x => x.transfer( getAK( pair1C ), BigInt( token1Amount ) ) )
-            await tokenC.exe( x => x.transfer( getAK( pair1C ), BigInt( token1Amount ) ) )
-            await pair1C.exe( x => x.mint( wallet.address, extraGas ) )
+            await token1.transfer( getAK( pair1C ), BigInt( token1Amount ) )
+            await tokenC.transfer( getAK( pair1C ), BigInt( token1Amount ) )
+            await pair1C.mint( wallet.address, extraGas )
         }
     }
     it( 'remove_liquidity', async () => {
-        const token0Amount = expandTo18Decimals( 1 )
-        const token1Amount = expandTo18Decimals( 4 )
+        const token0Amount = expand18( 1 )
+        const token1Amount = expand18( 4 )
         await addLiquidity( token0Amount, token1Amount )
 
-        const expectedLiquidity = expandTo18Decimals( 2 )
-        await pair.exe( x => x.create_allowance( routerAddr(), MaxUint256 ) )
-        await router.exe( x => x.remove_liquidity(
+        const expectedLiquidity = expand18( 2 )
+        await pair.create_allowance( routerAddr(), MaxUint256 )
+        const ret = await router.contract.methods.remove_liquidity(
             getA( token0 ),
             getA( token1 ),
-            BigInt( expectedLiquidity.sub( MINIMUM_LIQUIDITY ) ),
+            expectedLiquidity - MINIMUM_LIQUIDITY,
             0,
             0,
             wallet.address,
             MaxUint256,
             extraGas,
-        ) )
+        )
 
-        expect( await pair.exe( x => x.balance( wallet.address ) ) ).to.eq( 0n )
+        //TODO: this should be replaced in accordance
+        //with decision from _mint comment from the AedexV2Pair.aes
+        const addressZero = getAK( pair )
 
-        const totalSupplyToken0 = BigInt( await token0.exe( x => x.total_supply() ) )
-        const totalSupplyToken1 = BigInt( await token1.exe( x => x.total_supply() ) )
+        pair.expectEvents( ret,
+            emits( 'Transfer' ).withArgs(
+                wallet.address, getAK( pair ), expectedLiquidity - MINIMUM_LIQUIDITY
+            ).emits( 'Transfer' ).withArgs(
+                getAK( pair ), addressZero, expectedLiquidity - MINIMUM_LIQUIDITY
+            ).emits( 'Sync' ).withArgs(
+                500, 2000
+            ).emits( 'Burn' ).withArgs(
+                getAK( router ),
+                wallet.address,
+                `${token0Amount - 500n}|${token1Amount - 2000n}`
+            )
+        )
+        token0.expectEvents( ret,
+            emits( 'Transfer' ).withArgs(
+                getAK( pair ),
+                wallet.address,
+                token0Amount - 500n
+            )
+        )
+        token1.expectEvents( ret,
+            emits( 'Transfer' ).withArgs(
+                getAK( pair ),
+                wallet.address,
+                token1Amount - 2000n
+            )
+        )
+        expect( await pair.balance( wallet.address ) ).to.eq( 0n )
 
-        expect( await token0.exe( x => x.balance( wallet.address ) ) )
+        const totalSupplyToken0 = await token0.total_supply()
+        const totalSupplyToken1 = await token1.total_supply()
+
+        expect( await token0.balance( wallet.address ) )
             .to.eq(  totalSupplyToken0 - 500n )
-        expect( await token1.exe( x => x.balance( wallet.address ) ) )
+        expect( await token1.balance( wallet.address ) )
             .to.eq(  totalSupplyToken1 - 2000n )
     } )
 
     it( 'remove_liquidity_ae', async () => {
-        const waePartnerAmount = BigInt( expandTo18Decimals( 1 ) )
-        const aeAmount = BigInt( expandTo18Decimals( 4 ) )
+        const waePartnerAmount = expand18( 1 )
+        const aeAmount = expand18( 4 )
 
-        await waePartner.exe( x => x.transfer(
+        await waePartner.transfer(
             getAK( waePair ),
             waePartnerAmount
-        ) )
-        await wae.exe( x => x.deposit( { amount: aeAmount.toString() } ) )
-        await wae.exe( x => x.transfer( getAK( waePair ), aeAmount ) )
-        await waePair.exe( x => x.mint( wallet.address, extraGas ) )
+        )
+        const waePairToken0 = await waePair.token0()
+        await wae.deposit( { amount: aeAmount.toString() } )
+        await wae.transfer( getAK( waePair ), aeAmount )
+        await waePair.mint( wallet.address, extraGas )
 
-        const expectedLiquidity = BigInt( expandTo18Decimals( 2 ) )
-        await waePair.exe( x => x.create_allowance( routerAddr(), MaxUint256 ) )
-        await router.exe( x => x.remove_liquidity_ae(
+        const expectedLiquidity = expand18( 2 )
+        await waePair.create_allowance( routerAddr(), MaxUint256 )
+        const ret = await router.contract.methods.remove_liquidity_ae(
             getA( waePartner ),
             expectedLiquidity - MINIMUM_LIQUIDITY,
             0,
             0,
             wallet.address,
             MaxUint256,
-            {
-                ...extraGas,
-            }
-        ) )
+            { ...extraGas },
+        )
+
+        //TODO: this should be replaced in accordance
+        //with decision from _mint comment from the AedexV2Pair.aes
+        const addressZero = getAK( waePair )
+        waePair.expectEvents( ret,
+            emits( 'Transfer' ).withArgs(
+                wallet.address,
+                getAK( waePair ),
+                expectedLiquidity - MINIMUM_LIQUIDITY
+            ).emits( 'Transfer' ).withArgs(
+                getAK( waePair ),
+                addressZero,
+                expectedLiquidity - MINIMUM_LIQUIDITY
+            ).emits( 'Sync' ).withArgs(
+                waePairToken0 === getA( waePartner ) ? 500 : 2000,
+                waePairToken0 === getA( waePartner ) ? 2000 : 500
+            ).emits( 'Burn' ).withArgs(
+                getAK( router ),
+                getAK( router ),
+                ( waePairToken0 === getA( waePartner ) ? waePartnerAmount - 500n : aeAmount - 2000n )
+                + "|" +
+                ( waePairToken0 === getA( waePartner ) ? aeAmount - 2000n : waePartnerAmount - 500n ),
+            )
+        )
+        wae.expectEvents( ret,
+            emits( 'Transfer' ).withArgs(
+                getAK( waePair ),
+                getAK( router ),
+                aeAmount - 2000n
+            )
+        )
+        waePartner.expectEvents( ret,
+            emits( 'Transfer' ).withArgs(
+                getAK( waePair ),
+                getAK( router ),
+                waePartnerAmount - 500n
+            ).emits( 'Transfer' ).withArgs(
+                getAK( router ),
+                wallet.address,
+                waePartnerAmount - 500n
+            )
+        )
 
         expect(
-            await waePair.exe( x => x.balance( wallet.address ) )
+            await waePair.balance( wallet.address )
         ).to.eq( 0n )
-        const totalSupplywaePartner = BigInt( await waePartner.exe( x => x.total_supply() ) )
-        const totalSupplywae = BigInt( await wae.exe( x => x.total_supply() ) )
+        const totalSupplywaePartner = await waePartner.total_supply()
+        const totalSupplywae = await wae.total_supply()
         expect(
-            await waePartner.exe( x => x.balance( wallet.address ) )
+            await waePartner.balance( wallet.address )
         ).to.eq( totalSupplywaePartner - 500n  )
         expect(
-            await wae.exe( x => x.balance( wallet.address ) )
+            await wae.balance( wallet.address )
         ).to.eq( totalSupplywae - 2000n )
     } )
 

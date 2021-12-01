@@ -27,7 +27,7 @@ function withArgsProcess( argsT, parentCall ) {
                         }
                     }
                 } else {
-                    expect( decodedHead ).to.eq( arg )
+                    expect( decodedHead ).to.eq( typeof arg !== 'string' ? arg.toString() : arg  )
                 }
                 return loop( tailArgs, {
                     ...head,
