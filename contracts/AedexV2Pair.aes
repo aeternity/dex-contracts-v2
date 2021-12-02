@@ -184,7 +184,8 @@ contract AedexV2Pair =
         let liquidity = Option.default(0,balance(Contract.address))
 
         let fee_on = _mint_fee(_reserve0, _reserve1)
-        let _total_supply = state.total_supply // gas savings, must be defined here since totalSupply can update in _mintFee
+        let _total_supply = state.total_supply // gas savings, must be defined here since totalSupply
+                                               // can update in _mintFee
         let amount0 = (liquidity*balance0) / _total_supply // using balances ensures pro-rata distribution
         let amount1 = (liquidity*balance1) / _total_supply // using balances ensures pro-rata distribution
         _burn(Contract.address, liquidity)
@@ -263,17 +264,12 @@ contract AedexV2Pair =
     //AEX9 PART
 
     stateful function _mint(to_opt: option(address),value: int) =
-        //TODO: in uniswap there is a void/zero address for the source,
-        // find a replacement here or if Contract.address is ok just remove 
-        // this comment
-        let zero_address : address = Contract.address
         AE.validate_positive(value)
         switch(to_opt)
             Some(to) =>
                 put(state { total_supply @ p = p + value
                           , balance_of[ to = 0] @ p = p + value
                           })
-                Chain.event( Transfer(zero_address, to, value) )
             None =>
                 put(state { total_supply @ p = p + value
                           , locked_liquidity @ p = p + value
@@ -285,7 +281,6 @@ contract AedexV2Pair =
         put(state { total_supply @ p = p - value
                   , balance_of[ from = 0] @ p = p - value
                   })
-        Chain.event( Transfer(from, Contract.address, value) )
 
     entrypoint meta_info(): IAEX9Minimal.meta_info = {
           name = "Aedex v2",

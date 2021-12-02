@@ -94,9 +94,6 @@ describe( 'Pair Router', () => {
             MaxUint256,
             extraGas,
         )
-        //TODO: this should be replaced in accordance
-        //with decision from _mint comment from the AedexV2Pair.aes
-        const addressZero = getAK( pair )
         token0.expectEvents( ret,
             emits( "Transfer" ).withArgs(
                 wallet.address, getAK( pair ), token0Amount
@@ -108,10 +105,6 @@ describe( 'Pair Router', () => {
         pair.expectEvents( ret,
             emits( "LockLiquidity" ).withArgs(
                 MINIMUM_LIQUIDITY
-            ).emits( "Transfer" ).withArgs(
-                addressZero,
-                wallet.address,
-                expectedLiquidity - MINIMUM_LIQUIDITY,
             ).emits( "Sync" ).withArgs(
                 token0Amount, token1Amount
             ).emits( "Mint" ).withArgs(
@@ -145,14 +138,9 @@ describe( 'Pair Router', () => {
             }
         )
 
-        //TODO: this should be replaced in accordance
-        //with decision from _mint comment from the AedexV2Pair.aes
-        const addressZero = getAK( waePair )
         waePair.expectEvents( ret,
             emits( "LockLiquidity" ).withArgs(
                 MINIMUM_LIQUIDITY
-            ).emits( 'Transfer' ).withArgs(
-                addressZero, wallet.address, expectedLiquidity - MINIMUM_LIQUIDITY
             ).emits( 'Sync' ).withArgs(
                 waePairToken0 === getA( waePartner ) ? waePartnerAmount : aeAmount,
                 waePairToken0 === getA( waePartner ) ? aeAmount : waePartnerAmount,
@@ -201,15 +189,9 @@ describe( 'Pair Router', () => {
             extraGas,
         )
 
-        //TODO: this should be replaced in accordance
-        //with decision from _mint comment from the AedexV2Pair.aes
-        const addressZero = getAK( pair )
-
         pair.expectEvents( ret,
             emits( 'Transfer' ).withArgs(
                 wallet.address, getAK( pair ), expectedLiquidity - MINIMUM_LIQUIDITY
-            ).emits( 'Transfer' ).withArgs(
-                getAK( pair ), addressZero, expectedLiquidity - MINIMUM_LIQUIDITY
             ).emits( 'Sync' ).withArgs(
                 500, 2000
             ).emits( 'Burn' ).withArgs(
@@ -268,17 +250,10 @@ describe( 'Pair Router', () => {
             { ...extraGas },
         )
 
-        //TODO: this should be replaced in accordance
-        //with decision from _mint comment from the AedexV2Pair.aes
-        const addressZero = getAK( waePair )
         waePair.expectEvents( ret,
             emits( 'Transfer' ).withArgs(
                 wallet.address,
                 getAK( waePair ),
-                expectedLiquidity - MINIMUM_LIQUIDITY
-            ).emits( 'Transfer' ).withArgs(
-                getAK( waePair ),
-                addressZero,
                 expectedLiquidity - MINIMUM_LIQUIDITY
             ).emits( 'Sync' ).withArgs(
                 waePairToken0 === getA( waePartner ) ? 500 : 2000,
