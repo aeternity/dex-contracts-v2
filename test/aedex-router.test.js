@@ -167,7 +167,7 @@ describe( 'Pair Router', () => {
         //add liquidity for the third pair if it is the case
         if ( tokenCAmount ) {
             await token1.transfer( getAK( pair1C ), BigInt( token1Amount ) )
-            await tokenC.transfer( getAK( pair1C ), BigInt( token1Amount ) )
+            await tokenC.transfer( getAK( pair1C ), BigInt( tokenCAmount ) )
             await pair1C.mint( wallet.address, extraGas )
         }
     }
@@ -298,6 +298,9 @@ describe( 'Pair Router', () => {
         ).to.eq( totalSupplywae - 2000n )
     } )
 
+    const swapPayload = ( amount0In, amount1In, amount0Out, amount1Out, ) =>
+        `${amount0In}|${amount1In}|${amount0Out}|${amount1Out}`
+
     describe( 'swap_exact_tokens_for_tokens', () => {
         const token0Amount = expand18( 5 )
         const token1Amount = expand18( 10 )
@@ -305,22 +308,44 @@ describe( 'Pair Router', () => {
         const expectedOutputAmount = 1662497915624478906n
         beforeEach( async () => {
             await addLiquidity( token0Amount, token1Amount )
-            await token0.exe( x => x.create_allowance( routerAddr(), MaxUint256 ) )
+            await token0.create_allowance( routerAddr(), MaxUint256 )
         } )
         it( 'happy path', async () => {
-            const [ swapAmountRet, expectedOutputAmountRet ] = await router.exe(
-                x => x.swap_exact_tokens_for_tokens(
-                    swapAmount,
-                    0,
-                    [ getA( token0 ), getA( token1 ) ],
+            const ret = await router.contract.methods.swap_exact_tokens_for_tokens(
+                swapAmount,
+                0,
+                [ getA( token0 ), getA( token1 ) ],
+                wallet.address,
+                MaxUint256,
+                undefined,
+                extraGas,
+            )
+            const [ swapAmountRet, expectedOutputAmountRet ] = ret.decodedResult
+
+            token0.expectEvents( ret,
+                emits( 'Transfer' ).withArgs(
+                    wallet.address, getAK( pair ), swapAmount
+                )
+            )
+            token1.expectEvents( ret,
+                emits( 'Transfer' ).withArgs(
+                    getAK( pair ), wallet.address,  expectedOutputAmount
+                )
+            )
+
+            pair.expectEvents( ret,
+                emits( 'Sync' ).withArgs(
+                    token0Amount + swapAmount, token1Amount - expectedOutputAmount
+                ).emits( 'Swap' ).withArgs(
+                    getAK( router ),
                     wallet.address,
-                    MaxUint256,
-                    undefined,
-                    {
-                        ...extraGas,
-                    }
-            //), events( emits( 'Transfer' ) )
-                ),
+                    swapPayload(
+                        swapAmount,
+                        0,
+                        0,
+                        expectedOutputAmount,
+                    )
+                )
             )
 
             expect( swapAmountRet ).to.eq( swapAmount )
@@ -335,26 +360,79 @@ describe( 'Pair Router', () => {
         const tokenCAmount = expand18( 20 )
         const swapAmount = expand18( 1 )
         const expected1OutputAmount = 1662497915624478906n
-        const expectedCOutputAmount = 1421839107917040301n
+        const expectedCOutputAmount = 2843678215834080602n
 
         beforeEach( async () => {
             await addLiquidity( token0Amount, token1Amount, tokenCAmount )
-            await token0.exe( x => x.create_allowance( routerAddr(), MaxUint256 ) )
+            await token0.create_allowance( routerAddr(), MaxUint256 )
         } )
         it( 'happy path', async () => {
-            const amounts = await router.exe(
-                x => x.swap_exact_tokens_for_tokens(
-                    swapAmount,
-                    0,
-                    [ getA( token0 ), getA( token1 ), getA( tokenC ) ],
-                    wallet.address,
-                    MaxUint256,
-                    undefined,
-                    {
-                        ...extraGas,
-                    }
-                ),
+            const ret = await router.contract.methods.swap_exact_tokens_for_tokens(
+                swapAmount,
+                0,
+                [ getA( token0 ), getA( token1 ), getA( tokenC ) ],
+                wallet.address,
+                MaxUint256,
+                undefined,
+                {
+                    ...extraGas,
+                }
             )
+
+            token0.expectEvents( ret,
+                emits( 'Transfer' ).withArgs(
+                    wallet.address, getAK( pair ), swapAmount
+                )
+            )
+            token1.expectEvents( ret,
+                emits( 'Transfer' ).withArgs(
+                    getAK( pair ), getAK( pair1C ), expected1OutputAmount
+                )
+            )
+            tokenC.expectEvents( ret,
+                emits( 'Transfer' ).withArgs(
+                    getAK( pair1C ), wallet.address, expectedCOutputAmount
+                )
+            )
+            pair.expectEvents( ret,
+                emits( 'Sync' ).withArgs(
+                    token0Amount + swapAmount, token1Amount - expected1OutputAmount
+                ).emits( 'Swap' ).withArgs(
+                    getAK( router ),
+                    getAK( pair1C ),
+                    swapPayload(
+                        swapAmount,
+                        0,
+                        0,
+                        expected1OutputAmount,
+                    )
+                )
+            )
+            const pair1CToken0 = await pair1C.token0()
+            const reverseIfTokenCisFirst = ( xs ) =>
+                pair1CToken0 == getA( tokenC ) ? xs.reverse() : xs
+
+            //reverse if tokenC is first token in pair
+            const [ fstSyncArg, sndSyncArg ] = reverseIfTokenCisFirst( [
+                token1Amount + expected1OutputAmount, tokenCAmount - expectedCOutputAmount
+            ] )
+            const [ fstSwapInArg, sndSwapInArg ] = reverseIfTokenCisFirst(
+                [ expected1OutputAmount, 0 ]
+            )
+            const [ fstSwapOutArg, sndSwapOutArg ] = reverseIfTokenCisFirst(
+                [ 0, expectedCOutputAmount, ]
+            )
+            pair1C.expectEvents( ret,
+                emits( 'Sync' ).withArgs(
+                    fstSyncArg, sndSyncArg
+                ).emits( 'Swap' ).withArgs(
+                    getAK( router ),
+                    wallet.address,
+                    //reverse if tokenC is first token in pair
+                    swapPayload( fstSwapInArg, sndSwapInArg, fstSwapOutArg, sndSwapOutArg )
+                )
+            )
+            const amounts = ret.decodedResult
 
             expect( amounts[0] ).to.eq( swapAmount )
             expect( amounts[1] ).to.eq( expected1OutputAmount )
@@ -374,8 +452,8 @@ describe( 'Pair Router', () => {
         } )
 
         it( 'happy path', async () => {
-            await token0.exe( x => x.create_allowance( getAK( router ), MaxUint256 ) )
-            const amounts = await router.exe( x => x.swap_tokens_for_exact_tokens(
+            await token0.create_allowance( getAK( router ), MaxUint256 )
+            const ret = await router.contract.methods.swap_tokens_for_exact_tokens(
                 outputAmount,
                 MaxUint256,
                 [ getA( token0 ), getA( token1 ) ],
@@ -383,8 +461,34 @@ describe( 'Pair Router', () => {
                 MaxUint256,
                 undefined,
                 extraGas,
-            ) )
+            )
 
+            token0.expectEvents( ret,
+                emits( 'Transfer' ).withArgs(
+                    wallet.address, getAK( pair ), expectedSwapAmount
+                )
+            )
+            token1.expectEvents( ret,
+                emits( 'Transfer' ).withArgs(
+                    getAK( pair ), wallet.address,  outputAmount
+                )
+            )
+            pair.expectEvents( ret,
+                emits( 'Sync' ).withArgs(
+                    token0Amount + expectedSwapAmount,
+                    token1Amount - outputAmount
+                ).emits( 'Swap' ).withArgs(
+                    getAK( router ),
+                    wallet.address,
+                    swapPayload(
+                        expectedSwapAmount,
+                        0,
+                        0,
+                        outputAmount,
+                    )
+                )
+            )
+            const amounts = ret.decodedResult
             expect( amounts[0] ).to.eq( expectedSwapAmount )
             expect( amounts[1] ).to.eq( outputAmount )
         } )
@@ -394,8 +498,8 @@ describe( 'Pair Router', () => {
         const token0Amount = expand18( 5 )
         const token1Amount = expand18( 10 )
         const tokenCAmount = expand18( 20 )
-        const expectedSwapAmount = 629003528835597474n
-        const expected1InAmount = 1114454474534715257n
+        const expectedSwapAmount = 279498697843516618n
+        const expected1InAmount = 527899487937496701n
         const outputAmount = expand18( 1 )
 
         beforeEach( async () => {
@@ -403,9 +507,8 @@ describe( 'Pair Router', () => {
         } )
 
         it( 'happy path', async () => {
-            await token0.exe( x => x.create_allowance( getAK( router ), MaxUint256 ) )
-
-            const amounts = await router.exe( x => x.swap_tokens_for_exact_tokens(
+            await token0.create_allowance( getAK( router ), MaxUint256 )
+            const ret = await router.contract.methods.swap_tokens_for_exact_tokens(
                 outputAmount,
                 MaxUint256,
                 [ getA( token0 ), getA( token1 ), getA( tokenC ) ],
@@ -413,7 +516,64 @@ describe( 'Pair Router', () => {
                 MaxUint256,
                 undefined,
                 extraGas,
-            ) )
+            )
+            const amounts = ret.decodedResult
+
+            token0.expectEvents( ret,
+                emits( 'Transfer' ).withArgs(
+                    wallet.address, getAK( pair ), expectedSwapAmount
+                )
+            )
+            token1.expectEvents( ret,
+                emits( 'Transfer' ).withArgs(
+                    getAK( pair ), getAK( pair1C ),  expected1InAmount
+                )
+            )
+            tokenC.expectEvents( ret,
+                emits( 'Transfer' ).withArgs(
+                    getAK( pair1C ), wallet.address,  outputAmount
+                )
+            )
+            pair.expectEvents( ret,
+                emits( 'Sync' ).withArgs(
+                    token0Amount + expectedSwapAmount,
+                    token1Amount - expected1InAmount
+                ).emits( 'Swap' ).withArgs(
+                    getAK( router ),
+                    getAK( pair1C ),
+                    swapPayload(
+                        expectedSwapAmount,
+                        0,
+                        0,
+                        expected1InAmount,
+                    )
+                )
+            )
+            const pair1CToken0 = await pair1C.token0()
+            const reverseIfTokenCisFirst = ( xs ) =>
+                pair1CToken0 == getA( tokenC ) ? xs.reverse() : xs
+
+            //reverse if tokenC is first token in pair
+            const [ fstSyncArg, sndSyncArg ] = reverseIfTokenCisFirst( [
+                token1Amount + expected1InAmount, tokenCAmount - outputAmount
+            ] )
+            const [ fstSwapInArg, sndSwapInArg ] = reverseIfTokenCisFirst(
+                [ expected1InAmount, 0 ]
+            )
+
+            const [ fstSwapOutArg, sndSwapOutArg ] = reverseIfTokenCisFirst(
+                [ 0, outputAmount, ]
+            )
+            pair1C.expectEvents( ret,
+                emits( 'Sync' ).withArgs(
+                    fstSyncArg, sndSyncArg,
+                ).emits( 'Swap' ).withArgs(
+                    getAK( router ),
+                    wallet.address,
+                    //reverse if tokenC is first token in pair
+                    swapPayload( fstSwapInArg, sndSwapInArg, fstSwapOutArg, sndSwapOutArg )
+                )
+            )
 
             expect( amounts[0] ).to.eq( expectedSwapAmount )
             expect( amounts[1] ).to.eq( expected1InAmount )
@@ -428,17 +588,15 @@ describe( 'Pair Router', () => {
         const expectedOutputAmount = 1662497915624478906n
 
         beforeEach( async () => {
-            await waePartner.exe( x => x.transfer( getAK( waePair ), waePartnerAmount ) )
-            await wae.exe( x => x.deposit( { amount: aeAmount.toString() } ) )
-            await wae.exe( x => x.transfer( getAK( waePair ), aeAmount ) )
-            await waePair.exe( x => x.mint( wallet.address, extraGas ) )
-
-            //TODO: why that?
-            await token0.exe( x => x.create_allowance( getAK( router ), MaxUint256 ) )
+            await waePartner.transfer( getAK( waePair ), waePartnerAmount )
+            await wae.deposit( { amount: aeAmount.toString() } )
+            await wae.transfer( getAK( waePair ), aeAmount )
+            await waePair.mint( wallet.address, extraGas )
         } )
 
         it( 'happy path', async () => {
-            const amounts = await router.exe( x => x.swap_exact_ae_for_tokens(
+            const waePairToken0 = await waePair.token0()
+            const ret = await router.contract.methods.swap_exact_ae_for_tokens(
                 0,
                 [ getA( wae ), getA( waePartner ) ]
                 , wallet.address
@@ -448,7 +606,41 @@ describe( 'Pair Router', () => {
                     ...extraGas,
                     amount: swapAmount.toString()
                 } )
+            const amounts = ret.decodedResult
+
+            wae.expectEvents( ret,
+                emits( 'Deposit' ).withArgs(
+                    getAK( router ), swapAmount
+                ).emits( 'Transfer' ).withArgs(
+                    getAK( router ), getAK( waePair ), swapAmount
+                )
             )
+            waePartner.expectEvents( ret,
+                emits( 'Transfer' ).withArgs(
+                    getAK( waePair ), wallet.address, expectedOutputAmount
+                )
+            )
+            const isWaeToken0 = waePairToken0 === getA( waePartner )
+            waePair.expectEvents( ret,
+                emits( 'Sync' ).withArgs(
+                    isWaeToken0
+                        ? waePartnerAmount - expectedOutputAmount
+                        : aeAmount + swapAmount,
+                    isWaeToken0
+                        ? aeAmount + swapAmount
+                        : waePartnerAmount - expectedOutputAmount
+                ).emits( 'Swap' ).withArgs(
+                    getAK( router ),
+                    wallet.address,
+                    swapPayload(
+                        isWaeToken0 ? 0 : swapAmount,
+                        isWaeToken0 ? swapAmount : 0,
+                        isWaeToken0 ? expectedOutputAmount : 0,
+                        isWaeToken0 ? 0 : expectedOutputAmount,
+                    )
+                )
+            )
+
             expect( amounts[0] ).to.eq( swapAmount )
             expect( amounts[1] ).to.eq( expectedOutputAmount )
         } )
@@ -461,15 +653,16 @@ describe( 'Pair Router', () => {
         const outputAmount = expand18( 1 )
 
         beforeEach( async () => {
-            await waePartner.exe( x => x.transfer( getAK( waePair ), waePartnerAmount ) )
-            await wae.exe( x => x.deposit( { amount: aeAmount.toString() } ) )
-            await wae.exe( x => x.transfer( getAK( waePair ), aeAmount ) )
-            await waePair.exe( x => x.mint( wallet.address, extraGas ) )
+            await waePartner.transfer( getAK( waePair ), waePartnerAmount )
+            await wae.deposit( { amount: aeAmount.toString() } )
+            await wae.transfer( getAK( waePair ), aeAmount )
+            await waePair.mint( wallet.address, extraGas )
         } )
 
         it( 'happy path', async () => {
-            await waePartner.exe( x => x.create_allowance( getAK( router ), MaxUint256 ) )
-            const amounts = await router.exe( x => x.swap_tokens_for_exact_ae(
+            const waePairToken0 = await waePair.token0()
+            await waePartner.create_allowance( getAK( router ), MaxUint256 )
+            const ret = await router.contract.methods.swap_tokens_for_exact_ae(
                 outputAmount,
                 MaxUint256,
                 [ getA( waePartner ), getA( wae ) ],
@@ -477,7 +670,38 @@ describe( 'Pair Router', () => {
                 MaxUint256,
                 undefined,
                 extraGas
-            ) )
+            )
+            waePartner.expectEvents( ret,
+                emits( 'Transfer' ).withArgs(
+                    wallet.address, getAK( waePair ), expectedSwapAmount
+                )
+            )
+            wae.expectEvents( ret,
+                emits( 'Transfer' ).withArgs(
+                    getAK( waePair ), getAK( router ), outputAmount
+                )
+            )
+            const isWaeToken0 = waePairToken0 === getA( waePartner )
+            waePair.expectEvents( ret,
+                emits( 'Sync' ).withArgs(
+                    isWaeToken0
+                        ? waePartnerAmount + expectedSwapAmount
+                        : aeAmount - outputAmount,
+                    isWaeToken0
+                        ? aeAmount - outputAmount
+                        : waePartnerAmount + expectedSwapAmount
+                ).emits( 'Swap' ).withArgs(
+                    getAK( router ),
+                    getAK( router ),
+                    swapPayload(
+                        isWaeToken0 ? expectedSwapAmount : 0,
+                        isWaeToken0 ? 0 : expectedSwapAmount,
+                        isWaeToken0 ? 0 : outputAmount,
+                        isWaeToken0 ? outputAmount : 0,
+                    )
+                )
+            )
+            const amounts = ret.decodedResult
             expect( amounts[0] ).to.eq( expectedSwapAmount )
             expect( amounts[1] ).to.eq( outputAmount )
         } )
@@ -490,18 +714,18 @@ describe( 'Pair Router', () => {
         const expectedOutputAmount = 1662497915624478906n
 
         beforeEach( async () => {
-            await waePartner.exe( x => x.transfer(
-                getAK( waePair ), waePartnerAmount ) )
-            await wae.exe( x => x.deposit( { amount: aeAmount.toString() } ) )
-            await wae.exe( x => x.transfer( getAK( waePair ), aeAmount ) )
-            await waePair.exe( x => x.mint( wallet.address, extraGas ) )
+            await waePartner.transfer(
+                getAK( waePair ), waePartnerAmount )
+            await wae.deposit( { amount: aeAmount.toString() } )
+            await wae.transfer( getAK( waePair ), aeAmount )
+            await waePair.mint( wallet.address, extraGas )
         } )
 
         it( 'happy path', async () => {
-            await waePartner.exe( x =>
-                x.create_allowance( getAK( router ), MaxUint256 )
-            )
-            const amounts = await router.exe( x => x.swap_exact_tokens_for_ae(
+            await waePartner.create_allowance( getAK( router ), MaxUint256 )
+            const waePairToken0 = await waePair.token0()
+            const isWaeToken0 = waePairToken0 === getA( waePartner )
+            const ret = await router.contract.methods.swap_exact_tokens_for_ae(
                 swapAmount,
                 0,
                 [ getA( waePartner ), getA( wae ) ],
@@ -509,7 +733,39 @@ describe( 'Pair Router', () => {
                 MaxUint256,
                 undefined,
                 extraGas,
-            ) )
+            )
+
+            waePartner.expectEvents( ret,
+                emits( 'Transfer' ).withArgs(
+                    wallet.address, getAK( waePair ), swapAmount
+                )
+            )
+            wae.expectEvents( ret,
+                emits( 'Transfer' ).withArgs(
+                    getAK( waePair ), getAK( router ), expectedOutputAmount
+                )
+            )
+            waePair.expectEvents( ret,
+                emits( 'Sync' ).withArgs(
+                    isWaeToken0
+                        ? waePartnerAmount + swapAmount
+                        : aeAmount - expectedOutputAmount,
+                    isWaeToken0
+                        ? aeAmount - expectedOutputAmount
+                        : waePartnerAmount + swapAmount
+                ).emits( 'Swap' ).withArgs(
+                    getAK( router ),
+                    getAK( router ),
+                    swapPayload(
+                        isWaeToken0 ? swapAmount : 0,
+                        isWaeToken0 ? 0 : swapAmount,
+                        isWaeToken0 ? 0 : expectedOutputAmount,
+                        isWaeToken0 ? expectedOutputAmount : 0,
+                    )
+                )
+            )
+            const amounts = ret.decodedResult
+
             expect( amounts[0] ).to.eq( swapAmount )
             expect( amounts[1] ).to.eq( expectedOutputAmount )
         } )
@@ -526,13 +782,15 @@ describe( 'Pair Router', () => {
                 getAK( waePair ),
                 waePartnerAmount
             ) )
-            await wae.exe( x => x.deposit( { amount: aeAmount.toString() } ) )
-            await wae.exe( x => x.transfer( getAK( waePair ), aeAmount ) )
-            await waePair.exe( x => x.mint( wallet.address, extraGas ) )
+            await wae.deposit( { amount: aeAmount.toString() } )
+            await wae.transfer( getAK( waePair ), aeAmount )
+            await waePair.mint( wallet.address, extraGas )
         } )
 
         it( 'happy path', async () => {
-            const amounts = await router.exe( x => x.swap_ae_for_exact_tokens(
+            const waePairToken0 = await waePair.token0()
+            const isWaeToken0 = waePairToken0 === getA( waePartner )
+            const ret = await router.contract.methods.swap_ae_for_exact_tokens(
                 outputAmount,
                 [ getA( wae ), getA( waePartner ) ],
                 wallet.address,
@@ -542,7 +800,39 @@ describe( 'Pair Router', () => {
                     ...extraGas,
                     amount: expectedSwapAmount.toString()
                 }
-            ) )
+            )
+            wae.expectEvents( ret,
+                emits( 'Deposit' ).withArgs(
+                    getAK( router ), expectedSwapAmount
+                ).emits( 'Transfer' ).withArgs(
+                    getAK( router ), getAK( waePair ), expectedSwapAmount
+                )
+            )
+            waePartner.expectEvents( ret,
+                emits( 'Transfer' ).withArgs(
+                    getAK( waePair ), wallet.address, outputAmount
+                )
+            )
+            waePair.expectEvents( ret,
+                emits( 'Sync' ).withArgs(
+                    isWaeToken0
+                        ? waePartnerAmount - outputAmount
+                        : aeAmount + expectedSwapAmount,
+                    isWaeToken0
+                        ? aeAmount + expectedSwapAmount
+                        : waePartnerAmount - outputAmount
+                ).emits( 'Swap' ).withArgs(
+                    getAK( router ),
+                    wallet.address,
+                    swapPayload(
+                        isWaeToken0 ? 0 : expectedSwapAmount,
+                        isWaeToken0 ? expectedSwapAmount : 0,
+                        isWaeToken0 ? outputAmount : 0,
+                        isWaeToken0 ? 0 : outputAmount,
+                    )
+                )
+            )
+            const amounts = ret.decodedResult
             expect( amounts[0] ).to.eq( expectedSwapAmount )
             expect( amounts[1] ).to.eq( outputAmount )
         } )

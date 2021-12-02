@@ -7,7 +7,7 @@ function withArgsProcess( argsT, parentCall ) {
         const { head: headT, tail: tailT } = parentCall ? parentCall( tests ) : tests
         function loop( args, head, tail ) {
             const [ arg, tailArgs ] = headAndTail( args )
-            if ( !arg ) {
+            if ( arg == null ) {
                 return { head, tail }
             } else {
                 const [ decodedHead, decodedTail ] = headAndTail( head.decoded || [] )
@@ -27,7 +27,7 @@ function withArgsProcess( argsT, parentCall ) {
                         }
                     }
                 } else {
-                    expect( decodedHead ).to.eq( typeof arg !== 'string' ? arg.toString() : arg  )
+                    expect( decodedHead ).to.eq( typeof arg !== 'string' && arg != null ? arg.toString() : arg  )
                 }
                 return loop( tailArgs, {
                     ...head,

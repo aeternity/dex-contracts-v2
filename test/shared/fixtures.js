@@ -109,7 +109,6 @@ const getContract = async ( source, params, contractAddress, wallet = WALLETS[0]
                 const filtered = ( events || [] ).filter(
                     x =>  x.address == contract.deployInfo.address
                 ).reverse()
-                //console.debug( filtered )
                 if ( tests ) {
                     tests.events( {
                         tail : filtered,
