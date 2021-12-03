@@ -20,6 +20,7 @@ const fs = require( 'fs' )
 
 const NETWORKS = require( '../config/network.json' )
 const DEFAULT_NETWORK_NAME = 'local'
+const FungibleTokenFull = require( 'aeternity-fungible-token/FungibleTokenFull.aes.js' )
 
 //const EXAMPLE_CONTRACT_SOURCE = '../contracts/AedexPool.aes';
 //const EXAMPLE_CONTRACT_SOURCE = './contracts/AedexPool.aes';
@@ -52,13 +53,18 @@ const deploy = async ( secretKey, network, compiler ) => {
     } )
     // a filesystem object must be passed to the compiler if the contract uses custom includes
 
-    const deployContract = async ( source, params, interfaceName ) => {
+    const deployContract_ = async ( { source, file }, params, interfaceName ) => {
         try {
             console.log( '----------------------------------------------------------------------------------------------------' )
             console.log( `%cdeploying '${source}...'`, `color:green` )
 
-            const filesystem       = contractUtils.getFilesystem( source )
-            const contract_content = contractUtils.getContractContent( source )
+            var filesystem, contract_content
+            if ( file ) {
+                filesystem       = contractUtils.getFilesystem( file )
+                contract_content = contractUtils.getContractContent( file )
+            } else {
+                contract_content = source
+            }
 
             const contract          = await client.getContractInstance( { source: contract_content, filesystem } )
             const deployment_result = await contract.deploy( params )
@@ -82,8 +88,14 @@ const deploy = async ( secretKey, network, compiler ) => {
             throw ex
         }
     }
+    const deployContract = async ( file, params, interfaceName ) => 
+        deployContract_( { file }, params, interfaceName )
+    const deploySource = async ( source, params, interfaceName ) => 
+        deployContract_( { source }, params, interfaceName )
+
     const fakeAddress = 'ct_A8WVnCuJ7t1DjAJf4y8hJrAEVpt1T9ypG3nNBdbpKmpthGvUm'
     const fakeAddressAk = 'ak_A8WVnCuJ7t1DjAJf4y8hJrAEVpt1T9ypG3nNBdbpKmpthGvUm'
+    const FungibleTokenFullWithString = 'include "String.aes"\n' + FungibleTokenFull
     const deployments =
         [
             /* 00 */ () => deployContract( './contracts/test/BuildAll.aes', []  ),
@@ -98,8 +110,8 @@ const deploy = async ( secretKey, network, compiler ) => {
             /* 04 */ () => deployContract( './contracts/AedexV2Factory.aes', 
                 [ fakeAddressAk, fakeAddress ],
             ),
-            /* 05 */ () => deployContract( './contracts/test/TestAEX9.aes', 
-                [ "-", 0, "-", 0 ]  
+            /* 05 */ () => deploySource( FungibleTokenFullWithString, 
+                [ "-", 0, "-", 0 ],
             ),
         ]
     await deployments[5]()

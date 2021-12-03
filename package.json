@@ -23,7 +23,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@aeternity/aepp-sdk": "github:aeternity/aepp-sdk-js.git#develop",
+    "@aeternity/aepp-sdk": "^10.0.0-beta.1",
+    "aeternity-fungible-token": "^1.0.0",
     "axios": "^0.24.0",
     "crypto": "^1.0.1",
     "decimal.js": "^10.2.1",

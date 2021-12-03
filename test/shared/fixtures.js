@@ -30,6 +30,8 @@ import NETWORKS from '../../config/network.json'
 
 import { defaultWallets as WALLETS } from '../../config/wallets.json'
 import contractUtils from '../../utils/contract-utils'
+import FungibleTokenFull from 'aeternity-fungible-token/FungibleTokenFull.aes'
+const FungibleTokenFullWithString = 'include "String.aes"\n' + FungibleTokenFull
 
 const NETWORK_NAME = "local"
 const wallet0 = {
@@ -42,21 +44,40 @@ const hash = ( content ) =>
 
 const contents = {}
 
-const getContent = ( path ) => {
-    if ( contents[path] ) {
-        return contents[path]
-    } else {
-        const filesystem       = contractUtils.getFilesystem( path )
-        const contract_content = contractUtils.getContractContent( path )
-        const contentHash = hash( contract_content )
+    //const deployContract_ = async ( { source, file }, params, interfaceName ) => {
+        //try {
+            //console.log( '----------------------------------------------------------------------------------------------------' )
+            //console.log( `%cdeploying '${source}...'`, `color:green` )
 
-        const ret = {
-            filesystem,
-            contract_content,
-            contentHash,
+            //var filesystem, contract_content
+            //if ( file ) {
+                //filesystem       = contractUtils.getFilesystem( file )
+                //contract_content = contractUtils.getContractContent( file )
+            //} else {
+                //contract_content = source
+            //}
+const getContent = ( { source, file } ) => {
+    if ( file ) {
+        if ( contents[file] ) {
+            return contents[file]
+        } else {
+            const filesystem       = contractUtils.getFilesystem( file )
+            const contract_content = contractUtils.getContractContent( file )
+            const contentHash = hash( contract_content )
+
+            const ret = {
+                filesystem,
+                contract_content,
+                contentHash,
+            }
+            contents[file] = ret
+            return ret
         }
-        contents[path] = ret
-        return ret
+    } else {
+        return {
+            filesystem       : undefined,
+            contract_content : source,
+        }
     }
 }
 
@@ -75,14 +96,20 @@ const createClient = async ( wallet = WALLETS[0] ) => {
     } )
 }
 
-const getContract = async ( source, params, contractAddress, wallet = WALLETS[0] ) => {
+const getContract = ( file, params, contractAddress, wallet = WALLETS[0] ) => 
+    getContractEx( { file }, params, contractAddress, wallet )
+
+const getContractFromSource = ( source, title, params, contractAddress, wallet = WALLETS[0] ) => 
+    getContractEx( { source, title }, params, contractAddress, wallet )
+
+const getContractEx = async ( { source, file, title }, params, contractAddress, wallet = WALLETS[0] ) => {
 
     const client = await createClient( wallet )
     try {
         const {
             filesystem,
             contract_content,
-        } = getContent( source )
+        } = getContent( { source, file } )
 
         const contract           = await client.getContractInstance(
             {
@@ -99,7 +126,7 @@ const getContract = async ( source, params, contractAddress, wallet = WALLETS[0]
         return {
             contract, exe,  deploy: async ( extra ) => {
                 const deployment_result = await contract.deploy( params, extra )
-                console.debug( `%c----> Contract deployed: '${source}...'`, `color:green` )
+                console.debug( `%c----> Contract deployed: '${file || title}...'`, `color:green` )
 
                 return deployment_result
             },
@@ -197,13 +224,16 @@ const factoryFixture = async ( wallet, debugMode ) => {
 }
 
 const tokenFixture = async ( ix, liquidity ) => {
-    const token = await getContract(
-        './contracts/test/TestAEX9.aes',
+
+    const token = await getContractFromSource(
+        FungibleTokenFullWithString,
+        'FungibleTokenFull',
         [ 'TestAEX9-' + ix, 18n, 'TAEX9-' + ix, liquidity ],
     )
     await token.deploy()
     return token
 }
+getContractFromSource
 const waeFixture = async ( ) => {
     const token = await getContract(
         './contracts/test/WAE.aes',
