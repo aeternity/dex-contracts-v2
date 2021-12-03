@@ -10,7 +10,7 @@ contract AedexV2Factory =
               fee_to: option(address)
             , fee_to_setter: address
             , pairs: map(IAEX9Minimal,map(IAEX9Minimal,IAedexV2Pair))
-            , all_pairs: list(address)
+            , all_pairs: list(IAedexV2Pair)
             , pair_model: IAedexV2Pair
             , this_factory: option(IAedexV2FactoryForPair)
             , allow_debug_mode: bool
@@ -46,7 +46,7 @@ contract AedexV2Factory =
         put( state { this_factory = Some(this_factory) })
 
     entrypoint all_pairs_length(): int = List.length(state.all_pairs)
-    entrypoint all_pairs(ix: int): address = List.get(ix,state.all_pairs)
+    entrypoint all_pairs(ix: int): IAedexV2Pair = List.get(ix,state.all_pairs)
     entrypoint fee_to() = state.fee_to
     entrypoint fee_to_setter() = state.fee_to_setter
     entrypoint allow_debug_mode() = state.allow_debug_mode
@@ -110,7 +110,7 @@ contract AedexV2Factory =
             let old_t0_map: map(IAEX9Minimal,IAedexV2Pair) = Map.lookup_default(token0,p,{})
             old_t0_map { [token1] = pair }
 
-        let new_all_pairs = pair.address::state.all_pairs
+        let new_all_pairs = pair::state.all_pairs
         put( state { pairs @ p = p { [token0] = update_token0_map(p) }
                    , all_pairs = new_all_pairs
                    })

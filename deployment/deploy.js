@@ -83,6 +83,7 @@ const deploy = async ( secretKey, network, compiler ) => {
         }
     }
     const fakeAddress = 'ct_A8WVnCuJ7t1DjAJf4y8hJrAEVpt1T9ypG3nNBdbpKmpthGvUm'
+    const fakeAddressAk = 'ak_A8WVnCuJ7t1DjAJf4y8hJrAEVpt1T9ypG3nNBdbpKmpthGvUm'
     const deployments =
         [
             /* 00 */ () => deployContract( './contracts/test/BuildAll.aes', []  ),
@@ -94,8 +95,11 @@ const deploy = async ( secretKey, network, compiler ) => {
                 'IAedexV2Router.aes',
             ),
             /* 03 */ () => deployContract( './contracts/test/WAE.aes', [], 'IWAE.aes' ),
+            /* 04 */ () => deployContract( './contracts/AedexV2Factory.aes', 
+                [ fakeAddressAk, fakeAddress ]  
+            ),
         ]
-    await deployments[3]()
+    await deployments[4]()
 
     //console.log(await contract.methods.getOwner())
 }

@@ -33,6 +33,7 @@ contract AedexV2Pair =
             , int amount1_out,
             */
         )
+        //represents the new pair balances of token0 and token1
         | Sync(int /*reserve0*/, int /*reserve1*/)
 
     record state = {
@@ -87,7 +88,7 @@ contract AedexV2Pair =
         (balance0,balance1)
 
 
-    function _safe_transfer(token: IAEX9Minimal, to: address, value: int) =
+    function safe_transfer(token: IAEX9Minimal, to: address, value: int) =
         require(value >= 0,"AedexV2Pair: NEGATIVE_VALUE_ON_TRANSFER")
         token.transfer(to,value)
 
@@ -98,7 +99,7 @@ contract AedexV2Pair =
         put( state{ debug_time= Some(time)  } )
 
     // update reserves and, on the first call per block, price accumulators
-    stateful function _update(balance0: int, balance1: int, reserve0: int,reserve1: int  ) =
+    stateful function update(balance0: int, balance1: int, reserve0: int,reserve1: int  ) =
         require( balance0 >= 0 && balance1 >= 0 && reserve0 >= 0 && reserve1 >= 0,"AedexV2Pair: LP" )
 
         let block_timestamp = timestamp()
@@ -116,7 +117,7 @@ contract AedexV2Pair =
         Chain.event( Sync(balance0, balance1) ) // actually new reserve0&reserve1
 
     // if fee is on, mint liquidity equivalent to 1/6th of the growth in sqrt(k)
-    stateful function _mint_fee(reserve0: int, reserve1: int): bool =
+    stateful function mint_fee(reserve0: int, reserve1: int): bool =
         require(reserve0 >= 0 && reserve1 >= 0,"AedexV2Pair: LP")
         let k_last = state.k_last // gas savings
 
@@ -129,7 +130,7 @@ contract AedexV2Pair =
                     let numerator = state.total_supply * (root_k - root_k_last_last)
                     let denominator = root_k*5 + root_k_last_last
                     let liquidity = numerator / denominator
-                    if (liquidity > 0) _mint(Some(fee_to), liquidity)
+                    if (liquidity > 0) mint_update(Some(fee_to), liquidity)
             true
           None =>
             if( k_last != 0) put( state { k_last = 0})
@@ -151,25 +152,25 @@ contract AedexV2Pair =
 
     // this low-level function should be called from a contract which performs important safety checks
     stateful entrypoint mint(to: address): int =
-        let (_reserve0, _reserve1) = (state.reserve0,state.reserve1) // gas savings
+        let (reserve0, reserve1) = (state.reserve0,state.reserve1) // gas savings
         let (balance0,balance1) = get_balances()
-        let amount0 = balance0 - _reserve0
-        let amount1 = balance1 - _reserve1
+        let amount0 = balance0 - reserve0
+        let amount1 = balance1 - reserve1
 
-        let fee_on = _mint_fee(_reserve0, _reserve1)
+        let fee_on = mint_fee(reserve0, reserve1)
         let _total_supply = state.total_supply // gas savings, must be defined here since totalSupply can update in gc
 
         let min_liq = minimum_liquidity()
         let liquidity =
                 if (_total_supply == 0)
-                    _mint(None, min_liq) // permanently lock the first MINIMUM_LIQUIDITY tokens
+                    mint_update(None, min_liq) // permanently lock the first MINIMUM_LIQUIDITY tokens
                     Math.sqrt(amount0 * amount1) - min_liq
                 else
-                    Math.min((amount0*_total_supply) / _reserve0, (amount1*_total_supply) / _reserve1)
+                    Math.min((amount0*_total_supply) / reserve0, (amount1*_total_supply) / reserve1)
         require(liquidity > 0, "AedexV2Pair: INSUFFICIENT_LIQUIDITY_MINTED")
-        _mint(Some(to), liquidity)
+        mint_update(Some(to), liquidity)
 
-        _update(balance0, balance1, _reserve0, _reserve1)
+        update(balance0, balance1, reserve0, reserve1)
         if (fee_on)  put( state{ k_last = state.reserve0*state.reserve1 }) // reserve0 and reserve1 are up-to-date
         Chain.event( Mint(Call.caller, amount0, amount1) )
         liquidity
@@ -183,17 +184,17 @@ contract AedexV2Pair =
         let (balance0,balance1) = get_balances()
         let liquidity = Option.default(0,balance(Contract.address))
 
-        let fee_on = _mint_fee(_reserve0, _reserve1)
+        let fee_on = mint_fee(_reserve0, _reserve1)
         let _total_supply = state.total_supply // gas savings, must be defined here since totalSupply
-                                               // can update in _mintFee
+                                               // can update in mintFee
         let amount0 = (liquidity*balance0) / _total_supply // using balances ensures pro-rata distribution
         let amount1 = (liquidity*balance1) / _total_supply // using balances ensures pro-rata distribution
         _burn(Contract.address, liquidity)
-        _safe_transfer(_token0, to, amount0)
-        _safe_transfer(_token1, to, amount1)
+        safe_transfer(_token0, to, amount0)
+        safe_transfer(_token1, to, amount1)
         let (balance0,balance1) = get_balances()
 
-        _update(balance0, balance1, _reserve0, _reserve1)
+        update(balance0, balance1, _reserve0, _reserve1)
         if (fee_on)  put( state{ k_last = state.reserve0*state.reserve1 }) // reserve0 and reserve1 are up-to-date
         Chain.event( Burn(Call.caller, to, AE.xsToPayload([amount0, amount1])) )
         {amount0 = amount0,amount1 = amount1}
@@ -214,8 +215,8 @@ contract AedexV2Pair =
         let _token1 = state.token1
         require(to != _token0.address && to != _token1.address, "AedexV2Pair: INVALID_TO")
 
-        if (amount0_out > 0) _safe_transfer(_token0, to, amount0_out) // optimistically transfer tokens
-        if (amount1_out > 0) _safe_transfer(_token1, to, amount1_out) // optimistically transfer tokens
+        if (amount0_out > 0) safe_transfer(_token0, to, amount0_out) // optimistically transfer tokens
+        if (amount1_out > 0) safe_transfer(_token1, to, amount1_out) // optimistically transfer tokens
 
         Option.map((callback) => callback.aedex_v2_call(Call.caller,amount0_out,amount1_out),callback_opt)
 
@@ -232,7 +233,7 @@ contract AedexV2Pair =
             "AedexV2Pair: INSUFFICIENT_BALANCE"
             )
 
-        _update(balance0, balance1, _reserve0, _reserve1)
+        update(balance0, balance1, _reserve0, _reserve1)
         Chain.event( Swap( Call.caller, to,
             AE.xsToPayload([ amount0_in, amount1_in, amount0_out, amount1_out])
             ))
@@ -244,8 +245,8 @@ contract AedexV2Pair =
         let balance0 = Option.default(0,_token0.balance(Contract.address))
         let balance1 = Option.default(0,_token1.balance(Contract.address))
 
-        _safe_transfer(_token0, to, balance0 - state.reserve0)
-        _safe_transfer(_token1, to, balance1 - state.reserve1)
+        safe_transfer(_token0, to, balance0 - state.reserve0)
+        safe_transfer(_token1, to, balance1 - state.reserve1)
 
     // force reserves to match balances
     stateful entrypoint sync() =
@@ -254,7 +255,7 @@ contract AedexV2Pair =
         let balance0 = Option.default(0,_token0.balance(Contract.address))
         let balance1 = Option.default(0,_token1.balance(Contract.address))
 
-        _update(
+        update(
             balance0,
             balance1,
             state.reserve0,
@@ -263,7 +264,7 @@ contract AedexV2Pair =
 
     //AEX9 PART
 
-    stateful function _mint(to_opt: option(address),value: int) =
+    stateful function mint_update(to_opt: option(address),value: int) =
         AE.validate_positive(value)
         switch(to_opt)
             Some(to) =>
@@ -282,6 +283,8 @@ contract AedexV2Pair =
                   , balance_of[ from = 0] @ p = p - value
                   })
 
+    //TODO: we might want as meta_info to reflect token1&token0 meta_info
+    //find a suitable combination
     entrypoint meta_info(): IAEX9Minimal.meta_info = {
           name = "Aedex v2",
           symbol = "AEDX-V2",

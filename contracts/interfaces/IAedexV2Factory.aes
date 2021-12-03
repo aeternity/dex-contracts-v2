@@ -9,7 +9,7 @@ contract interface IAedexV2Factory =
     entrypoint fee_to_setter: () => address
 
     entrypoint get_pair: (IAEX9Minimal /*tokenA*/, IAEX9Minimal /*tokenB*/) => option(IAedexV2Pair)
-    entrypoint all_pairs: (int) => address
+    entrypoint all_pairs: (int) => IAedexV2Pair
     entrypoint all_pairs_length: () => int
 
     //TODO: we exclude this because of the circular reference
