@@ -46,7 +46,7 @@ describe( 'AEX9', () => {
     beforeEachWithSnapshot( 'first compile pool factory', async () => {
         contract = await getContract(
             './contracts/test/TestAEX9.aes',
-            [ TOTAL_SUPPLY.toString() ],
+            [ 'TestAEX9', 18n, 'TAEX9', TOTAL_SUPPLY ],
             undefined,
             wallet,
         )
@@ -61,7 +61,7 @@ describe( 'AEX9', () => {
         expect( decimals ).to.eq( 18n )
 
         expect( await exe( x => x.total_supply() ) ).to.eq( TOTAL_SUPPLY )
-        expect( await exe( x => x.balance_str( wallet.address ) ) ).to.eq( TOTAL_SUPPLY.toString() )
+        expect( await exe( x => x.balance( wallet.address ) ) ).to.eq( TOTAL_SUPPLY )
     } )
     it( 'approve', async () => {
         await contract.exe(

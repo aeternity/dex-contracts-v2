@@ -196,10 +196,10 @@ const factoryFixture = async ( wallet, debugMode ) => {
     return factory
 }
 
-const tokenFixture = async ( liquidity ) => {
+const tokenFixture = async ( ix, liquidity ) => {
     const token = await getContract(
         './contracts/test/TestAEX9.aes',
-        [ liquidity ],
+        [ 'TestAEX9-' + ix, 18n, 'TAEX9-' + ix, liquidity ],
     )
     await token.deploy()
     return token
@@ -225,12 +225,12 @@ const router01Fixture = async ( factory, wae ) => {
 
 const routerFixture = async ( wallet = wallet0 ) => {
     const liq = BigInt( expandTo18Decimals( 10000 ) )
-    const tokenA = await tokenFixture( liq )
-    const tokenB = await tokenFixture( liq )
-    const tokenC = await tokenFixture( liq )
+    const tokenA = await tokenFixture( 'A', liq )
+    const tokenB = await tokenFixture( 'B', liq )
+    const tokenC = await tokenFixture( 'C', liq )
 
     const wae = await waeFixture()
-    const waePartner = await tokenFixture( liq )
+    const waePartner = await tokenFixture( 'WaeP', liq )
 
     const factory = await factoryFixture( wallet )
 
@@ -293,8 +293,8 @@ const pairFixture = async ( wallet = wallet0 ) => {
     const factory = await factoryFixture( wallet, true )
 
     const liq = BigInt( expandTo18Decimals( 10000 ) )
-    const tokenA = await tokenFixture( liq )
-    const tokenB = await tokenFixture( liq )
+    const tokenA = await tokenFixture( 'A', liq )
+    const tokenB = await tokenFixture( 'B', liq )
 
     const pairAddress = await factory.exe( x => x.create_pair(
         getA( tokenA ),

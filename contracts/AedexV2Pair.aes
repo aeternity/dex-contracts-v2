@@ -20,9 +20,9 @@ contract AedexV2Pair =
 
 
         | LockLiquidity(int)
-        | Mint(address /*indexed sender*/, int /*amount0*/, int /*amount1*/)
-        | Burn(address /*indexed sender*/, address /*indexed to*/, string /*int amount0 | int amount1*/ )
-        | Swap(
+        | PairMint(address /*indexed sender*/, int /*amount0*/, int /*amount1*/)
+        | PairBurn(address /*indexed sender*/, address /*indexed to*/, string /*int amount0 | int amount1*/ )
+        | SwapTokens(
             address /*indexed sender*/
             , address /*indexed to*/
             , string
@@ -172,7 +172,7 @@ contract AedexV2Pair =
 
         update(balance0, balance1, reserve0, reserve1)
         if (fee_on)  put( state{ k_last = state.reserve0*state.reserve1 }) // reserve0 and reserve1 are up-to-date
-        Chain.event( Mint(Call.caller, amount0, amount1) )
+        Chain.event( PairMint(Call.caller, amount0, amount1) )
         liquidity
 
 
@@ -196,7 +196,7 @@ contract AedexV2Pair =
 
         update(balance0, balance1, _reserve0, _reserve1)
         if (fee_on)  put( state{ k_last = state.reserve0*state.reserve1 }) // reserve0 and reserve1 are up-to-date
-        Chain.event( Burn(Call.caller, to, AE.xsToPayload([amount0, amount1])) )
+        Chain.event( PairBurn(Call.caller, to, AE.xsToPayload([amount0, amount1])) )
         {amount0 = amount0,amount1 = amount1}
 
     // this low-level function should be called from a contract which performs important safety checks
@@ -234,7 +234,7 @@ contract AedexV2Pair =
             )
 
         update(balance0, balance1, _reserve0, _reserve1)
-        Chain.event( Swap( Call.caller, to,
+        Chain.event( SwapTokens( Call.caller, to,
             AE.xsToPayload([ amount0_in, amount1_in, amount0_out, amount1_out])
             ))
 

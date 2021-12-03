@@ -96,10 +96,13 @@ const deploy = async ( secretKey, network, compiler ) => {
             ),
             /* 03 */ () => deployContract( './contracts/test/WAE.aes', [], 'IWAE.aes' ),
             /* 04 */ () => deployContract( './contracts/AedexV2Factory.aes', 
-                [ fakeAddressAk, fakeAddress ]  
+                [ fakeAddressAk, fakeAddress ],
+            ),
+            /* 05 */ () => deployContract( './contracts/test/TestAEX9.aes', 
+                [ "-", 0, "-", 0 ]  
             ),
         ]
-    await deployments[4]()
+    await deployments[5]()
 
     //console.log(await contract.methods.getOwner())
 }

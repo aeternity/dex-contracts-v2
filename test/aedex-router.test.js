@@ -95,19 +95,19 @@ describe( 'Pair Router', () => {
             extraGas,
         )
         token0.expectEvents( ret,
-            emits( "Transfer" ).withArgs(
+            emits( 'Transfer' ).withArgs(
                 wallet.address, getAK( pair ), token0Amount
             ) )
         token1.expectEvents( ret,
-            emits( "Transfer" ).withArgs(
+            emits( 'Transfer' ).withArgs(
                 wallet.address, getAK( pair ), token1Amount
             ) )
         pair.expectEvents( ret,
-            emits( "LockLiquidity" ).withArgs(
+            emits( 'LockLiquidity' ).withArgs(
                 MINIMUM_LIQUIDITY
-            ).emits( "Sync" ).withArgs(
+            ).emits( 'Sync' ).withArgs(
                 token0Amount, token1Amount
-            ).emits( "Mint" ).withArgs(
+            ).emits( 'PairMint' ).withArgs(
                 getAK( router ), token0Amount, token1Amount
             )
         )
@@ -139,12 +139,12 @@ describe( 'Pair Router', () => {
         )
 
         waePair.expectEvents( ret,
-            emits( "LockLiquidity" ).withArgs(
+            emits( 'LockLiquidity' ).withArgs(
                 MINIMUM_LIQUIDITY
             ).emits( 'Sync' ).withArgs(
                 waePairToken0 === getA( waePartner ) ? waePartnerAmount : aeAmount,
                 waePairToken0 === getA( waePartner ) ? aeAmount : waePartnerAmount,
-            ).emits( 'Mint' ).withArgs(
+            ).emits( 'PairMint' ).withArgs(
                 getAK( router ),
                 waePairToken0 === getA( waePartner ) ? waePartnerAmount : aeAmount,
                 waePairToken0 === getA( waePartner ) ? aeAmount : waePartnerAmount,
@@ -194,7 +194,7 @@ describe( 'Pair Router', () => {
                 wallet.address, getAK( pair ), expectedLiquidity - MINIMUM_LIQUIDITY
             ).emits( 'Sync' ).withArgs(
                 500, 2000
-            ).emits( 'Burn' ).withArgs(
+            ).emits( 'PairBurn' ).withArgs(
                 getAK( router ),
                 wallet.address,
                 `${token0Amount - 500n}|${token1Amount - 2000n}`
@@ -258,11 +258,11 @@ describe( 'Pair Router', () => {
             ).emits( 'Sync' ).withArgs(
                 waePairToken0 === getA( waePartner ) ? 500 : 2000,
                 waePairToken0 === getA( waePartner ) ? 2000 : 500
-            ).emits( 'Burn' ).withArgs(
+            ).emits( 'PairBurn' ).withArgs(
                 getAK( router ),
                 getAK( router ),
                 ( waePairToken0 === getA( waePartner ) ? waePartnerAmount - 500n : aeAmount - 2000n )
-                + "|" +
+                + '|' +
                 ( waePairToken0 === getA( waePartner ) ? aeAmount - 2000n : waePartnerAmount - 500n ),
             )
         )
@@ -336,7 +336,7 @@ describe( 'Pair Router', () => {
             pair.expectEvents( ret,
                 emits( 'Sync' ).withArgs(
                     token0Amount + swapAmount, token1Amount - expectedOutputAmount
-                ).emits( 'Swap' ).withArgs(
+                ).emits( 'SwapTokens' ).withArgs(
                     getAK( router ),
                     wallet.address,
                     swapPayload(
@@ -397,7 +397,7 @@ describe( 'Pair Router', () => {
             pair.expectEvents( ret,
                 emits( 'Sync' ).withArgs(
                     token0Amount + swapAmount, token1Amount - expected1OutputAmount
-                ).emits( 'Swap' ).withArgs(
+                ).emits( 'SwapTokens' ).withArgs(
                     getAK( router ),
                     getAK( pair1C ),
                     swapPayload(
@@ -425,7 +425,7 @@ describe( 'Pair Router', () => {
             pair1C.expectEvents( ret,
                 emits( 'Sync' ).withArgs(
                     fstSyncArg, sndSyncArg
-                ).emits( 'Swap' ).withArgs(
+                ).emits( 'SwapTokens' ).withArgs(
                     getAK( router ),
                     wallet.address,
                     //reverse if tokenC is first token in pair
@@ -477,7 +477,7 @@ describe( 'Pair Router', () => {
                 emits( 'Sync' ).withArgs(
                     token0Amount + expectedSwapAmount,
                     token1Amount - outputAmount
-                ).emits( 'Swap' ).withArgs(
+                ).emits( 'SwapTokens' ).withArgs(
                     getAK( router ),
                     wallet.address,
                     swapPayload(
@@ -538,7 +538,7 @@ describe( 'Pair Router', () => {
                 emits( 'Sync' ).withArgs(
                     token0Amount + expectedSwapAmount,
                     token1Amount - expected1InAmount
-                ).emits( 'Swap' ).withArgs(
+                ).emits( 'SwapTokens' ).withArgs(
                     getAK( router ),
                     getAK( pair1C ),
                     swapPayload(
@@ -567,7 +567,7 @@ describe( 'Pair Router', () => {
             pair1C.expectEvents( ret,
                 emits( 'Sync' ).withArgs(
                     fstSyncArg, sndSyncArg,
-                ).emits( 'Swap' ).withArgs(
+                ).emits( 'SwapTokens' ).withArgs(
                     getAK( router ),
                     wallet.address,
                     //reverse if tokenC is first token in pair
@@ -629,7 +629,7 @@ describe( 'Pair Router', () => {
                     isWaeToken0
                         ? aeAmount + swapAmount
                         : waePartnerAmount - expectedOutputAmount
-                ).emits( 'Swap' ).withArgs(
+                ).emits( 'SwapTokens' ).withArgs(
                     getAK( router ),
                     wallet.address,
                     swapPayload(
@@ -690,7 +690,7 @@ describe( 'Pair Router', () => {
                     isWaeToken0
                         ? aeAmount - outputAmount
                         : waePartnerAmount + expectedSwapAmount
-                ).emits( 'Swap' ).withArgs(
+                ).emits( 'SwapTokens' ).withArgs(
                     getAK( router ),
                     getAK( router ),
                     swapPayload(
@@ -753,7 +753,7 @@ describe( 'Pair Router', () => {
                     isWaeToken0
                         ? aeAmount - expectedOutputAmount
                         : waePartnerAmount + swapAmount
-                ).emits( 'Swap' ).withArgs(
+                ).emits( 'SwapTokens' ).withArgs(
                     getAK( router ),
                     getAK( router ),
                     swapPayload(
@@ -821,7 +821,7 @@ describe( 'Pair Router', () => {
                     isWaeToken0
                         ? aeAmount + expectedSwapAmount
                         : waePartnerAmount - outputAmount
-                ).emits( 'Swap' ).withArgs(
+                ).emits( 'SwapTokens' ).withArgs(
                     getAK( router ),
                     wallet.address,
                     swapPayload(

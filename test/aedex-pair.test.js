@@ -54,24 +54,15 @@ describe( 'Pair Factory', () => {
     // entrypoint wrappers
     //------------------------------------------------------------------------------
 
-    const totalSupplyStr = ( isToken0 ) => {
+    const totalSupply = ( isToken0 ) => {
         const token = isToken0 ? token0 : token1
-        console.debug( `token${isToken0 ? 0 : 1}.total_supply_str()` )
+        console.debug( `token${isToken0 ? 0 : 1}.total_supply()` )
 
-        return token.exe( x => x.total_supply_str( ) )
+        return token.exe( x => x.total_supply( ) )
     }
 
-    const token0TotalSupplyStr = ( address ) => totalSupplyStr( true, address )
-    const token1TotalSupplyStr = ( address ) => totalSupplyStr( false, address )
-
-    const balanceStr = ( isToken0, address ) => {
-        const token = isToken0 ? token0 : token1
-        console.debug( `token${isToken0 ? 0 : 1}.balance_str( ${address})` )
-        return token.exe( x => x.balance_str( address ) )
-    }
-
-    const token0BalanceStr = ( address ) => balanceStr( true, address )
-    const token1BalanceStr = ( address ) => balanceStr( false, address )
+    const token0TotalSupply = ( address ) => totalSupply( true, address )
+    const token1TotalSupply = ( address ) => totalSupply( false, address )
 
     const balance = ( isToken0, address ) => {
         const token = isToken0 ? token0 : token1
@@ -168,11 +159,11 @@ describe( 'Pair Factory', () => {
         ).to.eq( expectedLiquidity - MINIMUM_LIQUIDITY )
 
         expect(
-            await token0BalanceStr( pairAddress() )
-        ).to.eq( token0Amount.toString() )
+            await token0Balance( pairAddress() )
+        ).to.eq( BigInt( token0Amount ) )
         expect(
-            await token1BalanceStr( pairAddress() )
-        ).to.eq( token1Amount.toString() )
+            await token1Balance( pairAddress() )
+        ).to.eq( BigInt( token1Amount ) )
 
         const reserves = await getReserves()
         expect( reserves.reserve0 ).to.eq( BigInt( token0Amount ) )
@@ -282,17 +273,17 @@ describe( 'Pair Factory', () => {
         expect( await token1Balance( pairAddress() ) )
             .to.eq( BigInt( token1Amount ) - BigInt( expectedOutputAmount ) )
 
-        const totalSupplyToken0 = await token0TotalSupplyStr()
-        const totalSupplyToken1 = await token1TotalSupplyStr()
+        const totalSupplyToken0 = await token0TotalSupply()
+        const totalSupplyToken1 = await token1TotalSupply()
 
         expect( await token0Balance( wallet.address ) )
             .to.eq(
-                BigInt( BigNumber.from( totalSupplyToken0 ) ) -
+                totalSupplyToken0  -
                 BigInt( token0Amount ) -
                 BigInt( swapAmount )
             )
         expect( await token1Balance( wallet.address ) )
-            .to.eq( BigInt( BigNumber.from( totalSupplyToken1 ) ) -
+            .to.eq( totalSupplyToken1 -
                 BigInt( token1Amount ) +
                 BigInt( expectedOutputAmount )
             )
@@ -316,26 +307,21 @@ describe( 'Pair Factory', () => {
             BigInt( token1Amount ) + BigInt( swapAmount )
         )
 
-        expect( await token0BalanceStr( pairAddress() ) )
-            .to.eq( token0Amount.sub( expectedOutputAmount ).toString() )
-        expect( await token1BalanceStr( pairAddress() ) )
-            .to.eq( token1Amount.add( swapAmount ).toString() )
+        expect( await token0Balance( pairAddress() ) )
+            .to.eq( BigInt( token0Amount.sub( expectedOutputAmount ) ) )
+        expect( await token1Balance( pairAddress() ) )
+            .to.eq( BigInt( token1Amount.add( swapAmount ) ) )
 
-        const totalSupplyToken0 = await token0TotalSupplyStr()
-        const totalSupplyToken1 = await token1TotalSupplyStr()
-        expect( await token0BalanceStr( wallet.address ) )
-            .to.eq(
-                BigNumber.from( totalSupplyToken0 )
-                    .sub( token0Amount )
-                    .add( expectedOutputAmount )
-                    .toString()
+        const totalSupplyToken0 = await token0TotalSupply()
+        const totalSupplyToken1 = await token1TotalSupply()
+        expect( await token0Balance( wallet.address ) )
+            .to.eq( totalSupplyToken0 
+                - BigInt( token0Amount )
+                + BigInt( expectedOutputAmount )
             )
-        expect( await token1BalanceStr( wallet.address ) )
-            .to.eq(
-                BigNumber.from( totalSupplyToken1 )
-                    .sub( token1Amount )
-                    .sub( swapAmount )
-                    .toString()
+        expect( await token1Balance( wallet.address ) )
+            .to.eq( totalSupplyToken1 - BigInt( token1Amount )
+                - BigInt( swapAmount )
             )
     } )
     it( 'burn', async () => {
@@ -351,16 +337,16 @@ describe( 'Pair Factory', () => {
 
         expect( await pairBalance( wallet.address ) ).to.eq( 0n )
         expect( await pairTotalSupply() ).to.eq( MINIMUM_LIQUIDITY )
-        expect( await token0BalanceStr( pairAddress() ) ).to.eq( '1000' )
-        expect( await token1BalanceStr( pairAddress() ) ).to.eq( '1000' )
-        const totalSupplyToken0 = await token0TotalSupplyStr()
-        const totalSupplyToken1 = await token1TotalSupplyStr()
+        expect( await token0Balance( pairAddress() ) ).to.eq( 1000n )
+        expect( await token1Balance( pairAddress() ) ).to.eq( 1000n )
+        const totalSupplyToken0 = await token0TotalSupply()
+        const totalSupplyToken1 = await token1TotalSupply()
         expect(
-            await token0BalanceStr( wallet.address )
-        ).to.eq( BigNumber.from( totalSupplyToken0 ).sub( 1000 ).toString() )
+            await token0Balance( wallet.address )
+        ).to.eq( totalSupplyToken0 - 1000n )
         expect(
-            await token1BalanceStr( wallet.address )
-        ).to.eq( BigNumber.from( totalSupplyToken1 ).sub( 1000 ).toString() )
+            await token1Balance( wallet.address )
+        ).to.eq( totalSupplyToken1 - 1000n )
     } )
     it( 'price{0,1}CumulativeLast', async () => {
         const token0Amount = expandTo18Decimals( 3 )
@@ -456,17 +442,9 @@ describe( 'Pair Factory', () => {
 
         // using 1000 here instead of the symbolic MINIMUM_LIQUIDITY because the amounts only happen to be equal...
         // ...because the initial liquidity amounts were equal
-        expect( await token0BalanceStr( pairAddress() ) )
-            .to.eq(
-                BigNumber.from( 1000 )
-                    .add( '249501683697445' )
-                    .toString()
-            )
-        expect( await token1BalanceStr( pairAddress() ) )
-            .to.eq(
-                BigNumber.from( 1000 )
-                    .add( '250000187312969' )
-                    .toString()
-            )
+        expect( await token0Balance( pairAddress() ) )
+            .to.eq( 1000n +   249501683697445n )
+        expect( await token1Balance( pairAddress() ) )
+            .to.eq( 1000n + 250000187312969n )
     } )
 } )
