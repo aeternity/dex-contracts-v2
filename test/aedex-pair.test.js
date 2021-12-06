@@ -16,7 +16,7 @@
  */
 const { expect } = require( 'chai' )
 import { BigNumber } from 'ethers'
-const MINIMUM_LIQUIDITY = BigInt( BigNumber.from( 10 ).pow( 3 ) )
+//const MINIMUM_LIQUIDITY = BigInt( BigNumber.from( 10 ).pow( 3 ) )
 
 const { defaultWallets: WALLETS } = require( '../config/wallets.json' )
 
@@ -30,7 +30,7 @@ import {
     expandTo18Decimals,
     expectToRevert,
     encodePrice,
-
+    MINIMUM_LIQUIDITY,
 } from './shared/utilities'
 
 const wallet = {

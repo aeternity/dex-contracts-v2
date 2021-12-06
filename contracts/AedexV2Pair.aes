@@ -50,6 +50,7 @@ contract AedexV2Pair =
             , block_timestamp_last: int  // uses single storage slot, accessible via get_reserves
             , price0_cumulative_last: int
             , price1_cumulative_last: int
+            , min_liquidity: int
             , k_last: int // reserve0 * reserve1, as of immediately after the most recent liquidity event
                           // NOTE:
                           // refers to k from XYK model (x * y = k equation)
@@ -58,10 +59,11 @@ contract AedexV2Pair =
             , debug_time: option(int)
             }
 
-    entrypoint init (
+    entrypoint init(
           factory: IAedexV2FactoryForPair
         , token0: IAEX9Minimal
         , token1: IAEX9Minimal
+        , min_liquidity: int
         , debug_time: option(int)
         ) = {
               total_supply = 0
@@ -78,6 +80,7 @@ contract AedexV2Pair =
             , price1_cumulative_last = 0
             , k_last = 0
             , debug_time = debug_time
+            , min_liquidity = min_liquidity
         }
 
     // INTERNALS
@@ -144,7 +147,7 @@ contract AedexV2Pair =
         }
 
 
-    entrypoint minimum_liquidity() = 1000
+    entrypoint minimum_liquidity() = state.min_liquidity
 
     entrypoint factory() = state.factory
     entrypoint token0() = state.token0
@@ -160,8 +163,8 @@ contract AedexV2Pair =
         let fee_on = mint_fee(reserve0, reserve1)
         let _total_supply = state.total_supply // gas savings, must be defined here since totalSupply can update in gc
 
-        let min_liq = minimum_liquidity()
         let liquidity =
+                let min_liq = state.min_liquidity // gas savings
                 if (_total_supply == 0)
                     mint_update(None, min_liq) // permanently lock the first MINIMUM_LIQUIDITY tokens
                     Math.sqrt(amount0 * amount1) - min_liq

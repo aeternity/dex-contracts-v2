@@ -15,8 +15,6 @@
  *  PERFORMANCE OF THIS SOFTWARE.
  */
 const { expect } = require( 'chai' )
-const MINIMUM_LIQUIDITY = 1000n //BigInt( BigNumber.from( 10 ).pow( 3 ) )
-
 const { defaultWallets: WALLETS } = require( '../config/wallets.json' )
 
 import {
@@ -29,6 +27,7 @@ import {
 import {
     expandTo18Decimals,
     MaxUint256 as MaxUint256BN,
+    MINIMUM_LIQUIDITY,
     emits,
 } from './shared/utilities'
 const expand18 = ( n ) => BigInt( expandTo18Decimals( n ) )
@@ -91,6 +90,7 @@ describe( 'Pair Router', () => {
             0n,
             0n,
             wallet.address,
+            MINIMUM_LIQUIDITY,
             MaxUint256,
             extraGas,
         )
@@ -131,6 +131,7 @@ describe( 'Pair Router', () => {
             waePartnerAmount,
             aeAmount,
             wallet.address,
+            MINIMUM_LIQUIDITY,
             MaxUint256,
             {
                 ...extraGas,

@@ -17,6 +17,7 @@ contract interface IAedexV2Factory =
     entrypoint create_pair: (
             IAEX9Minimal /*tokenA*/,
             IAEX9Minimal /*tokenB*/,
+            int /*min_liquidity*/,
             option(int) /* debug_time */
         ) => IAedexV2Pair /*pair*/
 

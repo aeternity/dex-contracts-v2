@@ -25,6 +25,7 @@ import {
 
 import {
     expectToRevert,
+    MINIMUM_LIQUIDITY,
 } from './shared/utilities'
 
 const wallet = {
@@ -53,7 +54,7 @@ describe( 'Pair Factory', () => {
             () => factory.exe( x => x.create_pair(
                 getA( token0 ),
                 getA( token1 ),
-                //getA( factory ),
+                MINIMUM_LIQUIDITY,
                 undefined
             ) ),
             'AedexV2Factory: PAIR_EXISTS'
@@ -64,7 +65,7 @@ describe( 'Pair Factory', () => {
             () => factory.exe( x => x.create_pair(
                 getA( token1 ),
                 getA( token0 ),
-                //getA( factory ),
+                MINIMUM_LIQUIDITY,
                 undefined
 
             ) ),

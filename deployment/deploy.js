@@ -114,7 +114,7 @@ const deploy = async ( secretKey, network, compiler ) => {
                 [ "-", 0, "-", 0 ],
             ),
         ]
-    await deployments[5]()
+    await deployments[2]()
 
     //console.log(await contract.methods.getOwner())
 }

@@ -50,11 +50,12 @@ payable contract AedexV2Router =
         , amount_b_desired: int
         , amount_a_min: int
         , amount_b_min: int
+        , min_liquidity: int
         ): (amount_a *  amount_b) =
         let factory = state.factory
         // create the pair if it doesn't exist yet
         if( Option.is_none( factory.get_pair(token_a, token_b) ))
-           factory.create_pair(token_a,token_b,None)
+           factory.create_pair(token_a,token_b,min_liquidity,None)
            ()
         let (reserve_a,reserve_b) = AedexV2Library.get_reserves( factory, token_a, token_b )
 
@@ -79,13 +80,16 @@ payable contract AedexV2Router =
             , amount_a_min: int
             , amount_b_min: int
             , to: address
+            , min_liquidity: int // the minimum liquidity constant for the pair 
+                                 // in case the pair is not yet created
             , deadline: int
         ): (amount_a * amount_b * liquidity) =
         ensure_deadline(deadline)
         let (amount_a, amount_b) = _add_liquidity(
                 token_a, token_b,
                 amount_a_desired, amount_b_desired,
-                amount_a_min, amount_b_min
+                amount_a_min, amount_b_min,
+                min_liquidity
                 )
         //getting pair and transfer to its address the tokens
         let pair: IAedexV2Pair = AedexV2Library.pair_for( state.factory, token_a, token_b )
@@ -100,13 +104,16 @@ payable contract AedexV2Router =
         , amount_token_min: int
         , amount_ae_min: int
         , to: address
+        , min_liquidity: int // the minimum liquidity constant for the pair 
+                             // in case the pair is not yet created
         , deadline: int
         ):  (amount_token * amount_ae * liquidity) =
         let (wae_aex9,wae,_) = trio(deadline)
         let (amount_token, amount_ae) = _add_liquidity(
                 token, wae_aex9,
                 amount_token_desired, Call.value,
-                amount_token_min, amount_ae_min
+                amount_token_min, amount_ae_min,
+                min_liquidity
                 )
         let pair: IAedexV2Pair = AedexV2Library.pair_for(state.factory, token, wae_aex9)
         token.transfer_allowance(Call.caller, pair.address, amount_token)

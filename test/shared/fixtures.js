@@ -22,6 +22,7 @@ import {
     makeExe,
     expandTo18Decimals,
     exec,
+    MINIMUM_LIQUIDITY,
 } from './utilities'
 
 import { Universal, MemoryAccount, Node } from '@aeternity/aepp-sdk'
@@ -191,6 +192,7 @@ const pairModelFixture = async () => {
             fakeAddress,
             fakeAddress,
             fakeAddress,
+            1000,
             undefined,
         ],
     )
@@ -270,6 +272,7 @@ const routerFixture = async ( wallet = wallet0 ) => {
     const pair01Address = await factory.exe( x => x.create_pair(
         getA( tokenA ),
         getA( tokenB ),
+        MINIMUM_LIQUIDITY,
     ) )
 
     const pair01 = await getContract( "./contracts/AedexV2Pair.aes", [], pair01Address  )
@@ -282,6 +285,10 @@ const routerFixture = async ( wallet = wallet0 ) => {
     const pair1CAddress = await factory.exe( x => x.create_pair(
         getA( token1 ),
         getA( tokenC ),
+        MINIMUM_LIQUIDITY,
+        undefined, {
+            gas: 150000
+        }
     ) )
 
     //this should be used on longer path tests
@@ -290,6 +297,7 @@ const routerFixture = async ( wallet = wallet0 ) => {
     const waePairAddress = await factory.exe( x => x.create_pair(
         getA( wae ),
         getA( waePartner ),
+        MINIMUM_LIQUIDITY,
         undefined, {
             gas: 150000
         }
@@ -329,6 +337,7 @@ const pairFixture = async ( wallet = wallet0 ) => {
     const pairAddress = await factory.exe( x => x.create_pair(
         getA( tokenA ),
         getA( tokenB ),
+        MINIMUM_LIQUIDITY,
         //getA( factory ),
         1636041331999, //debug time
     ) )

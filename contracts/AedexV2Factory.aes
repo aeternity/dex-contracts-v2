@@ -79,6 +79,7 @@ contract AedexV2Factory =
     stateful entrypoint create_pair(
           token_a: IAEX9Minimal
         , token_b: IAEX9Minimal
+        , min_liquidity: int
         , debug_time: option(int)
         ): IAedexV2Pair =
 
@@ -102,6 +103,7 @@ contract AedexV2Factory =
                     , this_factory
                     , token0
                     , token1
+                    , min_liquidity
                     , debug_time
                     )
 
