@@ -25,12 +25,11 @@ import {
 } from './shared/fixtures'
 
 import {
-    expandTo18Decimals,
+    expandTo18Dec,
     MaxUint256 as MaxUint256BN,
     MINIMUM_LIQUIDITY,
     emits,
 } from './shared/utilities'
-const expand18 = ( n ) => BigInt( expandTo18Decimals( n ) )
 const MaxUint256 = BigInt( MaxUint256BN )
 
 const wallet = {
@@ -75,18 +74,18 @@ describe( 'Pair Router', () => {
         expect( await router.exe( x => x.wae_aex9() ) ).to.eq( getA( wae ) )
     } )
     it( 'add_liquidity', async () => {
-        const token0Amount = expandTo18Decimals( 1 )
-        const token1Amount = expandTo18Decimals( 4 )
+        const token0Amount = expandTo18Dec( 1 )
+        const token1Amount = expandTo18Dec( 4 )
 
-        const expectedLiquidity = expand18( 2 )
+        const expectedLiquidity = expandTo18Dec( 2 )
         await token0.create_allowance( routerAddr(), MaxUint256 )
         await token1.create_allowance( routerAddr(), MaxUint256 )
 
         const ret = await router.contract.methods.add_liquidity(
             getA( token0 ),
             getA( token1 ),
-            BigInt( token0Amount ),
-            BigInt( token1Amount ),
+            token0Amount,
+            token1Amount,
             0n,
             0n,
             wallet.address,
@@ -118,10 +117,10 @@ describe( 'Pair Router', () => {
     } )
 
     it( 'add_liquidity_ae', async () => {
-        const waePartnerAmount = expand18( 1 )
-        const aeAmount = expand18( 4 )
+        const waePartnerAmount = expandTo18Dec( 1 )
+        const aeAmount = expandTo18Dec( 4 )
 
-        const expectedLiquidity = expand18( 2 )
+        const expectedLiquidity = expandTo18Dec( 2 )
         await waePartner.create_allowance( routerAddr(), MaxUint256 )
 
         const waePairToken0 = await waePair.token0()
@@ -173,11 +172,11 @@ describe( 'Pair Router', () => {
         }
     }
     it( 'remove_liquidity', async () => {
-        const token0Amount = expand18( 1 )
-        const token1Amount = expand18( 4 )
+        const token0Amount = expandTo18Dec( 1 )
+        const token1Amount = expandTo18Dec( 4 )
         await addLiquidity( token0Amount, token1Amount )
 
-        const expectedLiquidity = expand18( 2 )
+        const expectedLiquidity = expandTo18Dec( 2 )
         await pair.create_allowance( routerAddr(), MaxUint256 )
         const ret = await router.contract.methods.remove_liquidity(
             getA( token0 ),
@@ -227,8 +226,8 @@ describe( 'Pair Router', () => {
     } )
 
     it( 'remove_liquidity_ae', async () => {
-        const waePartnerAmount = expand18( 1 )
-        const aeAmount = expand18( 4 )
+        const waePartnerAmount = expandTo18Dec( 1 )
+        const aeAmount = expandTo18Dec( 4 )
 
         await waePartner.transfer(
             getAK( waePair ),
@@ -239,7 +238,7 @@ describe( 'Pair Router', () => {
         await wae.transfer( getAK( waePair ), aeAmount )
         await waePair.mint( wallet.address, extraGas )
 
-        const expectedLiquidity = expand18( 2 )
+        const expectedLiquidity = expandTo18Dec( 2 )
         await waePair.create_allowance( routerAddr(), MaxUint256 )
         const ret = await router.contract.methods.remove_liquidity_ae(
             getA( waePartner ),
@@ -303,9 +302,9 @@ describe( 'Pair Router', () => {
         `${amount0In}|${amount1In}|${amount0Out}|${amount1Out}`
 
     describe( 'swap_exact_tokens_for_tokens', () => {
-        const token0Amount = expand18( 5 )
-        const token1Amount = expand18( 10 )
-        const swapAmount = expand18( 1 )
+        const token0Amount = expandTo18Dec( 5 )
+        const token1Amount = expandTo18Dec( 10 )
+        const swapAmount = expandTo18Dec( 1 )
         const expectedOutputAmount = 1662497915624478906n
         beforeEach( async () => {
             await addLiquidity( token0Amount, token1Amount )
@@ -356,10 +355,10 @@ describe( 'Pair Router', () => {
     } )
 
     describe( 'longer_path: swap_exact_tokens_for_tokens', () => {
-        const token0Amount = expand18( 5 )
-        const token1Amount = expand18( 10 )
-        const tokenCAmount = expand18( 20 )
-        const swapAmount = expand18( 1 )
+        const token0Amount = expandTo18Dec( 5 )
+        const token1Amount = expandTo18Dec( 10 )
+        const tokenCAmount = expandTo18Dec( 20 )
+        const swapAmount = expandTo18Dec( 1 )
         const expected1OutputAmount = 1662497915624478906n
         const expectedCOutputAmount = 2843678215834080602n
 
@@ -443,10 +442,10 @@ describe( 'Pair Router', () => {
     } )
 
     describe( 'swap_tokens_for_exact_tokens', () => {
-        const token0Amount = expand18( 5 )
-        const token1Amount = expand18( 10 )
+        const token0Amount = expandTo18Dec( 5 )
+        const token1Amount = expandTo18Dec( 10 )
         const expectedSwapAmount = 557227237267357629n
-        const outputAmount = expand18( 1 )
+        const outputAmount = expandTo18Dec( 1 )
 
         beforeEach( async () => {
             await addLiquidity( token0Amount, token1Amount )
@@ -496,12 +495,12 @@ describe( 'Pair Router', () => {
 
     } )
     describe( 'longer_path: swap_tokens_for_exact_tokens', () => {
-        const token0Amount = expand18( 5 )
-        const token1Amount = expand18( 10 )
-        const tokenCAmount = expand18( 20 )
+        const token0Amount = expandTo18Dec( 5 )
+        const token1Amount = expandTo18Dec( 10 )
+        const tokenCAmount = expandTo18Dec( 20 )
         const expectedSwapAmount = 279498697843516618n
         const expected1InAmount = 527899487937496701n
-        const outputAmount = expand18( 1 )
+        const outputAmount = expandTo18Dec( 1 )
 
         beforeEach( async () => {
             await addLiquidity( token0Amount, token1Amount, tokenCAmount )
@@ -583,9 +582,9 @@ describe( 'Pair Router', () => {
 
     } )
     describe( 'swap_exact_ae_for_tokens', () => {
-        const waePartnerAmount = expand18( 10 )
-        const aeAmount = expand18( 5 )
-        const swapAmount = expand18( 1 )
+        const waePartnerAmount = expandTo18Dec( 10 )
+        const aeAmount = expandTo18Dec( 5 )
+        const swapAmount = expandTo18Dec( 1 )
         const expectedOutputAmount = 1662497915624478906n
 
         beforeEach( async () => {
@@ -648,10 +647,10 @@ describe( 'Pair Router', () => {
 
     } )
     describe( 'swap_tokens_for_exact_ae', () => {
-        const waePartnerAmount = expand18( 5 )
-        const aeAmount = expand18( 10 )
+        const waePartnerAmount = expandTo18Dec( 5 )
+        const aeAmount = expandTo18Dec( 10 )
         const expectedSwapAmount = 557227237267357629n
-        const outputAmount = expand18( 1 )
+        const outputAmount = expandTo18Dec( 1 )
 
         beforeEach( async () => {
             await waePartner.transfer( getAK( waePair ), waePartnerAmount )
@@ -709,9 +708,9 @@ describe( 'Pair Router', () => {
 
     } )
     describe( 'swap_exact_tokens_for_ae', () => {
-        const waePartnerAmount = expand18( 5 )
-        const aeAmount = expand18( 10 )
-        const swapAmount = expand18( 1 )
+        const waePartnerAmount = expandTo18Dec( 5 )
+        const aeAmount = expandTo18Dec( 10 )
+        const swapAmount = expandTo18Dec( 1 )
         const expectedOutputAmount = 1662497915624478906n
 
         beforeEach( async () => {
@@ -773,10 +772,10 @@ describe( 'Pair Router', () => {
     } )
 
     describe( 'swap_ae_for_exact_tokens', () => {
-        const waePartnerAmount = expand18( 10 )
-        const aeAmount = expand18( 5 )
+        const waePartnerAmount = expandTo18Dec( 10 )
+        const aeAmount = expandTo18Dec( 5 )
         const expectedSwapAmount = 557227237267357629n
-        const outputAmount = expand18( 1 )
+        const outputAmount = expandTo18Dec( 1 )
 
         beforeEach( async () => {
             await waePartner.exe( x => x.transfer(

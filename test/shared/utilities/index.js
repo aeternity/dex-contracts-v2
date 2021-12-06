@@ -1,24 +1,27 @@
 const bn = require( 'bignumber.js' )
-const { BigNumber } =  require( 'ethers' )
 const { expect, assert } = require( 'chai' )
 const { exec : execP } = require( "child_process" )
 import { emits } from './events'
 
-const MaxUint128 = BigNumber.from( 2 ).pow( 128 ).sub( 1 )
-const MaxUint256 = BigNumber.from( 2 ).pow( 256 ).sub( 1 )
+// BigNumber.from( 2 ).pow( 128 ).sub( 1 )
+const MaxUint128 = 340282366920938463463374607431768211456n - 1n
+
+//BigNumber.from( 2 ).pow( 256 ).sub( 1 )
+const MaxUint256 = 115792089237316195423570985008687907853269984665640564039457584007913129639936n - 1n
 
 const MINIMUM_LIQUIDITY = 1000n
 
-function expandTo18Decimals( n ) {
-    return BigNumber.from( n ).mul( BigNumber.from( 10 ).pow( 18 ) )
+function expandTo18Dec( n ) {
+    return BigInt( n ) * 1000000000000000000n // BigInt( n ) * ( 10n ** 18n )
 }
 
 bn.config( { EXPONENTIAL_AT: 999999, DECIMAL_PLACES: 40 } )
 
 function encodePrice( reserve0, reserve1 ) {
+    const _2_pow_112 = 5192296858534827628530496329220096n
     return [
-        reserve1.mul( BigNumber.from( 2 ).pow( 112 ) ).div( reserve0 ),
-        reserve0.mul( BigNumber.from( 2 ).pow( 112 ) ).div( reserve1 )
+        ( BigInt( reserve1 ) * _2_pow_112 ) / BigInt( reserve0 ), // reserve1.mul( BigNumber.from( 2 ).pow( 112 ) ).div( reserve0 ),
+        ( BigInt( reserve0 ) * _2_pow_112 ) / BigInt( reserve1 ), // reserve0.mul( BigNumber.from( 2 ).pow( 112 ) ).div( reserve1 )
     ]
 }
 const makeExe = ( contract ) => async ( f, get ) => {
@@ -77,7 +80,7 @@ module.exports = {
     exec,
     expectToRevert,
     makeExe,
-    expandTo18Decimals,
+    expandTo18Dec,
     MaxUint128,
     MaxUint256,
     encodePrice,

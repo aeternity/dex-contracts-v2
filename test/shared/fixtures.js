@@ -20,7 +20,7 @@ import axios from 'axios'
 
 import {
     makeExe,
-    expandTo18Decimals,
+    expandTo18Dec,
     exec,
     MINIMUM_LIQUIDITY,
 } from './utilities'
@@ -45,18 +45,6 @@ const hash = ( content ) =>
 
 const contents = {}
 
-    //const deployContract_ = async ( { source, file }, params, interfaceName ) => {
-        //try {
-            //console.log( '----------------------------------------------------------------------------------------------------' )
-            //console.log( `%cdeploying '${source}...'`, `color:green` )
-
-            //var filesystem, contract_content
-            //if ( file ) {
-                //filesystem       = contractUtils.getFilesystem( file )
-                //contract_content = contractUtils.getContractContent( file )
-            //} else {
-                //contract_content = source
-            //}
 const getContent = ( { source, file } ) => {
     if ( file ) {
         if ( contents[file] ) {
@@ -256,7 +244,7 @@ const router01Fixture = async ( factory, wae ) => {
 }
 
 const routerFixture = async ( wallet = wallet0 ) => {
-    const liq = BigInt( expandTo18Decimals( 10000 ) )
+    const liq = expandTo18Dec( 10000 ) 
     const tokenA = await tokenFixture( 'A', liq )
     const tokenB = await tokenFixture( 'B', liq )
     const tokenC = await tokenFixture( 'C', liq )
@@ -330,7 +318,7 @@ const routerFixture = async ( wallet = wallet0 ) => {
 const pairFixture = async ( wallet = wallet0 ) => {
     const factory = await factoryFixture( wallet, true )
 
-    const liq = BigInt( expandTo18Decimals( 10000 ) )
+    const liq = expandTo18Dec( 10000 )
     const tokenA = await tokenFixture( 'A', liq )
     const tokenB = await tokenFixture( 'B', liq )
 

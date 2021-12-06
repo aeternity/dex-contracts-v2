@@ -297,10 +297,6 @@ contract AedexV2Pair =
     entrypoint total_supply() = state.total_supply
     entrypoint price0_cumulative_last() = state.price0_cumulative_last
     entrypoint price1_cumulative_last() = state.price1_cumulative_last
-    entrypoint price0_cumulative_last_str() =
-        Int.to_str(state.price0_cumulative_last)
-    entrypoint price1_cumulative_last_str() =
-        Int.to_str(state.price1_cumulative_last)
 
     entrypoint balance(address: address): option(int) =
         //we replace None with 0

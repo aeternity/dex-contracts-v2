@@ -22,10 +22,6 @@ const NETWORKS = require( '../config/network.json' )
 const DEFAULT_NETWORK_NAME = 'local'
 const FungibleTokenFull = require( 'aeternity-fungible-token/FungibleTokenFull.aes.js' )
 
-//const EXAMPLE_CONTRACT_SOURCE = '../contracts/AedexPool.aes';
-//const EXAMPLE_CONTRACT_SOURCE = './contracts/AedexPool.aes';
-//const EXAMPLE_CONTRACT_SOURCE = './contracts/test/DexOracleTest.aes'
-
 const deploy = async ( secretKey, network, compiler ) => {
     if ( !secretKey ) {
         throw new Error( `Required option missing: secretKey` )
