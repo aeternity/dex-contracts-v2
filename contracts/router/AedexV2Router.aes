@@ -108,7 +108,8 @@ payable contract AedexV2Router =
                              // in case the pair is not yet created
         , deadline: int
         ):  (amount_token * amount_ae * liquidity) =
-        let (wae_aex9,wae,_) = trio(deadline)
+        ensure_deadline(deadline)
+        let (wae_aex9,wae) = (state.wae_aex9,state.wae)
         let (amount_token, amount_ae) = _add_liquidity(
                 token, wae_aex9,
                 amount_token_desired, Call.value,
@@ -154,9 +155,9 @@ payable contract AedexV2Router =
             , to: address
             , deadline: int
         ): (amount_token * amount_ae) =
-        let (wae_aex9,wae,_) = trio(deadline)
+        ensure_deadline(deadline)
         let (amount_token, amount_ae) = remove_liquidity(
-                token, wae_aex9,
+                token, state.wae_aex9,
                 liquidity,
                 amount_token_min, amount_ae_min,
                 Contract.address,
@@ -164,7 +165,7 @@ payable contract AedexV2Router =
                 )
         token.transfer(to,amount_token)
         //TODO: be sure is the right thing to do
-        wae.withdraw(amount_ae)
+        state.wae.withdraw(amount_ae)
         Chain.spend(to,amount_ae)
         (amount_token,amount_ae)
 
@@ -243,8 +244,9 @@ payable contract AedexV2Router =
             , deadline: int
             , callback: option(IAedexV2Callback)
         ): list(int) =
-        let (wae_aex9,wae,factory) = trio(deadline)
-        require(first(path) == wae_aex9, "AedexV2Router: INVALID_PATH_FIRST")
+        ensure_deadline(deadline)
+        let (wae,factory) = (state.wae,state.factory)
+        require(first(path).address == wae.address, "AedexV2Router: INVALID_PATH_FIRST")
         let amounts = AedexV2Library.get_amounts_out(factory, Call.value, path)
         require(last(amounts) >= amount_out_min,
                  "AedexV2Router: INSUFFICIENT_OUTPUT_AMOUNT")
@@ -262,8 +264,9 @@ payable contract AedexV2Router =
             , deadline: int
             , callback: option(IAedexV2Callback)
         ): list(int) =
-        let (wae_aex9,wae,factory) = trio(deadline)
-        require(last(path) == wae_aex9, "AedexV2Router: INVALID_PATH_LAST")
+        ensure_deadline(deadline)
+        let (wae,factory) = (state.wae,state.factory)
+        require(last(path).address == state.wae.address, "AedexV2Router: INVALID_PATH_LAST")
         let amounts = AedexV2Library.get_amounts_in(factory, amount_out, path)
         require(List.get(0,amounts) =< amount_in_max, "AedexV2Router: EXCESSIVE_INPUT_AMOUNT")
         List.get(0,path).transfer_allowance(
@@ -285,8 +288,9 @@ payable contract AedexV2Router =
         , deadline: int
         , callback: option(IAedexV2Callback)
         ): list(int) =
-        let (wae_aex9,wae,factory) = trio(deadline)
-        require(last(path) == wae_aex9, "AedexV2Router: INVALID_PATH_LAST")
+        ensure_deadline(deadline)
+        let (wae,factory) = (state.wae,state.factory)
+        require(last(path).address == wae.address, "AedexV2Router: INVALID_PATH_LAST")
         let amounts = AedexV2Library.get_amounts_out(factory, amount_in, path)
         require(last(amounts)>= amount_out_min, "AedexV2Router: INSUFFICIENT_OUTPUT_AMOUNT")
         first(path).transfer_allowance(
@@ -307,8 +311,9 @@ payable contract AedexV2Router =
             , deadline: int
             , callback: option(IAedexV2Callback)
         ): list(int) =
-        let (wae_aex9,wae,factory) = trio(deadline)
-        require(first(path) == wae_aex9, "AedexV2Router: INVALID_PATH_FIRST")
+        ensure_deadline(deadline)
+        let (wae,factory) = (state.wae,state.factory)
+        require(first(path).address == wae.address, "AedexV2Router: INVALID_PATH_FIRST")
         let amounts = AedexV2Library.get_amounts_in(factory, amount_out, path)
         let fst_amount = first(amounts)
         require(first(amounts) =< Call.value, "AedexV2Router: EXCESSIVE_INPUT_AMOUNT")
@@ -342,10 +347,6 @@ payable contract AedexV2Router =
 
     function last(xs: list('a)): 'a = List.get(List.length(xs)-1,xs)
     function first(xs: list('a)): 'a = List.get(0,xs)
-
-    function trio(deadline: int) =
-        ensure_deadline(deadline)
-        (state.wae_aex9,state.wae,state.factory)
 
     function ensure_deadline(deadline: int) =
         require(deadline >= Chain.timestamp, "AedexV2Router: EXPIRED")

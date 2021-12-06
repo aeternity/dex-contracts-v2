@@ -51,36 +51,36 @@ contract WAE =
         put(state{balance_of @ b = b { [ Call.caller = 0] @ value = value + Call.value} })
         Chain.event( Deposit(Call.caller, Call.value) )
 
-    stateful entrypoint withdraw(wad: int): unit =
+    stateful entrypoint withdraw(amount: int): unit =
         let caller_balance: int = Map.lookup_default(Call.caller,state.balance_of,0)
-        require(caller_balance >= wad, "WAE: LOW_BALANCE")
-        put(state{balance_of @ b = b { [ Call.caller ] = caller_balance - wad} })
-        Chain.spend( Call.caller,wad )
-        Chain.event( Withdrawal(Call.caller, wad) )
+        require(caller_balance >= amount, "WAE: LOW_BALANCE")
+        put(state{balance_of @ b = b { [ Call.caller ] = caller_balance - amount} })
+        Chain.spend( Call.caller,amount )
+        Chain.event( Withdrawal(Call.caller, amount) )
 
-    stateful entrypoint create_allowance(guy: address, wad: int): unit =
-        put( state{allowance @ a = a{ [Call.caller = {} ] @ p = p { [guy] = wad }}})
-        Chain.event(Allowance(Call.caller, guy, wad))
+    stateful entrypoint create_allowance(guy: address, amount: int): unit =
+        put( state{allowance @ a = a{ [Call.caller = {} ] @ p = p { [guy] = amount }}})
+        Chain.event(Allowance(Call.caller, guy, amount))
 
 
-    stateful entrypoint transfer(dst: address , wad: int): unit =
-        transfer_allowance(Call.caller, dst, wad)
+    stateful entrypoint transfer(dst: address , amount: int): unit =
+        transfer_allowance(Call.caller, dst, amount)
 
-    stateful entrypoint transfer_allowance(src: address, dst: address, wad: int) =
+    stateful entrypoint transfer_allowance(src: address, dst: address, amount: int) =
         let src_balance = Map.lookup_default(src,state.balance_of,0)
-        require(src_balance >= wad, "WAE: LOW_BALANCE")
+        require(src_balance >= amount, "WAE: LOW_BALANCE")
 
         if (src != Call.caller)
             let src_allowance_map = Map.lookup_default(src,state.allowance,{})
             let src_allowance = Map.lookup_default(Call.caller,src_allowance_map,0)
-            require(src_allowance >= wad, "WAE: LOW_ALLOWANCE")
-            put( state{ allowance @ a = a { [src = {}] @ s = s { [Call.caller] @ p = p - wad}}})
+            require(src_allowance >= amount, "WAE: LOW_ALLOWANCE")
+            put( state{ allowance @ a = a { [src = {}] @ s = s { [Call.caller] @ p = p - amount}}})
 
         put( state { balance_of @ b = b {
-                [ src ] @ s = s - wad,
-                [ dst = 0 ] @ d = d + wad
+                [ src ] @ s = s - amount,
+                [ dst = 0 ] @ d = d + amount
             } })
-        Chain.event( Transfer( src, dst, wad ) )
+        Chain.event( Transfer( src, dst, amount ) )
 
 
     datatype event
@@ -90,7 +90,7 @@ contract WAE =
 
         | Deposit(address /*indexed dst*/, int /*ae*/)
 
-        | Withdrawal(address /*indexed src*/, int /*wad*/)
+        | Withdrawal(address /*indexed src*/, int /*amount*/)
 
 
 

@@ -12,8 +12,6 @@ contract interface IAedexV2Factory =
     entrypoint all_pairs: (int) => IAedexV2Pair
     entrypoint all_pairs_length: () => int
 
-    //TODO: we exclude this because of the circular reference
-    //when this_factory is removed/solved we can uncomment this
     entrypoint create_pair: (
             IAEX9Minimal /*tokenA*/,
             IAEX9Minimal /*tokenB*/,
