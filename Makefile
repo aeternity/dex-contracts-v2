@@ -21,4 +21,4 @@ testRouter:
 	npm run test:aedex-router-break
 testFactoryPool:
 	npm run test:aedex-pool-factory-break
-test: testAll
+test: testRouter

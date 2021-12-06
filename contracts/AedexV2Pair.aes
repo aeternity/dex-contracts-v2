@@ -20,7 +20,7 @@ contract AedexV2Pair =
 
 
         | LockLiquidity(int)
-        | PairMint(address /*indexed sender*/, int /*amount0*/, int /*amount1*/)
+        | Mint(address /*indexed sender*/, int /*amount0*/, int /*amount1*/)
         | PairBurn(address /*indexed sender*/, address /*indexed to*/, string /*int amount0 | int amount1*/ )
         | SwapTokens(
             address /*indexed sender*/
@@ -175,7 +175,7 @@ contract AedexV2Pair =
 
         update(balance0, balance1, reserve0, reserve1)
         if (fee_on)  put( state{ k_last = state.reserve0*state.reserve1 }) // reserve0 and reserve1 are up-to-date
-        Chain.event( PairMint(Call.caller, amount0, amount1) )
+        Chain.event( Mint(Call.caller, amount0, amount1) )
         liquidity
 
 
