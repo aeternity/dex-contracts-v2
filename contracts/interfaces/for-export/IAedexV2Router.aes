@@ -1,4 +1,5 @@
 contract interface IWAE =
+  payable stateful entrypoint depositTo : (address) => unit
   payable stateful entrypoint deposit : () => unit
   stateful entrypoint transfer : (address, int) => unit
   stateful entrypoint withdraw : (int) => unit
@@ -51,7 +52,7 @@ contract interface IAedexV2Factory =
   entrypoint get_pair : (IAEX9Minimal, IAEX9Minimal) => option(IAedexV2Pair)
   entrypoint all_pairs : (int) => IAedexV2Pair
   entrypoint all_pairs_length : () => int
-  entrypoint create_pair : (IAEX9Minimal, IAEX9Minimal, int, option(int)) => IAedexV2Pair
+  stateful entrypoint create_pair : (IAEX9Minimal, IAEX9Minimal, int, option(int)) => IAedexV2Pair
   entrypoint set_fee_to : (address) => unit
   entrypoint set_fee_toSetter : (address) => unit
 
@@ -76,7 +77,7 @@ payable main contract AedexV2Router =
   stateful entrypoint add_liquidity : (IAEX9Minimal, IAEX9Minimal, int, int, int, int, address, int, int) => (AedexV2Router.amount_a * AedexV2Router.amount_b * AedexV2Router.liquidity)
   payable stateful entrypoint add_liquidity_ae : (IAEX9Minimal, int, int, int, address, int, int) => (AedexV2Router.amount_token * AedexV2Router.amount_ae * AedexV2Router.liquidity)
   stateful entrypoint remove_liquidity : (IAEX9Minimal, IAEX9Minimal, int, int, int, address, int) => (AedexV2Router.amount_a * AedexV2Router.amount_b)
-  stateful entrypoint remove_liquidity_ae : (IAEX9Minimal, int, int, int, address, int) => (AedexV2Router.amount_token * AedexV2Router.amount_ae)
+  payable stateful entrypoint remove_liquidity_ae : (IAEX9Minimal, int, int, int, address, int) => (AedexV2Router.amount_token * AedexV2Router.amount_ae)
   stateful entrypoint swap_exact_tokens_for_tokens : (int, int, list(IAEX9Minimal), address, int, option(IAedexV2Callback)) => list(int)
   stateful entrypoint swap_tokens_for_exact_tokens : (int, int, list(IAEX9Minimal), address, int, option(IAedexV2Callback)) => list(int)
   payable stateful entrypoint swap_exact_ae_for_tokens : (int, list(IAEX9Minimal), address, int, option(IAedexV2Callback)) => list(int)

@@ -12,7 +12,7 @@ contract interface IAedexV2Factory =
     entrypoint all_pairs: (int) => IAedexV2Pair
     entrypoint all_pairs_length: () => int
 
-    entrypoint create_pair: (
+    stateful entrypoint create_pair: (
             IAEX9Minimal /*tokenA*/,
             IAEX9Minimal /*tokenB*/,
             int /*min_liquidity*/,
