@@ -1,5 +1,5 @@
 contract interface IWAE =
-  payable stateful entrypoint depositTo : (address) => unit
+  payable stateful entrypoint deposit_to : (address) => unit
   payable stateful entrypoint deposit : () => unit
   stateful entrypoint transfer : (address, int) => unit
   stateful entrypoint withdraw : (int) => unit
@@ -87,3 +87,5 @@ payable main contract AedexV2Router =
   entrypoint quote : (int, int, int) => int
   entrypoint get_amount_out : (int, int, int) => int
   entrypoint get_amount_in : (int, int, int) => int
+  entrypoint get_amounts_out : (int, list(IAEX9Minimal)) => list(int)
+  entrypoint get_amounts_in : (int, list(IAEX9Minimal)) => list(int)

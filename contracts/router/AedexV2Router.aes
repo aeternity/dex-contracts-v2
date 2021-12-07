@@ -119,7 +119,7 @@ payable contract AedexV2Router =
         let pair: IAedexV2Pair = AedexV2Library.pair_for(state.factory, token, wae_aex9)
         token.transfer_allowance(Call.caller, pair.address, amount_token)
 
-        wae.depositTo(pair.address,value=amount_ae)
+        wae.deposit_to(pair.address,value=amount_ae)
         let liquidity = pair.mint(to)
         if (Call.value > amount_ae)
             Chain.spend(Call.caller,Call.value - amount_ae) // refund dust ae, if any
@@ -139,9 +139,9 @@ payable contract AedexV2Router =
         let pair: IAedexV2Pair = AedexV2Library.pair_for(state.factory, token_a, token_b)
         pair.transfer_allowance(Call.caller, pair.address, liquidity) // send liquidity to pair
         let burn_ret = pair.burn(to)
-        let (amount0, amount1) = (burn_ret.amount0,burn_ret.amount1)
         let (token0,_) = AedexV2Library.sort_tokens(token_a, token_b)
-        let (amount_a, amount_b) = if (token_a == token0) (amount0, amount1) else (amount1, amount0)
+        let (amount_a, amount_b) = if (token_a == token0) (burn_ret.amount0, burn_ret.amount1)
+                                   else (burn_ret.amount1, burn_ret.amount0)
         require(amount_a >= amount_a_min, "AedexV2Router: INSUFFICIENT_A_AMOUNT")
         require(amount_b >= amount_b_min, "AedexV2Router: INSUFFICIENT_B_AMOUNT")
         (amount_a,amount_b)
@@ -177,7 +177,7 @@ payable contract AedexV2Router =
             , path: list(IAEX9Minimal)
             , _to: address
             , factory: IAedexV2Factory  // we pass it as parameter to save multiple state lookups
-            , callback: option(IAedexV2Callback)
+            , callback_opt: option(IAedexV2Callback)
         ): unit =
         switch((path,amounts))
             (input::output::_path,_::amount_out::_amounts) =>
@@ -188,11 +188,10 @@ payable contract AedexV2Router =
                             (nexOutput::_) => AedexV2Library.pair_for(factory,output,nexOutput).address
                 let pair: IAedexV2Pair = AedexV2Library.pair_for(factory,input,output)
 
-                pair.swap(amount0_out, amount1_out, to,callback)
-                _swap(amount_out::_amounts,output::_path,_to,factory,callback)
-            (_::_::_,_::[]) => _invalid_amounts()
-            (_::_::_,[]) => _invalid_amounts()
-            (_,_) => ()
+                pair.swap(amount0_out, amount1_out, to,callback_opt)
+                _swap(amount_out::_amounts,output::_path,_to,factory,callback_opt)
+            (path,_) | List.length(path) =< 1 => ()
+            _ => abort_invalid_amounts()
 
     stateful entrypoint swap_exact_tokens_for_tokens(
               amount_in: int
@@ -200,7 +199,7 @@ payable contract AedexV2Router =
             , path: list(IAEX9Minimal)
             , to: address
             , deadline: int
-            , callback: option(IAedexV2Callback)
+            , callback_opt: option(IAedexV2Callback)
         ): list(int) =
         require_deadline(deadline)
         let factory = state.factory
@@ -213,7 +212,7 @@ payable contract AedexV2Router =
             first_pair(factory,path).address,
             List.get(0,amounts)
             )
-        _swap(amounts, path, to, factory, callback)
+        _swap(amounts, path, to, factory, callback_opt)
         amounts
 
     stateful entrypoint swap_tokens_for_exact_tokens(
@@ -222,7 +221,7 @@ payable contract AedexV2Router =
             , path: list(IAEX9Minimal)
             , to: address
             , deadline: int
-            , callback: option(IAedexV2Callback)
+            , callback_opt: option(IAedexV2Callback)
         ): list(int) =
         require_deadline(deadline)
         let factory = state.factory
@@ -233,7 +232,7 @@ payable contract AedexV2Router =
             first_pair(factory,path).address,
             List.get(0,amounts)
             )
-        _swap(amounts, path, to, factory, callback)
+        _swap(amounts, path, to, factory, callback_opt)
         amounts
 
     payable stateful entrypoint swap_exact_ae_for_tokens(
@@ -241,7 +240,7 @@ payable contract AedexV2Router =
             , path: list(IAEX9Minimal)
             , to: address
             , deadline: int
-            , callback: option(IAedexV2Callback)
+            , callback_opt: option(IAedexV2Callback)
         ): list(int) =
         require_deadline(deadline)
         let (wae,factory) = (state.wae,state.factory)
@@ -250,8 +249,8 @@ payable contract AedexV2Router =
         require(last(amounts) >= amount_out_min,
                  "AedexV2Router: INSUFFICIENT_OUTPUT_AMOUNT")
         let pair = first_pair(factory,path)
-        wae.depositTo(pair.address,value=List.get(0,amounts))
-        _swap(amounts, path, to, factory, callback )
+        wae.deposit_to(pair.address,value=List.get(0,amounts))
+        _swap(amounts, path, to, factory, callback_opt )
         amounts
 
     stateful entrypoint swap_tokens_for_exact_ae(
@@ -260,7 +259,7 @@ payable contract AedexV2Router =
             , path: list(IAEX9Minimal)
             , to: address
             , deadline: int
-            , callback: option(IAedexV2Callback)
+            , callback_opt: option(IAedexV2Callback)
         ): list(int) =
         require_deadline(deadline)
         let (wae,factory) = (state.wae,state.factory)
@@ -272,7 +271,7 @@ payable contract AedexV2Router =
             first_pair(factory,path).address,
             List.get(0,amounts)
             )
-        _swap(amounts, path, Contract.address, factory, callback)
+        _swap(amounts, path, Contract.address, factory, callback_opt)
         let last_amount = last(amounts)
         wae.withdraw(last_amount)
         Chain.spend(to,last_amount)
@@ -284,7 +283,7 @@ payable contract AedexV2Router =
         , path: list(IAEX9Minimal)
         , to: address
         , deadline: int
-        , callback: option(IAedexV2Callback)
+        , callback_opt: option(IAedexV2Callback)
         ): list(int) =
         require_deadline(deadline)
         let (wae,factory) = (state.wae,state.factory)
@@ -296,7 +295,7 @@ payable contract AedexV2Router =
             first_pair(factory,path).address,
             first(amounts)
             )
-        _swap(amounts, path, Contract.address, factory, callback)
+        _swap(amounts, path, Contract.address, factory, callback_opt)
         let last_amount = last(amounts)
         wae.withdraw(last_amount)
         Chain.spend(to,last_amount)
@@ -307,7 +306,7 @@ payable contract AedexV2Router =
             , path: list(IAEX9Minimal)
             , to: address
             , deadline: int
-            , callback: option(IAedexV2Callback)
+            , callback_opt: option(IAedexV2Callback)
         ): list(int) =
         require_deadline(deadline)
         let (wae,factory) = (state.wae,state.factory)
@@ -316,8 +315,8 @@ payable contract AedexV2Router =
         let fst_amount = first(amounts)
         require(first(amounts) =< Call.value, "AedexV2Router: EXCESSIVE_INPUT_AMOUNT")
         let fst_pair = first_pair(factory,path)
-        wae.depositTo(fst_pair.address,value=fst_amount)
-        _swap(amounts, path, to, factory, callback)
+        wae.deposit_to(fst_pair.address,value=fst_amount)
+        _swap(amounts, path, to, factory, callback_opt)
         if (Call.value > fst_amount)
             Chain.spend(Call.caller,Call.value - fst_amount) // refund dust ae, if any
         amounts
@@ -332,10 +331,10 @@ payable contract AedexV2Router =
     entrypoint get_amount_in( amount_out, reserve_in, reserve_out) =
         AedexV2Library.get_amount_in( amount_out, reserve_in, reserve_out)
 
-    function get_amounts_out( amount_in , path) =
+    entrypoint get_amounts_out( amount_in , path) =
         AedexV2Library.get_amounts_out(state.factory, amount_in , path)
 
-    function get_amounts_in( amount_out , path) =
+    entrypoint get_amounts_in( amount_out , path) =
         AedexV2Library.get_amounts_in(state.factory, amount_out , path)
 
     // **** UTILS ****
@@ -347,6 +346,6 @@ payable contract AedexV2Router =
 
     function require_deadline(deadline: int) =
         require(deadline >= Chain.timestamp, "AedexV2Router: EXPIRED")
-    function _invalid_amounts() =
+    function abort_invalid_amounts() =
         abort("AedexV2Router: AMOUNT_LIST_IS_SHORTER")
 

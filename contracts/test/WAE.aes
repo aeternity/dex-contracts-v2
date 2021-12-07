@@ -51,7 +51,7 @@ contract WAE =
         put(state{balance_of @ b = b { [ Call.caller = 0] @ value = value + Call.value} })
         Chain.event( Deposit(Call.caller, Call.value) )
 
-    payable stateful entrypoint depositTo(to: address): unit =
+    payable stateful entrypoint deposit_to(to: address): unit =
         put(state{balance_of @ b = b { [ to = 0] @ value = value + Call.value} })
         Chain.event( Deposit(Call.caller, Call.value) )
         Chain.event( Transfer( Call.caller, to, Call.value ) )
