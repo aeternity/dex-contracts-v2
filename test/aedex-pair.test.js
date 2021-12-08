@@ -22,6 +22,8 @@ import {
     getA,
     pairFixture,
     beforeEachWithSnapshot,
+    getAK,
+    swapPayload,
 } from './shared/fixtures'
 
 import {
@@ -29,6 +31,7 @@ import {
     expectToRevert,
     encodePrice,
     MINIMUM_LIQUIDITY,
+    emits,
 } from './shared/utilities'
 
 const wallet = {
@@ -56,7 +59,7 @@ describe( 'Pair Factory', () => {
         const token = isToken0 ? token0 : token1
         console.debug( `token${isToken0 ? 0 : 1}.total_supply()` )
 
-        return token.exe( x => x.total_supply( ) )
+        return token.total_supply( )
     }
 
     const token0TotalSupply = ( address ) => totalSupply( true, address )
@@ -65,7 +68,7 @@ describe( 'Pair Factory', () => {
     const balance = ( isToken0, address ) => {
         const token = isToken0 ? token0 : token1
         console.debug( `token${isToken0 ? 0 : 1}.balance( ${address})` )
-        return token.exe( x => x.balance( address ) )
+        return token.balance( address )
     }
 
     const token0Balance = ( address ) => balance( true, address )
@@ -74,66 +77,66 @@ describe( 'Pair Factory', () => {
     const transfer = async ( isToken0, amount ) => {
         const token = isToken0 ? token0 : token1
         console.debug( `token${isToken0 ? 0 : 1}.transfer( ${pairAddress()}, ${amount.toString()})` )
-        await token.exe( x => x.transfer( pairAddress(), BigInt( amount ) ) )
+        await token.transfer( pairAddress(), BigInt( amount ) )
     }
     const token0Transfer = ( amount ) => transfer( true, amount.toString() )
     const token1Transfer = ( amount ) => transfer( false, amount.toString() )
 
     const pairTransfer = async ( amount ) => {
         console.debug( `pair.transfer( ${pairAddress()}, ${amount.toString()})` )
-        await pair.exe( x => x.transfer( pairAddress(), amount.toString() ) )
+        await pair.transfer( pairAddress(), amount.toString() )
     }
     const pairBurn = async ( address ) => {
         console.debug( `pair.burn( ${address})` )
-        await pair.exe( x => x.burn( address,  { gas: 100000 }  ) )
+        return pair.contract.methods.burn( address,  { gas: 100000 }  )
     }
 
-    const mint = async ( address ) => {
+    const mint = ( address ) => {
         console.debug( `pair.mint( ${address} )` )
-        await pair.exe( x => x.mint( address,  { gas: 100000 } ) )
+        return pair.contract.methods.mint( address,  { gas: 100000 } )
     }
-    const swap = async ( amount0, amount1, address ) => {
+    const swap = ( amount0, amount1, address ) => {
         const calleeAddress = getA( callee )
         console.debug( `pair.swap( ${amount0.toString()}, ${amount1.toString()}, ${address}, ${calleeAddress} )` )
-        await pair.exe( x => x.swap(
+        return pair.contract.methods.swap(
             BigInt( amount0 ),
             BigInt( amount1 ),
             address,
             calleeAddress,
             { gas: 100000 }
-        ) )
+        )
     }
     const pairBalance = ( address ) => {
         console.debug( `pair.balance( ${address})` )
-        return pair.exe( x => x.balance( address ) )
+        return pair.balance( address )
     }
     const getReserves = async () => {
         console.debug( `pair.get_reserves()` )
-        return await pair.exe( x => x.get_reserves() )
+        return await pair.get_reserves()
     }
     const pairTotalSupply = ( ) => {
         console.debug( `pair.total_supply()` )
-        return pair.exe( x => x.total_supply( ) )
+        return pair.total_supply( )
     }
     const  setDebugTime = ( offset ) => {
         console.debug( `pair.set_debug_time(${offset})` )
-        return pair.exe( x => x.set_debug_time( offset ) )
+        return pair.set_debug_time( offset )
     }
     const  sync = ( ) => {
         console.debug( `pair.sync()` )
-        return pair.exe( x => x.sync( { gas: 100000 } ) )
+        return pair.sync( { gas: 100000 } )
     }
     const  price0CumulativeLast = ( ) => {
         console.debug( `pair.price0_cumulative_last()` )
-        return pair.exe( x => x.price0_cumulative_last( ) )
+        return pair.price0_cumulative_last( )
     }
     const  price1CumulativeLast = ( ) => {
         console.debug( `pair.price1_cumulative_last()` )
-        return pair.exe( x => x.price1_cumulative_last( ) )
+        return pair.price1_cumulative_last( )
     }
     const setFeeTo = async ( address ) => {
         console.debug( `factory.set_fee_to( ${address})` )
-        await factory.exe( x => x.set_fee_to( address ) )
+        await factory.set_fee_to( address )
     }
 
     //------------------------------------------------------------------------------
@@ -147,7 +150,20 @@ describe( 'Pair Factory', () => {
         await token1Transfer( token1Amount )
 
         const expectedLiquidity = expandTo18Dec( 2 )
-        await mint( wallet.address )
+        const ret = await mint( wallet.address )
+
+        pair.expectEvents( ret,
+            emits( 'LockLiquidity' ).withArgs(
+                MINIMUM_LIQUIDITY
+            ).emits( 'Mint' ).withArgs(
+                wallet.address, expectedLiquidity - MINIMUM_LIQUIDITY
+            ).emits( 'Sync' ).withArgs(
+                token0Amount, token1Amount
+            ).emits( 'PairMint' ).withArgs(
+                wallet.address, token0Amount, token1Amount,
+            )
+
+        )
 
         expect(
             await pairTotalSupply()
@@ -260,7 +276,19 @@ describe( 'Pair Factory', () => {
         const swapAmount = expandTo18Dec( 1 )
         const expectedOutputAmount = 1662497915624478906n
         await token0Transfer( swapAmount )
-        await swap( 0, expectedOutputAmount, wallet.address )
+        const ret = await swap( 0, expectedOutputAmount, wallet.address )
+        token1.expectEvents( ret,
+            emits( 'Transfer' ).withArgs( getAK( pair ), wallet.address, expectedOutputAmount )
+        )
+        pair.expectEvents( ret,
+            emits( 'Sync' ).withArgs(
+                token0Amount + swapAmount, token1Amount - expectedOutputAmount
+            ).emits( 'SwapTokens' ).withArgs(
+                wallet.address,
+                wallet.address,
+                swapPayload( swapAmount, 0, 0, expectedOutputAmount )
+            )
+        )
 
         const reserves = await getReserves()
         expect( reserves.reserve0 ).to.eq( token0Amount + swapAmount )
@@ -288,7 +316,20 @@ describe( 'Pair Factory', () => {
         const swapAmount = expandTo18Dec( 1 )
         const expectedOutputAmount = 453305446940074565n
         await token1Transfer(  swapAmount )
-        await swap( expectedOutputAmount, 0, wallet.address )
+        const ret = await swap( expectedOutputAmount, 0, wallet.address )
+        token0.expectEvents( ret,
+            emits( 'Transfer' ).withArgs( getAK( pair ), wallet.address, expectedOutputAmount )
+        )
+        pair.expectEvents( ret,
+            emits( 'Sync' ).withArgs(
+                token0Amount - expectedOutputAmount,
+                token1Amount + swapAmount,
+            ).emits( 'SwapTokens' ).withArgs(
+                wallet.address,
+                wallet.address,
+                swapPayload( 0, swapAmount,  expectedOutputAmount, 0 )
+            )
+        )
 
         const reserves = await getReserves()
         expect( reserves.reserve0 ).to.eq(
@@ -319,7 +360,31 @@ describe( 'Pair Factory', () => {
 
         await pairTransfer( expectedLiquidity - MINIMUM_LIQUIDITY )
 
-        await pairBurn( wallet.address )
+        const ret = await pairBurn( wallet.address )
+
+        pair.expectEvents( ret,
+            emits( 'Burn' ).withArgs(
+                getAK( pair ), expectedLiquidity - MINIMUM_LIQUIDITY
+            ).emits( 'Sync' ).withArgs(
+                1000, 1000
+            ).emits( 'PairBurn' ).withArgs(
+                wallet.address,
+                wallet.address,
+                ( token0Amount - 1000n )
+                + '|' +
+                ( token1Amount - 1000n ),
+            )
+        )
+        token0.expectEvents( ret,
+            emits( 'Transfer' ).withArgs(
+                getAK( pair ), wallet.address, token0Amount - 1000n
+            )
+        )
+        token1.expectEvents( ret,
+            emits( 'Transfer' ).withArgs(
+                getAK( pair ), wallet.address, token1Amount - 1000n
+            )
+        )
 
         expect( await pairBalance( wallet.address ) ).to.eq( 0n )
         expect( await pairTotalSupply() ).to.eq( MINIMUM_LIQUIDITY )

@@ -22,6 +22,7 @@ import {
     routerFixture,
     beforeEachWithSnapshot,
     getAK,
+    swapPayload,
 } from './shared/fixtures'
 
 import {
@@ -104,6 +105,8 @@ describe( 'Pair Router', () => {
         pair.expectEvents( ret,
             emits( 'LockLiquidity' ).withArgs(
                 MINIMUM_LIQUIDITY
+            ).emits( 'Mint' ).withArgs(
+                wallet.address, expectedLiquidity - MINIMUM_LIQUIDITY
             ).emits( 'Sync' ).withArgs(
                 token0Amount, token1Amount
             ).emits( 'PairMint' ).withArgs(
@@ -141,6 +144,8 @@ describe( 'Pair Router', () => {
         waePair.expectEvents( ret,
             emits( 'LockLiquidity' ).withArgs(
                 MINIMUM_LIQUIDITY
+            ).emits( 'Mint' ).withArgs(
+                wallet.address, expectedLiquidity - MINIMUM_LIQUIDITY
             ).emits( 'Sync' ).withArgs(
                 waePairToken0 === getA( waePartner ) ? waePartnerAmount : aeAmount,
                 waePairToken0 === getA( waePartner ) ? aeAmount : waePartnerAmount,
@@ -192,6 +197,8 @@ describe( 'Pair Router', () => {
         pair.expectEvents( ret,
             emits( 'Transfer' ).withArgs(
                 wallet.address, getAK( pair ), expectedLiquidity - MINIMUM_LIQUIDITY
+            ).emits( 'Burn' ).withArgs(
+                getAK( pair ), expectedLiquidity - MINIMUM_LIQUIDITY
             ).emits( 'Sync' ).withArgs(
                 500, 2000
             ).emits( 'PairBurn' ).withArgs(
@@ -255,6 +262,8 @@ describe( 'Pair Router', () => {
                 wallet.address,
                 getAK( waePair ),
                 expectedLiquidity - MINIMUM_LIQUIDITY
+            ).emits( 'Burn' ).withArgs(
+                getAK( waePair ), expectedLiquidity - MINIMUM_LIQUIDITY
             ).emits( 'Sync' ).withArgs(
                 waePairToken0 === getA( waePartner ) ? 500 : 2000,
                 waePairToken0 === getA( waePartner ) ? 2000 : 500
@@ -297,9 +306,6 @@ describe( 'Pair Router', () => {
             await wae.balance( wallet.address )
         ).to.eq( totalSupplywae - 2000n )
     } )
-
-    const swapPayload = ( amount0In, amount1In, amount0Out, amount1Out, ) =>
-        `${amount0In}|${amount1In}|${amount0Out}|${amount1Out}`
 
     describe( 'swap_exact_tokens_for_tokens', () => {
         const token0Amount = expandTo18Dec( 5 )

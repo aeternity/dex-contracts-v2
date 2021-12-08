@@ -17,6 +17,8 @@ contract AedexV2Pair =
         = Transfer(address /*indexed from*/, address /*indexed to*/, int /*value*/)
         | Approval(address /*indexed owner*/, address /*indexed spender*/, int /*value*/)
         | Allowance(address /*indexed owner*/, address /*indexed spender*/, int /*value*/)
+        | Mint(address /*indexed owner*/, int /*value*/)
+        | Burn(address /*indexed owner*/, int /*value*/)
 
 
         | LockLiquidity(int)
@@ -274,6 +276,7 @@ contract AedexV2Pair =
                 put(state { total_supply @ p = p + value
                           , balance_of[ to = 0] @ p = p + value
                           })
+                Chain.event( Mint( to, value ))
             None =>
                 put(state { total_supply @ p = p + value
                           , locked_liquidity @ p = p + value
@@ -285,6 +288,7 @@ contract AedexV2Pair =
         put(state { total_supply @ p = p - value
                   , balance_of[ from = 0] @ p = p - value
                   })
+        Chain.event( Burn(from,value))
 
     //TODO: we might want as meta_info to reflect token1&token0 meta_info
     //find a suitable combination

@@ -23,6 +23,7 @@ import {
     expandTo18Dec,
     exec,
     MINIMUM_LIQUIDITY,
+    emits,
 } from './utilities'
 
 import { Universal, MemoryAccount, Node } from '@aeternity/aepp-sdk'
@@ -85,10 +86,10 @@ const createClient = async ( wallet = WALLETS[0] ) => {
     } )
 }
 
-const getContract = ( file, params, contractAddress, wallet = WALLETS[0] ) => 
+const getContract = ( file, params, contractAddress, wallet = WALLETS[0] ) =>
     getContractEx( { file }, params, contractAddress, wallet )
 
-const getContractFromSource = ( source, title, params, contractAddress, wallet = WALLETS[0] ) => 
+const getContractFromSource = ( source, title, params, contractAddress, wallet = WALLETS[0] ) =>
     getContractEx( { source, title }, params, contractAddress, wallet )
 
 const getContractEx = async ( { source, file, title }, params, contractAddress, wallet = WALLETS[0] ) => {
@@ -168,6 +169,7 @@ const createWrappedMethods =  ( contract, extractor ) => {
 
 const getA = x => x.contract.deployInfo.address
 
+const getAK = contract => cttoak( getA( contract ) )
 const cttoak = ( value ) => value.replace( "ct_", "ak_" )
 
 var pairModel
@@ -244,7 +246,7 @@ const router01Fixture = async ( factory, wae ) => {
 }
 
 const routerFixture = async ( wallet = wallet0 ) => {
-    const liq = expandTo18Dec( 10000 ) 
+    const liq = expandTo18Dec( 10000 )
     const tokenA = await tokenFixture( 'A', liq )
     const tokenB = await tokenFixture( 'B', liq )
     const tokenC = await tokenFixture( 'C', liq )
@@ -322,13 +324,14 @@ const pairFixture = async ( wallet = wallet0 ) => {
     const tokenA = await tokenFixture( 'A', liq )
     const tokenB = await tokenFixture( 'B', liq )
 
-    const pairAddress = await factory.exe( x => x.create_pair(
+    const createPairRet = await factory.contract.methods.create_pair(
         getA( tokenA ),
         getA( tokenB ),
         MINIMUM_LIQUIDITY,
         //getA( factory ),
         1636041331999, //debug time
-    ) )
+    )
+    const pairAddress = createPairRet.decodedResult
 
     const pair = await getContract( "./contracts/AedexV2Pair.aes", [], pairAddress  )
 
@@ -336,6 +339,15 @@ const pairFixture = async ( wallet = wallet0 ) => {
 
     const token0 = getA( tokenA ) === token0Address ? tokenA : tokenB
     const token1 = getA( tokenA ) === token0Address ? tokenB : tokenA
+
+    factory.expectEvents( createPairRet,
+        emits( 'PairCreated' ).withArgs(
+            getAK( token0 ),
+            getAK( token1 ),
+            cttoak( pairAddress ),
+            1, //total pairs
+        )
+    )
 
     const callee = await calleeFixture()
 
@@ -396,7 +408,9 @@ module.exports = {
     pairModelFixture,
     getContract,
     getA,
-    getAK: ( contract ) => cttoak( getA( contract ) ),
+    getAK,
     cttoak,
+    swapPayload: ( amount0In, amount1In, amount0Out, amount1Out, ) =>
+        `${amount0In}|${amount1In}|${amount0Out}|${amount1Out}`
 }
 
