@@ -44,6 +44,11 @@ contract WAE =
         let spenderA = Map.lookup_default(owner,state.allowance,{})
         Map.lookup(spender,spenderA)
 
+    entrypoint allowance_unfolded(
+             from_account: address,
+             for_account: address
+        ): option(int) = allowance({from_account = from_account, for_account = for_account})
+
     //------------------------------------------------------------------------------
     // stateful ones
     //------------------------------------------------------------------------------

@@ -410,6 +410,7 @@ module.exports = {
     getA,
     getAK,
     cttoak,
+    waeFixture,
     swapPayload: ( amount0In, amount1In, amount0Out, amount1Out, ) =>
         `${amount0In}|${amount1In}|${amount0Out}|${amount1Out}`
 }
