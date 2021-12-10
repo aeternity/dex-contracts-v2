@@ -94,7 +94,7 @@ const deploy = async ( secretKey, network, compiler ) => {
     const FungibleTokenFullWithString = 'include "String.aes"\n' + FungibleTokenFull
     const deployments =
         [
-            /* 00 */ () => deployContract( './contracts/test/BuildAll.aes', []  ),
+            /* 00 */ () => deployContract( './test/contracts/BuildAll.aes', []  ),
             /* 01 */ () => deployContract( './contracts/AedexV2Pair.aes',
                 [ fakeAddress, fakeAddress, fakeAddress, undefined ] ),
             /* 02 */ () => deployContract(
@@ -102,7 +102,7 @@ const deploy = async ( secretKey, network, compiler ) => {
                 [ fakeAddress, fakeAddress, fakeAddress ],
                 'IAedexV2Router.aes',
             ),
-            /* 03 */ () => deployContract( './contracts/test/WAE.aes', [], 'IWAE.aes' ),
+            /* 03 */ () => deployContract( './contracts/WAE.aes', [], 'IWAE.aes' ),
             /* 04 */ () => deployContract( './contracts/AedexV2Factory.aes', 
                 [ fakeAddressAk, fakeAddress ],
             ),
@@ -110,7 +110,7 @@ const deploy = async ( secretKey, network, compiler ) => {
                 [ "-", 0, "-", 0 ],
             ),
         ]
-    await deployments[3]()
+    await deployments[0]()
 
     //console.log(await contract.methods.getOwner())
 }

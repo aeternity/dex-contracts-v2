@@ -43,7 +43,7 @@ payable contract AedexV2Router =
 
     //just creates the pair if it is the case and calculates the amount
     // based on parameters and pair reserves
-    function _add_liquidity(
+    function add_liquidity'(
           token_a: IAEX9Minimal
         , token_b: IAEX9Minimal
         , amount_a_desired: int
@@ -85,7 +85,7 @@ payable contract AedexV2Router =
             , deadline: int
         ): (amount_a * amount_b * liquidity) =
         require_deadline(deadline)
-        let (amount_a, amount_b) = _add_liquidity(
+        let (amount_a, amount_b) = add_liquidity'(
                 token_a, token_b,
                 amount_a_desired, amount_b_desired,
                 amount_a_min, amount_b_min,
@@ -110,7 +110,7 @@ payable contract AedexV2Router =
         ):  (amount_token * amount_ae * liquidity) =
         require_deadline(deadline)
         let (wae_aex9,wae) = (state.wae_aex9,state.wae)
-        let (amount_token, amount_ae) = _add_liquidity(
+        let (amount_token, amount_ae) = add_liquidity'(
                 token, wae_aex9,
                 amount_token_desired, Call.value,
                 amount_token_min, amount_ae_min,
@@ -172,10 +172,10 @@ payable contract AedexV2Router =
 
     // **** SWAP ****
     // requires the initial amount to have already been sent to the first pair
-    stateful function _swap(
+    stateful function swap'(
             amounts: list(int)
             , path: list(IAEX9Minimal)
-            , _to: address
+            , to: address
             , factory: IAedexV2Factory  // we pass it as parameter to save multiple state lookups
             , callback_opt: option(IAedexV2Callback)
         ): unit =
@@ -183,13 +183,13 @@ payable contract AedexV2Router =
             (input::output::_path,_::amount_out::_amounts) =>
                 let (token0,_) = AedexV2Library.sort_tokens(input,output)
                 let (amount0_out, amount1_out) = if (input == token0) (0, amount_out) else (amount_out, 0)
-                let to = switch(_path)
-                            [] => _to
+                let to' = switch(_path)
+                            [] => to
                             (nexOutput::_) => AedexV2Library.pair_for(factory,output,nexOutput).address
                 let pair: IAedexV2Pair = AedexV2Library.pair_for(factory,input,output)
 
-                pair.swap(amount0_out, amount1_out, to,callback_opt)
-                _swap(amount_out::_amounts,output::_path,_to,factory,callback_opt)
+                pair.swap(amount0_out, amount1_out, to',callback_opt)
+                swap'(amount_out::_amounts,output::_path,to,factory,callback_opt)
             (path,_) | List.length(path) =< 1 => ()
             _ => abort_invalid_amounts()
 
@@ -212,7 +212,7 @@ payable contract AedexV2Router =
             first_pair(factory,path).address,
             List.get(0,amounts)
             )
-        _swap(amounts, path, to, factory, callback_opt)
+        swap'(amounts, path, to, factory, callback_opt)
         amounts
 
     stateful entrypoint swap_tokens_for_exact_tokens(
@@ -232,7 +232,7 @@ payable contract AedexV2Router =
             first_pair(factory,path).address,
             List.get(0,amounts)
             )
-        _swap(amounts, path, to, factory, callback_opt)
+        swap'(amounts, path, to, factory, callback_opt)
         amounts
 
     payable stateful entrypoint swap_exact_ae_for_tokens(
@@ -246,11 +246,11 @@ payable contract AedexV2Router =
         let (wae,factory) = (state.wae,state.factory)
         require(first(path).address == wae.address, "AedexV2Router: INVALID_PATH_FIRST")
         let amounts = AedexV2Library.get_amounts_out(factory, Call.value, path)
-        require(last(amounts) >= amount_out_min,
-                 "AedexV2Router: INSUFFICIENT_OUTPUT_AMOUNT")
-        let pair = first_pair(factory,path)
-        wae.deposit_to(pair.address,value=List.get(0,amounts))
-        _swap(amounts, path, to, factory, callback_opt )
+        require(last(amounts) >= amount_out_min, "AedexV2Router: INSUFFICIENT_OUTPUT_AMOUNT")
+        wae.deposit_to(
+            first_pair(factory,path).address,
+            value=List.get(0,amounts) )
+        swap'(amounts, path, to, factory, callback_opt )
         amounts
 
     stateful entrypoint swap_tokens_for_exact_ae(
@@ -266,12 +266,12 @@ payable contract AedexV2Router =
         require(last(path).address == state.wae.address, "AedexV2Router: INVALID_PATH_LAST")
         let amounts = AedexV2Library.get_amounts_in(factory, amount_out, path)
         require(List.get(0,amounts) =< amount_in_max, "AedexV2Router: EXCESSIVE_INPUT_AMOUNT")
-        List.get(0,path).transfer_allowance(
+        first(path).transfer_allowance(
             Call.caller,
             first_pair(factory,path).address,
-            List.get(0,amounts)
+            first(amounts)
             )
-        _swap(amounts, path, Contract.address, factory, callback_opt)
+        swap'(amounts, path, Contract.address, factory, callback_opt)
         let last_amount = last(amounts)
         wae.withdraw(last_amount)
         Chain.spend(to,last_amount)
@@ -295,7 +295,7 @@ payable contract AedexV2Router =
             first_pair(factory,path).address,
             first(amounts)
             )
-        _swap(amounts, path, Contract.address, factory, callback_opt)
+        swap'(amounts, path, Contract.address, factory, callback_opt)
         let last_amount = last(amounts)
         wae.withdraw(last_amount)
         Chain.spend(to,last_amount)
@@ -312,13 +312,14 @@ payable contract AedexV2Router =
         let (wae,factory) = (state.wae,state.factory)
         require(first(path).address == wae.address, "AedexV2Router: INVALID_PATH_FIRST")
         let amounts = AedexV2Library.get_amounts_in(factory, amount_out, path)
-        let fst_amount = first(amounts)
+        let first_amount = first(amounts)
         require(first(amounts) =< Call.value, "AedexV2Router: EXCESSIVE_INPUT_AMOUNT")
-        let fst_pair = first_pair(factory,path)
-        wae.deposit_to(fst_pair.address,value=fst_amount)
-        _swap(amounts, path, to, factory, callback_opt)
-        if (Call.value > fst_amount)
-            Chain.spend(Call.caller,Call.value - fst_amount) // refund dust ae, if any
+        wae.deposit_to(
+            first_pair(factory,path).address,
+            value=first_amount)
+        swap'(amounts, path, to, factory, callback_opt)
+        if (Call.value > first_amount)
+            Chain.spend(Call.caller,Call.value - first_amount) // refund dust ae, if any
         amounts
 
     // **** LIB EXPOSURE ****
@@ -333,7 +334,6 @@ payable contract AedexV2Router =
 
     entrypoint get_amounts_out( amount_in , path) =
         AedexV2Library.get_amounts_out(state.factory, amount_in , path)
-
     entrypoint get_amounts_in( amount_out , path) =
         AedexV2Library.get_amounts_in(state.factory, amount_out , path)
 

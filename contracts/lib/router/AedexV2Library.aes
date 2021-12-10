@@ -50,6 +50,8 @@ namespace AedexV2Library =
         else
             (reserve1,reserve0)
 
+    private function apply_fee(amount: int): int= amount*997 // the fee is 0.3%
+
     // given an input amount of an asset and pair reserves, returns the maximum output amount of the other asset
     function get_amount_out(
               amount_in: int
@@ -58,7 +60,7 @@ namespace AedexV2Library =
         ): int =
         require(amount_in > 0, "AedexV2Library: INSUFFICIENT_INPUT_AMOUNT")
         require(reserve_in > 0 && reserve_out > 0, "AedexV2Library: INSUFFICIENT_LIQUIDITY")
-        let amount_in_with_fee = amount_in*997
+        let amount_in_with_fee = apply_fee(amount_in)
         let numerator = amount_in_with_fee*reserve_out
         let denominator = reserve_in*1000 + amount_in_with_fee
         numerator / denominator
@@ -72,7 +74,7 @@ namespace AedexV2Library =
         require(amount_out > 0, "AedexV2Library: INSUFFICIENT_OUTPUT_AMOUNT")
         require(reserve_in > 0 && reserve_out > 0, "AedexV2Library: INSUFFICIENT_LIQUIDITY")
         let numerator = reserve_in*amount_out*1000
-        let denominator = (reserve_out - amount_out)*997
+        let denominator = apply_fee(reserve_out - amount_out)
         (numerator / denominator) + 1
 
 

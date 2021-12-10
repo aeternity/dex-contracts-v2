@@ -191,7 +191,7 @@ const pairModelFixture = async () => {
 
 const calleeFixture = async ( ) => {
     const callee = await getContract(
-        './contracts/test/AedexV2CallbackTest.aes',
+        './test/contracts/AedexV2CallbackTest.aes',
         [],
     )
     await callee.deploy()
@@ -228,7 +228,7 @@ const tokenFixture = async ( ix, liquidity ) => {
 getContractFromSource
 const waeFixture = async ( ) => {
     const token = await getContract(
-        './contracts/test/WAE.aes',
+        './contracts/WAE.aes',
         [ ],
     )
     await token.deploy()
@@ -387,16 +387,11 @@ const beforeEachWithSnapshot = ( str, work ) => {
     afterEach( "reset to snapshot", async () => {
         //const currentBlockHeight = await getBlockHeight()
         const currentBlockHeight = await client.height()
-        console.debug( "current blockHeight: " + currentBlockHeight )
         if ( currentBlockHeight > snapshotHeight ) {
-            console.debug( "rollingback to " + snapshotHeight + "..." )
             const cmd = `docker exec aedex_node_1 bin/aeternity db_rollback --height ${snapshotHeight}`
             await exec( cmd )
-            console.debug( "rollback completed" )
             await awaitOneKeyBlock( client )
-        } else {
-            console.debug( "nothing to rollback" )
-        }
+        }  
     } )
 }
 

@@ -1,0 +1,18 @@
+@compiler >= 6
+
+include "../../contracts/lib/Utils.aes"
+include "../../contracts/interfaces/IAEX9Minimal.aes"
+include "../../contracts/interfaces/IAedexV2Callback.aes"
+include "../../contracts/interfaces/IAedexV2Pair.aes"
+include "../../contracts/interfaces/IAedexV2Factory.aes"
+include "../../contracts/interfaces/IAedexV2FactoryForPair.aes"
+include "../../contracts/lib/router/AedexV2Library.aes"
+include "../../contracts/lib/Math.aes"
+include "../../contracts/lib/UQ112x112.aes"
+include "../../contracts/AedexV2Factory.aes"
+include "../../contracts/AedexV2Pair.aes"
+include "../../contracts/router/AedexV2Router.aes"
+include "./AedexV2CallbackTest.aes"
+
+main contract BuildAll =
+    entrypoint init() = ()

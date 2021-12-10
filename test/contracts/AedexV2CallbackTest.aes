@@ -1,8 +1,8 @@
 @compiler >= 6
 
-include "../lib/Utils.aes"
-include "../interfaces/IAEX9Minimal.aes"
-include "../interfaces/IAedexV2Callback.aes"
+include "../../contracts/lib/Utils.aes"
+include "../../contracts/interfaces/IAEX9Minimal.aes"
+include "../../contracts/interfaces/IAedexV2Callback.aes"
 
 contract AedexV2CallbackTest =
     entrypoint aedex_v2_call(sender: address, amount0: int, amount1: int): unit =
