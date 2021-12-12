@@ -3,7 +3,7 @@
 include "String.aes"
 include "List.aes"
 
-namespace AE =
+namespace Utils =
     function validate_positive(x: int) =
         require(x >= 0,"LP")
 

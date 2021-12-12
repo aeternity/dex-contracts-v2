@@ -198,7 +198,7 @@ contract AedexV2Pair =
 
         update(balance0, balance1, reserve0, reserve1)
         if (fee_on)  put( state{ k_last = state.reserve0*state.reserve1 }) // reserve0 and reserve1 are up-to-date
-        Chain.event( PairBurn(Call.caller, to, AE.xsToPayload([amount0, amount1])) )
+        Chain.event( PairBurn(Call.caller, to, Utils.xsToPayload([amount0, amount1])) )
         {amount0 = amount0,amount1 = amount1}
 
     // this low-level function should be called from a contract which performs important safety checks
@@ -237,7 +237,7 @@ contract AedexV2Pair =
 
         update(balance0, balance1, reserve0, reserve1)
         Chain.event( SwapTokens( Call.caller, to,
-            AE.xsToPayload([ amount0_in, amount1_in, amount0_out, amount1_out])
+            Utils.xsToPayload([ amount0_in, amount1_in, amount0_out, amount1_out])
             ))
 
     // force balances to match reserves
@@ -270,7 +270,7 @@ contract AedexV2Pair =
     //AEX9 PART
 
     stateful function mint_update(to_opt: option(address),value: int) =
-        AE.validate_positive(value)
+        Utils.validate_positive(value)
         switch(to_opt)
             Some(to) =>
                 put(state { total_supply @ p = p + value
@@ -311,33 +311,30 @@ contract AedexV2Pair =
         Some(Map.lookup_default(address,state.balance_of,0))
 
     entrypoint allowance(accounts: IAEX9Minimal.allowance_accounts): option(int) =
-        let (owner,spender) = (accounts.from_account,accounts.for_account)
-        let spenderA = Map.lookup_default(owner,state.allowance,{})
-        Map.lookup(spender,spenderA)
+        let spenderA = Map.lookup_default(accounts.from_account,state.allowance,{})
+        Map.lookup(accounts.for_account,spenderA)
 
     stateful entrypoint create_allowance(spender: address, amount: int): unit =
-        AE.validate_positive(amount)
+        Utils.validate_positive(amount)
         let old = Map.lookup_default(Call.caller,state.allowance,{})
         put( state { allowance @ x = x { [Call.caller] = old { [spender] = amount } } } )
         Chain.event( Allowance(Call.caller, spender, amount) )
 
     stateful entrypoint transfer(recipient: address , amount: int): unit =
-        AE.validate_positive(amount)
-        let balance_before = Map.lookup_default(Call.caller,state.balance_of,0)
-        require(balance_before >= amount,  "AedexV2Pair: INSUFFICIENT_BALANCE_FOR_TRANSFER")
+        Utils.validate_positive(amount)
+        let balance = Map.lookup_default(Call.caller,state.balance_of,0)
+        require(balance >= amount,  "AedexV2Pair: INSUFFICIENT_BALANCE_FOR_TRANSFER")
         if(Call.caller != recipient)
-            let balance_recipient = Map.lookup_default(recipient,state.balance_of,0)
-
             put(state { balance_of @ b = b
-                            { [Call.caller] = balance_before - amount
-                            , [recipient] = balance_recipient + amount
+                            { [Call.caller] = balance - amount
+                            , [recipient = 0] @ p = p + amount
                             }
                       }
                )
             Chain.event( Transfer(Call.caller, recipient, amount) )
 
     stateful entrypoint transfer_allowance(sender: address, recipient: address, amount: int) =
-        AE.validate_positive(amount)
+        Utils.validate_positive(amount)
         let allowance_before = Map.lookup_default(
                 Call.caller,
                 Map.lookup_default(sender,state.allowance,{}),
