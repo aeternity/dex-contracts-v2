@@ -285,8 +285,12 @@ contract AedexV2Pair =
 
     stateful function burn_update(from: address,value: int) =
         require(value > 0, "AedexV2Pair: INSUFFICIENT_LIQUIDITY_BURNED")
-        put(state { total_supply @ p = p - value
-                  , balance_of[ from = 0 ] @ p = p - value
+        let total_supply = state.total_supply // we are using twice: verification and update
+        require(total_supply >= value , "AedexV2Pair: INSUFFICIENT_TOTAL_SUPPLY")
+        let balance = state.balance_of[ from ] // using twice: verification and update
+        require(balance >= value , "AedexV2Pair: INSUFFICIENT_BALANCE_FOR_BURNING")
+        put(state { total_supply  = total_supply - value
+                  , balance_of[ from ] = balance - value
                   })
         Chain.event( Burn(from,value) )
 
