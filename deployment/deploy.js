@@ -84,9 +84,9 @@ const deploy = async ( secretKey, network, compiler ) => {
             throw ex
         }
     }
-    const deployContract = async ( file, params, interfaceName ) => 
+    const deployContract = async ( file, params, interfaceName ) =>
         deployContract_( { file }, params, interfaceName )
-    const deploySource = async ( source, params, interfaceName ) => 
+    const deploySource = async ( source, params, interfaceName ) =>
         deployContract_( { source }, params, interfaceName )
 
     const fakeAddress = 'ct_A8WVnCuJ7t1DjAJf4y8hJrAEVpt1T9ypG3nNBdbpKmpthGvUm'
@@ -96,21 +96,24 @@ const deploy = async ( secretKey, network, compiler ) => {
         [
             /* 00 */ () => deployContract( './test/contracts/BuildAll.aes', []  ),
             /* 01 */ () => deployContract( './contracts/AedexV2Pair.aes',
-                [ fakeAddress, fakeAddress, fakeAddress, undefined ] ),
+                [ fakeAddress, fakeAddress, fakeAddress, 0, undefined ],
+                'IAedexV2Pair.aes',
+            ),
             /* 02 */ () => deployContract(
                 './contracts/router/AedexV2Router.aes',
                 [ fakeAddress, fakeAddress, fakeAddress ],
                 'IAedexV2Router.aes',
             ),
             /* 03 */ () => deployContract( './contracts/WAE.aes', [], 'IWAE.aes' ),
-            /* 04 */ () => deployContract( './contracts/AedexV2Factory.aes', 
+            /* 04 */ () => deployContract( './contracts/AedexV2Factory.aes',
                 [ fakeAddressAk, fakeAddress ],
+                'IAedexV2Factory.aes'
             ),
-            /* 05 */ () => deploySource( FungibleTokenFullWithString, 
+            /* 05 */ () => deploySource( FungibleTokenFullWithString,
                 [ "-", 0, "-", 0 ],
             ),
         ]
-    await deployments[0]()
+    await deployments[4]()
 
     //console.log(await contract.methods.getOwner())
 }

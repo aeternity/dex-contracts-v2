@@ -17,6 +17,8 @@ function exportContract ( fileName ) {
 
 exportContract( 'IAedexV2Router' )
 exportContract( 'IWAE' )
+exportContract( 'IAedexV2Factory' )
+exportContract( 'IAedexV2Pair' )
 
 //copy error
 const errorsFileDest = exportDir + `/errors.js`
