@@ -62,6 +62,13 @@ payable contract AedexV2Router =
         if (reserve_a == 0 && reserve_b == 0)
             (amount_a_desired, amount_b_desired)
         else
+            // there are provided two desired liquidity amounts, one  will remain fixed with
+            // what was provided as desired, and the second one will be inferred based
+            // on the current tokenA/tokenB rate.
+            // If the inferred one is less than amount(A/B)Min
+            // or greater then amount(A/B)Desired the transaction will fail.
+            // First we will try to infer B from A, if that is less then B_Desired we go with that
+            // otherwise we are going to infer A from B
             let amount_b_optimal = AedexV2Library.quote(amount_a_desired, reserve_a, reserve_b)
             if (amount_b_optimal =< amount_b_desired)
                 require(amount_b_optimal >= amount_b_min, "AedexV2Router: INSUFFICIENT_B_AMOUNT")
@@ -80,7 +87,7 @@ payable contract AedexV2Router =
             , amount_a_min: int
             , amount_b_min: int
             , to: address
-            , min_liquidity: int // the minimum liquidity constant for the pair 
+            , min_liquidity: int // the minimum liquidity constant for the pair
                                  // in case the pair is not yet created
             , deadline: int
         ): (amount_a * amount_b * liquidity) =
@@ -104,7 +111,7 @@ payable contract AedexV2Router =
         , amount_token_min: int
         , amount_ae_min: int
         , to: address
-        , min_liquidity: int // the minimum liquidity constant for the pair 
+        , min_liquidity: int // the minimum liquidity constant for the pair
                              // in case the pair is not yet created
         , deadline: int
         ):  (amount_token * amount_ae * liquidity) =
