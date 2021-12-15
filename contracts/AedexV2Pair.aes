@@ -270,7 +270,7 @@ contract AedexV2Pair =
     //AEX9 PART
 
     stateful function mint_update(to_opt: option(address),value: int) =
-        Utils.validate_positive(value)
+        Utils.require_positive(value)
         switch(to_opt)
             Some(to) =>
                 put(state { total_supply @ p = p + value
@@ -315,13 +315,13 @@ contract AedexV2Pair =
         Map.lookup(accounts.for_account,spenderA)
 
     stateful entrypoint create_allowance(spender: address, amount: int): unit =
-        Utils.validate_positive(amount)
+        Utils.require_positive(amount)
         let old = Map.lookup_default(Call.caller,state.allowance,{})
         put( state { allowance @ x = x { [Call.caller] = old { [spender] = amount } } } )
         Chain.event( Allowance(Call.caller, spender, amount) )
 
     stateful entrypoint transfer(recipient: address , amount: int): unit =
-        Utils.validate_positive(amount)
+        Utils.require_positive(amount)
         let balance = Map.lookup_default(Call.caller,state.balance_of,0)
         require(balance >= amount,  "AedexV2Pair: INSUFFICIENT_BALANCE_FOR_TRANSFER")
         if(Call.caller != recipient)
@@ -334,7 +334,7 @@ contract AedexV2Pair =
             Chain.event( Transfer(Call.caller, recipient, amount) )
 
     stateful entrypoint transfer_allowance(sender: address, recipient: address, amount: int) =
-        Utils.validate_positive(amount)
+        Utils.require_positive(amount)
         let allowance_before = Map.lookup_default(
                 Call.caller,
                 Map.lookup_default(sender,state.allowance,{}),

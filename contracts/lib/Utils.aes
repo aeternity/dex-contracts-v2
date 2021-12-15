@@ -4,7 +4,7 @@ include "String.aes"
 include "List.aes"
 
 namespace Utils =
-    function validate_positive(x: int) =
+    function require_positive(x: int) =
         require(x >= 0,"LP")
 
     function
