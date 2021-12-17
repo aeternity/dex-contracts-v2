@@ -1,0 +1,47 @@
+{
+  "name": "dex-contracts-v2",
+  "version": "1.0.0",
+  "description": "This is the default package.json generated for your project",
+  "main": "index.js",
+  "scripts": {
+    "deploy": "node deployment/deploy.js",
+    "test": "mocha ./test/*.test.js --timeout 0 --exit",
+    "postinstall": "node ./scripts/postinstall.js",
+    "test:wae": "mocha ./test/wae.test.js --timeout 0 --exit",
+    "test:wae-break": "mocha ./test/wae.test.js  --timeout 0 --exit -b --failed-first",
+    "test:wae-debug": "node --inspect-brk node_modules/.bin/mocha ./test/wae.test.js --timeout 0 --exit -b",
+    "test:aedex-pool-factory": "mocha ./test/aedex-pool-factory.test.js --timeout 0 --exit",
+    "test:aedex-pool-factory-break": "mocha ./test/aedex-pool-factory.test.js  --timeout 0 --exit -b --failed-first",
+    "test:aedex-pool-factory-debug": "node --inspect-brk node_modules/.bin/mocha ./test/aedex-pool-factory.test.js --timeout 0 --exit -b",
+    "test:aedex-router": "mocha ./test/aedex-router.test.js --timeout 0 --exit",
+    "test:aedex-router-break": "mocha ./test/aedex-router.test.js  --timeout 0 --exit -b --failed-first",
+    "test:aedex-router-debug": "node --inspect-brk node_modules/.bin/mocha ./test/aedex-router.test.js --timeout 0 --exit -b",
+    "test:aedex-pair": "mocha ./test/aedex-pair.test.js --timeout 0 --exit",
+    "test:aedex-pair-break": "mocha ./test/aedex-pair.test.js  --timeout 0 --exit -b --failed-first",
+    "test:aedex-pair-debug": "node --inspect-brk node_modules/.bin/mocha ./test/aedex-pair.test.js --timeout 0 --exit -b"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@aeternity/aepp-sdk": "^10.0.0-beta.1",
+    "aeternity-fungible-token": "^1.0.0",
+    "axios": "^0.24.0",
+    "crypto": "^1.0.1",
+    "fs": "^0.0.1-security"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.15.4",
+    "@babel/core": "^7.15.4",
+    "@babel/plugin-transform-runtime": "^7.15.0",
+    "@babel/preset-env": "^7.15.4",
+    "@babel/register": "^7.15.3",
+    "@babel/runtime": "^7.8.4",
+    "babel-eslint": "^10.0.3",
+    "babel-jest": "^25.1.0",
+    "chai": "^4.3.4",
+    "eslint": "^8.2.0",
+    "eslint-plugin-import": "^2.20.0",
+    "eslint-plugin-jest": "^23.6.0",
+    "mocha": "^9.0.3"
+  }
+}

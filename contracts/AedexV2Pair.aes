@@ -1,0 +1,361 @@
+@compiler >= 6
+
+include "./lib/Utils.aes"
+include "./lib/UQ112x112.aes"
+include "./lib/Math.aes"
+include "./interfaces/IAedexV2Pair.aes"
+include "./interfaces/IAedexV2Callback.aes"
+include "./interfaces/IAedexV2FactoryForPair.aes"
+include "Option.aes"
+
+include "./interfaces/IAEX9Minimal.aes"
+contract AedexV2Pair =
+    type owner = address
+    type spender = address
+
+    datatype event
+        = Transfer(address /*indexed from*/, address /*indexed to*/, int /*value*/)
+        | Approval(address /*indexed owner*/, address /*indexed spender*/, int /*value*/)
+        | Allowance(address /*indexed owner*/, address /*indexed spender*/, int /*value*/)
+        | Mint(address /*indexed owner*/, int /*value*/)
+        | Burn(address /*indexed owner*/, int /*value*/)
+
+
+        | LockLiquidity(int)
+        | PairMint(address /*indexed sender*/, int /*amount0*/, int /*amount1*/)
+        | PairBurn(address /*indexed sender*/, address /*indexed to*/, string /*int amount0 | int amount1*/ )
+        | SwapTokens(
+            address /*indexed sender*/
+            , address /*indexed to*/
+            , string
+            /*
+            , int amount0_in,
+            , int amount1_in,
+            , int amount0_out,
+            , int amount1_out,
+            */
+        )
+        //represents the new pair balances of token0 and token1
+        | Sync(int /*reserve0*/, int /*reserve1*/)
+
+    record state = {
+              //token area
+              total_supply: int
+            , balance_of: map(owner, int)
+            , locked_liquidity: int
+            , allowance: map(owner, map(spender,int))
+            , factory: IAedexV2FactoryForPair
+            , token0: IAEX9Minimal
+            , token1: IAEX9Minimal
+            , reserve0: int           // uses single storage slot, accessible via get_reserves
+            , reserve1: int           // uses single storage slot, accessible via get_reserves
+            , block_timestamp_last: int  // uses single storage slot, accessible via get_reserves
+            , price0_cumulative_last: int
+            , price1_cumulative_last: int
+            , min_liquidity: int
+            , k_last: int // reserve0 * reserve1, as of immediately after the most recent liquidity event
+                          // NOTE:
+                          // refers to k from XYK model (x * y = k equation)
+                          // https://docs.uniswap.org/protocol/V2/concepts/protocol-overview/how-uniswap-works
+                          // https://medium.com/phoenix-finance/understanding-the-xyk-model-of-pooled-liquidity-7340fdc20d9c
+            , debug_time: option(int)
+            }
+
+    entrypoint init(
+          factory: IAedexV2FactoryForPair
+        , token0: IAEX9Minimal
+        , token1: IAEX9Minimal
+        , min_liquidity: int
+        , debug_time: option(int)
+        ) = {
+              total_supply = 0
+            , balance_of   = {}
+            , locked_liquidity = 0
+            , allowance    = {}
+            , factory = factory
+            , token0 = token0
+            , token1 = token1
+            , reserve0 = 0
+            , reserve1 = 0
+            , block_timestamp_last = 0
+            , price0_cumulative_last = 0
+            , price1_cumulative_last = 0
+            , k_last = 0
+            , debug_time = debug_time
+            , min_liquidity = min_liquidity
+        }
+
+    // INTERNALS
+
+    function get_balances() =
+        let balance0 = Option.default(0,state.token0.balance(Contract.address))
+        let balance1 = Option.default(0,state.token1.balance(Contract.address))
+        (balance0,balance1)
+
+
+    function timestamp() = Option.default(Chain.timestamp,state.debug_time)
+
+    stateful entrypoint set_debug_time(time: int) =
+        require(Option.is_some(state.debug_time),"AedexV2Pair: NOT_DEBUG_MODE")
+        put( state{ debug_time= Some(time)  } )
+
+    // update reserves and, on the first call per block, price accumulators
+    stateful function update(balance0: int, balance1: int, reserve0: int,reserve1: int  ) =
+        require( balance0 >= 0 && balance1 >= 0 && reserve0 >= 0 && reserve1 >= 0,"AedexV2Pair: LP" )
+
+        let block_timestamp = timestamp()
+
+        let time_elapsed = block_timestamp - state.block_timestamp_last
+        if (time_elapsed > 0 && reserve0 != 0 && reserve1 != 0)
+            put(state { price0_cumulative_last @ p = p + (UQ112x112.encode(reserve1)/reserve0)*time_elapsed
+                      , price1_cumulative_last @ p = p + (UQ112x112.encode(reserve0)/reserve1)*time_elapsed
+                })
+
+        put( state { reserve0 = balance0
+                   , reserve1 = balance1
+                   , block_timestamp_last = block_timestamp
+                   })
+        Chain.event( Sync(balance0, balance1) ) // actually new reserve0&reserve1
+
+    // if fee is on, mint liquidity equivalent to 1/6th of the growth in sqrt(k)
+    stateful function mint_fee(reserve0: int, reserve1: int): bool =
+        require(reserve0 >= 0 && reserve1 >= 0,"AedexV2Pair: LP")
+        let k_last = state.k_last // gas savings
+
+        switch(state.factory.fee_to())
+          Some(fee_to) =>
+            if (k_last != 0)
+                let root_k = Math.sqrt(reserve0 * reserve1)
+                let root_k_last_last = Math.sqrt(k_last)
+                if (root_k > root_k_last_last)
+                    let numerator = state.total_supply * (root_k - root_k_last_last)
+                    let denominator = root_k*5 + root_k_last_last
+                    let liquidity = numerator / denominator
+                    if (liquidity > 0) mint_update(Some(fee_to), liquidity)
+            true
+          None =>
+            if( k_last != 0) put( state { k_last = 0})
+            false
+
+    // DEX
+    entrypoint get_reserves(): IAedexV2Pair.reserves = {
+              reserve0 = state.reserve0
+            , reserve1 = state.reserve1
+            , block_timestamp_last = state.block_timestamp_last
+        }
+
+
+    entrypoint minimum_liquidity() = state.min_liquidity
+
+    entrypoint factory() = state.factory
+    entrypoint token0() = state.token0
+    entrypoint token1() = state.token1
+
+    // this low-level function should be called from a contract which performs important safety checks
+    stateful entrypoint mint(to: address): int =
+        let (reserve0, reserve1) = (state.reserve0,state.reserve1) // gas savings
+        let (balance0,balance1) = get_balances()
+        let amount0 = balance0 - reserve0
+        let amount1 = balance1 - reserve1
+
+        let fee_on = mint_fee(reserve0, reserve1)
+        let total_supply = state.total_supply // gas savings, must be defined here since totalSupply can update in gc
+
+        let liquidity =
+                let min_liq = state.min_liquidity // gas savings
+                if (total_supply == 0)
+                    mint_update(None, min_liq) // permanently lock the first MINIMUM_LIQUIDITY tokens
+                    Math.sqrt(amount0 * amount1) - min_liq
+                else
+                    Math.min((amount0*total_supply) / reserve0, (amount1*total_supply) / reserve1)
+        require(liquidity > 0, "AedexV2Pair: INSUFFICIENT_LIQUIDITY_MINTED")
+        mint_update(Some(to), liquidity)
+
+        update(balance0, balance1, reserve0, reserve1)
+        if (fee_on)  put( state{ k_last = state.reserve0*state.reserve1 }) // reserve0 and reserve1 are up-to-date
+        Chain.event( PairMint(Call.caller, amount0, amount1) )
+        liquidity
+
+
+    // this low-level function should be called from a contract which performs important safety checks
+    stateful entrypoint burn(to: address): IAedexV2Pair.amounts =
+        let (reserve0, reserve1) = (state.reserve0,state.reserve1) // gas savings
+        let token0 = state.token0                                   // gas savings
+        let token1 = state.token1                                   // gas savings
+        let (balance0,balance1) = get_balances()
+        let liquidity = Option.default(0,balance(Contract.address))
+
+        let fee_on = mint_fee(reserve0, reserve1)
+        let total_supply = state.total_supply // gas savings, must be defined here since totalSupply
+                                               // can update in mintFee
+        let amount0 = (liquidity*balance0) / total_supply // using balances ensures pro-rata distribution
+        let amount1 = (liquidity*balance1) / total_supply // using balances ensures pro-rata distribution
+        burn_update(Contract.address, liquidity)
+        require(amount0 >= 0 && amount1 >= 0,"AedexV2Pair: NEGATIVE_VALUE_ON_TRANSFER")
+        token0.transfer(to, amount0)
+        token1.transfer(to, amount1)
+        let (balance0,balance1) = get_balances()
+
+        update(balance0, balance1, reserve0, reserve1)
+        if (fee_on)  put( state{ k_last = state.reserve0*state.reserve1 }) // reserve0 and reserve1 are up-to-date
+        Chain.event( PairBurn(Call.caller, to, Utils.xsToPayload([amount0, amount1])) )
+        {amount0 = amount0,amount1 = amount1}
+
+    // this low-level function should be called from a contract which performs important safety checks
+    stateful entrypoint swap(
+        amount0_out: int,
+        amount1_out: int,
+        to: address,
+        callback_opt: option(IAedexV2Callback)
+        ): unit =
+        require(amount0_out > 0 || amount1_out > 0, "AedexV2Pair: INSUFFICIENT_OUTPUT_AMOUNT")
+        let (reserve0, reserve1) = (state.reserve0,state.reserve1) // gas savings
+        require(amount0_out < reserve0 && amount1_out < reserve1, "AedexV2Pair: INSUFFICIENT_LIQUIDITY")
+
+
+        let token0 = state.token0
+        let token1 = state.token1
+        require(to != token0.address && to != token1.address, "AedexV2Pair: INVALID_TO")
+
+        if (amount0_out > 0) token0.transfer(to, amount0_out) // optimistically transfer tokens
+        if (amount1_out > 0) token1.transfer(to, amount1_out) // optimistically transfer tokens
+
+        Option.map((callback) => callback.aedex_v2_call(Call.caller,amount0_out,amount1_out),callback_opt)
+
+        let (balance0,balance1) = get_balances()
+
+        let amount0_in = if(balance0 > reserve0 - amount0_out) balance0 - (reserve0 - amount0_out) else 0
+        let amount1_in = if(balance1 > reserve1 - amount1_out) balance1 - (reserve1 - amount1_out) else 0
+        require(amount0_in > 0 || amount1_in > 0, "AedexV2Pair: INSUFFICIENT_INPUT_AMOUNT")
+
+        let balance0_adjusted = balance0*1000 - amount0_in*3
+        let balance1_adjusted = balance1*1000 - amount1_in*3
+        require(
+            balance0_adjusted*balance1_adjusted >= reserve0*reserve1*1000000,
+            "AedexV2Pair: INSUFFICIENT_BALANCE"
+            )
+
+        update(balance0, balance1, reserve0, reserve1)
+        Chain.event( SwapTokens( Call.caller, to,
+            Utils.xsToPayload([ amount0_in, amount1_in, amount0_out, amount1_out])
+            ))
+
+    // force balances to match reserves
+    stateful entrypoint skim(to: address ) =
+        let token0 = state.token0
+        let token1 = state.token1
+        let balance0 = Option.default(0,token0.balance(Contract.address))
+        let balance1 = Option.default(0,token1.balance(Contract.address))
+
+        let amount0 = balance0 - state.reserve0
+        let amount1 = balance1 - state.reserve1
+        require(amount0 >= 0 && amount1 >= 0,"AedexV2Pair: NEGATIVE_VALUE_ON_TRANSFER")
+        token0.transfer(to, amount0)
+        token1.transfer(to, amount1)
+
+    // force reserves to match balances
+    stateful entrypoint sync() =
+        let token0 = state.token0
+        let token1 = state.token1
+        let balance0 = Option.default(0,token0.balance(Contract.address))
+        let balance1 = Option.default(0,token1.balance(Contract.address))
+
+        update(
+            balance0,
+            balance1,
+            state.reserve0,
+            state.reserve1
+            )
+
+    //AEX9 PART
+
+    stateful function mint_update(to_opt: option(address),value: int) =
+        Utils.require_positive(value)
+        switch(to_opt)
+            Some(to) =>
+                put(state { total_supply @ p = p + value
+                          , balance_of[ to = 0] @ p = p + value
+                          })
+                Chain.event( Mint( to, value ))
+            None =>
+                put(state { total_supply @ p = p + value
+                          , locked_liquidity @ p = p + value
+                          })
+                Chain.event( LockLiquidity(value) )
+
+    stateful function burn_update(from: address,value: int) =
+        require(value > 0, "AedexV2Pair: INSUFFICIENT_LIQUIDITY_BURNED")
+        let total_supply = state.total_supply // we are using twice: verification and update
+        require(total_supply >= value , "AedexV2Pair: INSUFFICIENT_TOTAL_SUPPLY")
+        let balance = state.balance_of[ from ] // using twice: verification and update
+        require(balance >= value , "AedexV2Pair: INSUFFICIENT_BALANCE_FOR_BURNING")
+        put(state { total_supply  = total_supply - value
+                  , balance_of[ from ] = balance - value
+                  })
+        Chain.event( Burn(from,value) )
+
+    //TODO: we might want as meta_info to reflect token1&token0 meta_info
+    //find a suitable combination
+    entrypoint meta_info(): IAEX9Minimal.meta_info = {
+          name = "Aedex v2",
+          symbol = "AEDX-V2",
+          decimals = 18
+        }
+
+    entrypoint total_supply() = state.total_supply
+    entrypoint price0_cumulative_last() = state.price0_cumulative_last
+    entrypoint price1_cumulative_last() = state.price1_cumulative_last
+
+    entrypoint balance(address: address): option(int) =
+        //we replace None with 0
+        Some(Map.lookup_default(address,state.balance_of,0))
+
+    entrypoint allowance(accounts: IAEX9Minimal.allowance_accounts): option(int) =
+        let spenderA = Map.lookup_default(accounts.from_account,state.allowance,{})
+        Map.lookup(accounts.for_account,spenderA)
+
+    stateful entrypoint create_allowance(spender: address, amount: int): unit =
+        Utils.require_positive(amount)
+        let old = Map.lookup_default(Call.caller,state.allowance,{})
+        put( state { allowance @ x = x { [Call.caller] = old { [spender] = amount } } } )
+        Chain.event( Allowance(Call.caller, spender, amount) )
+
+    stateful entrypoint transfer(recipient: address , amount: int): unit =
+        Utils.require_positive(amount)
+        let balance = Map.lookup_default(Call.caller,state.balance_of,0)
+        require(balance >= amount,  "AedexV2Pair: INSUFFICIENT_BALANCE_FOR_TRANSFER")
+        if(Call.caller != recipient)
+            put(state { balance_of @ b = b
+                            { [Call.caller] = balance - amount
+                            , [recipient = 0] @ p = p + amount
+                            }
+                      }
+               )
+            Chain.event( Transfer(Call.caller, recipient, amount) )
+
+    stateful entrypoint transfer_allowance(sender: address, recipient: address, amount: int) =
+        Utils.require_positive(amount)
+        let allowance_before = Map.lookup_default(
+                Call.caller,
+                Map.lookup_default(sender,state.allowance,{}),
+                0
+                )
+
+        require(allowance_before >= amount, "AedexV2Pair: INSUFFICIENT_ALLOWANCE")
+
+        let balance_recipient = Map.lookup_default(
+             recipient,
+             state.balance_of,
+             0
+             )
+        let balance_sender = Map.lookup_default( sender, state.balance_of,0 )
+        require(balance_sender >= amount,"AedexV2Pair: INSUFFICIENT_BALANCE_FOR_TRANSFER" )
+
+        put(state
+            { allowance @ a = a { [sender] @ s = s {[Call.caller] = allowance_before - amount }}
+            , balance_of @ b = b { [recipient] = balance_recipient + amount
+                                , [sender] = balance_sender - amount
+                                }
+            })
+
+        Chain.event( Transfer(sender, recipient, amount) )

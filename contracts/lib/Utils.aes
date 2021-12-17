@@ -1,0 +1,24 @@
+@compiler >= 6
+
+include "String.aes"
+include "List.aes"
+
+namespace Utils =
+    function require_positive(x: int) =
+        require(x >= 0,"LP")
+
+    function
+        addIntToPayload: (string,int) => string
+        addIntToPayload("", x) = Int.to_str(x)
+        addIntToPayload(acc, x) = String.concat( String.concat(acc,"|"), Int.to_str(x) )
+
+    function xsToPayload(xs: list(int)): string =
+        List.foldl(addIntToPayload,"",xs)
+
+    function
+        addAddrToPayload: (string,address) => string
+        addAddrToPayload("", x) = Address.to_str(x)
+        addAddrToPayload(acc, x) = String.concat( String.concat(acc,"|"), Address.to_str(x) )
+
+    function addrsToPayload(xs: list(address)): string =
+        List.foldl(addAddrToPayload,"",xs)

@@ -1,0 +1,23 @@
+@compiler >= 6
+
+include "./IAEX9Minimal.aes"
+include "./IAedexV2Pair.aes"
+
+
+contract interface IAedexV2Factory =
+    entrypoint fee_to: () => option(address)
+    entrypoint fee_to_setter: () => address
+
+    entrypoint get_pair: (IAEX9Minimal /*tokenA*/, IAEX9Minimal /*tokenB*/) => option(IAedexV2Pair)
+    entrypoint all_pairs: (int) => IAedexV2Pair
+    entrypoint all_pairs_length: () => int
+
+    stateful entrypoint create_pair: (
+            IAEX9Minimal /*tokenA*/,
+            IAEX9Minimal /*tokenB*/,
+            int /*min_liquidity*/,
+            option(int) /* debug_time */
+        ) => IAedexV2Pair /*pair*/
+
+    entrypoint set_fee_to: (address) => unit
+    entrypoint set_fee_toSetter: (address) => unit
