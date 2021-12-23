@@ -60,10 +60,9 @@ contract interface IAedexV2Factory =
 
 
 
-
-
 payable main contract AedexV2Router =
   record state = {factory : IAedexV2Factory,wae : IWAE,wae_aex9 : IAEX9Minimal}
+  datatype event = DummyEvent
   type amount_a = int
   type amount_b = int
   type amount_token = int
