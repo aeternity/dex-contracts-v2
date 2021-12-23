@@ -10,6 +10,8 @@ include "../lib/router/AedexV2Library.aes"
 include "Option.aes"
 
 payable contract AedexV2Router =
+    datatype event = DummyEvent()
+
     record state = {
               factory: IAedexV2Factory
             , wae: IWAE
