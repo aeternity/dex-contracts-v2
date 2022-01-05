@@ -80,8 +80,8 @@ describe( 'Pair Router', () => {
     } )
 
     it( 'add_liquidity_ae', async () => {
-        const waePartnerAmount = expandTo18Dec( 1  )
-        const aeAmount = expandTo18Dec( 4  )
+        const waePartnerAmount = expandTo18Dec( 100  )
+        const aeAmount = expandTo18Dec( 400  )
 
         await waePartner.create_allowance( routerAddr(), MaxUint256 )
 
