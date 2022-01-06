@@ -103,7 +103,10 @@ describe( 'Pair Router', () => {
                 wallet.address, getAK( pair ), token1Amount
             ) )
         pair.expectEvents( ret,
-            emits( 'LockLiquidity' ).withArgs(
+            emits( 'Mint' ).withArgs(
+                getAK( pair ),
+                MINIMUM_LIQUIDITY
+            ).emits( 'LockLiquidity' ).withArgs(
                 MINIMUM_LIQUIDITY
             ).emits( 'Mint' ).withArgs(
                 wallet.address, expectedLiquidity - MINIMUM_LIQUIDITY
@@ -142,7 +145,10 @@ describe( 'Pair Router', () => {
         )
 
         waePair.expectEvents( ret,
-            emits( 'LockLiquidity' ).withArgs(
+            emits( 'Mint' ).withArgs(
+                getAK( waePair ),
+                MINIMUM_LIQUIDITY
+            ).emits( 'LockLiquidity' ).withArgs(
                 MINIMUM_LIQUIDITY
             ).emits( 'Mint' ).withArgs(
                 wallet.address, expectedLiquidity - MINIMUM_LIQUIDITY

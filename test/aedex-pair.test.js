@@ -153,7 +153,10 @@ describe( 'Pair Factory', () => {
         const ret = await mint( wallet.address )
 
         pair.expectEvents( ret,
-            emits( 'LockLiquidity' ).withArgs(
+            emits( 'Mint' ).withArgs(
+                getAK( pair ),
+                MINIMUM_LIQUIDITY
+            ).emits( 'LockLiquidity' ).withArgs(
                 MINIMUM_LIQUIDITY
             ).emits( 'Mint' ).withArgs(
                 wallet.address, expectedLiquidity - MINIMUM_LIQUIDITY

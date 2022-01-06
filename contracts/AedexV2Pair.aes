@@ -281,6 +281,7 @@ contract AedexV2Pair =
                 put(state { total_supply @ p = p + value
                           , locked_liquidity @ p = p + value
                           })
+                Chain.event( Mint( Contract.address, value ))
                 Chain.event( LockLiquidity(value) )
 
     stateful function burn_update(from: address,value: int) =
