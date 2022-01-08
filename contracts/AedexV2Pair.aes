@@ -99,7 +99,7 @@ contract AedexV2Pair =
           decimals = 18
         }
 
-    //TODO:  event if we have mint and burn, the entrypoints signature and business
+    //TODO: even if we have mint and burn, the entrypoints signature and business
     // differ from the aex9, a decision must be made how we deal with 'mintable' and
     // 'burnable' extension.
     entrypoint aex9_extensions() : list(string) = ["allowances"] // "mintable", "burnable"
