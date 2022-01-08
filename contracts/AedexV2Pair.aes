@@ -12,6 +12,9 @@ include "./interfaces/IAEX9Minimal.aes"
 contract AedexV2Pair =
     type owner = address
     type spender = address
+    type allowance_accounts = IAEX9Minimal.allowance_accounts
+    type allowances = map(allowance_accounts, int)
+    type balances = map(owner, int)
 
     datatype event
         = Transfer(address /*indexed from*/, address /*indexed to*/, int /*value*/)
@@ -41,9 +44,9 @@ contract AedexV2Pair =
     record state = {
               //token area
               total_supply: int
-            , balance_of: map(owner, int)
+            , balance_of: balances
             , locked_liquidity: int
-            , allowance: map(owner, map(spender,int))
+            , allowances: allowances
             , factory: IAedexV2FactoryForPair
             , token0: IAEX9Minimal
             , token1: IAEX9Minimal
@@ -68,76 +71,55 @@ contract AedexV2Pair =
         , min_liquidity: int
         , debug_time: option(int)
         ) = {
-              total_supply = 0
-            , balance_of   = {}
-            , locked_liquidity = 0
-            , allowance    = {}
-            , factory = factory
-            , token0 = token0
-            , token1 = token1
-            , reserve0 = 0
-            , reserve1 = 0
-            , block_timestamp_last = 0
+              total_supply           = 0
+            , balance_of             = {}
+            , locked_liquidity       = 0
+            , allowances             = {}
+            , factory                = factory
+            , token0                 = token0
+            , token1                 = token1
+            , reserve0               = 0
+            , reserve1               = 0
+            , block_timestamp_last   = 0
             , price0_cumulative_last = 0
             , price1_cumulative_last = 0
-            , k_last = 0
-            , debug_time = debug_time
-            , min_liquidity = min_liquidity
+            , k_last                 = 0
+            , debug_time             = debug_time
+            , min_liquidity          = min_liquidity
         }
 
-    // INTERNALS
+    //------------------------------------------------------------------------------
+    // VIEWERS
+    //------------------------------------------------------------------------------
+    //TODO: we might want as meta_info to reflect token1&token0 meta_info
+    //find a suitable combination
+    entrypoint meta_info(): IAEX9Minimal.meta_info = {
+          name = "Aedex v2",
+          symbol = "AEDX-V2",
+          decimals = 18
+        }
 
-    function get_balances() =
-        let balance0 = Option.default(0,state.token0.balance(Contract.address))
-        let balance1 = Option.default(0,state.token1.balance(Contract.address))
-        (balance0,balance1)
+    //TODO:  event if we have mint and burn, the entrypoints signature and business
+    // differ from the aex9, a decision must be made how we deal with 'mintable' and
+    // 'burnable' extension.
+    entrypoint aex9_extensions() : list(string) = ["allowances"] // "mintable", "burnable"
+    entrypoint total_supply() : int = state.total_supply
 
+    entrypoint balances() : balances = state.balance_of
+    entrypoint balance(address: address): option(int) = Map.lookup(address,state.balance_of)
 
-    function timestamp() = Option.default(Chain.timestamp,state.debug_time)
+    entrypoint allowances() : allowances = state.allowances
+    entrypoint allowance(allowance_accounts : allowance_accounts) : option(int) =
+        Map.lookup(allowance_accounts, state.allowances)
+    entrypoint allowance_for_caller(from_account: address) : option(int) =
+        allowance({ from_account = from_account, for_account = Call.caller })
 
-    stateful entrypoint set_debug_time(time: int) =
-        require(Option.is_some(state.debug_time),"AedexV2Pair: NOT_DEBUG_MODE")
-        put( state{ debug_time= Some(time)  } )
+    //we don't have an owner to make veto decisions over the pair contract
+    entrypoint owner() : address = Contract.address
 
-    // update reserves and, on the first call per block, price accumulators
-    stateful function update(balance0: int, balance1: int, reserve0: int,reserve1: int  ) =
-        require( balance0 >= 0 && balance1 >= 0 && reserve0 >= 0 && reserve1 >= 0,"AedexV2Pair: LP" )
+    entrypoint price0_cumulative_last() = state.price0_cumulative_last
+    entrypoint price1_cumulative_last() = state.price1_cumulative_last
 
-        let block_timestamp = timestamp()
-
-        let time_elapsed = block_timestamp - state.block_timestamp_last
-        if (time_elapsed > 0 && reserve0 != 0 && reserve1 != 0)
-            put(state { price0_cumulative_last @ p = p + (UQ112x112.encode(reserve1)/reserve0)*time_elapsed
-                      , price1_cumulative_last @ p = p + (UQ112x112.encode(reserve0)/reserve1)*time_elapsed
-                })
-
-        put( state { reserve0 = balance0
-                   , reserve1 = balance1
-                   , block_timestamp_last = block_timestamp
-                   })
-        Chain.event( Sync(balance0, balance1) ) // actually new reserve0&reserve1
-
-    // if fee is on, mint liquidity equivalent to 1/6th of the growth in sqrt(k)
-    stateful function mint_fee(reserve0: int, reserve1: int): bool =
-        require(reserve0 >= 0 && reserve1 >= 0,"AedexV2Pair: LP")
-        let k_last = state.k_last // gas savings
-
-        switch(state.factory.fee_to())
-          Some(fee_to) =>
-            if (k_last != 0)
-                let root_k = Math.sqrt(reserve0 * reserve1)
-                let root_k_last_last = Math.sqrt(k_last)
-                if (root_k > root_k_last_last)
-                    let numerator = state.total_supply * (root_k - root_k_last_last)
-                    let denominator = root_k*5 + root_k_last_last
-                    let liquidity = numerator / denominator
-                    if (liquidity > 0) mint_update(Some(fee_to), liquidity)
-            true
-          None =>
-            if( k_last != 0) put( state { k_last = 0})
-            false
-
-    // DEX
     entrypoint get_reserves(): IAedexV2Pair.reserves = {
               reserve0 = state.reserve0
             , reserve1 = state.reserve1
@@ -295,68 +277,109 @@ contract AedexV2Pair =
                   })
         Chain.event( Burn(from,value) )
 
-    //TODO: we might want as meta_info to reflect token1&token0 meta_info
-    //find a suitable combination
-    entrypoint meta_info(): IAEX9Minimal.meta_info = {
-          name = "Aedex v2",
-          symbol = "AEDX-V2",
-          decimals = 18
-        }
 
-    entrypoint total_supply() = state.total_supply
-    entrypoint price0_cumulative_last() = state.price0_cumulative_last
-    entrypoint price1_cumulative_last() = state.price1_cumulative_last
-
-    entrypoint balance(address: address): option(int) =
-        //we replace None with 0
-        Some(Map.lookup_default(address,state.balance_of,0))
-
-    entrypoint allowance(accounts: IAEX9Minimal.allowance_accounts): option(int) =
-        let spenderA = Map.lookup_default(accounts.from_account,state.allowance,{})
-        Map.lookup(accounts.for_account,spenderA)
-
-    stateful entrypoint create_allowance(spender: address, amount: int): unit =
-        Utils.require_positive(amount)
-        let old = Map.lookup_default(Call.caller,state.allowance,{})
-        put( state { allowance @ x = x { [Call.caller] = old { [spender] = amount } } } )
-        Chain.event( Allowance(Call.caller, spender, amount) )
+    stateful entrypoint create_allowance(for_account: address, value: int) =
+        Utils.require_positive(value)
+        let allowance_accounts = { from_account =  Call.caller, for_account = for_account }
+        require_allowance_not_existent(allowance_accounts)
+        put(state{ allowances[allowance_accounts] = value })
+        Chain.event(Allowance(Call.caller, for_account, value))
 
     stateful entrypoint transfer(recipient: address , amount: int): unit =
+        internal_transfer(Call.caller, recipient, amount)
+
+    stateful function internal_transfer(sender: address, recipient: address, amount: int) =
         Utils.require_positive(amount)
-        let balance = Map.lookup_default(Call.caller,state.balance_of,0)
-        require(balance >= amount,  "AedexV2Pair: INSUFFICIENT_BALANCE_FOR_TRANSFER")
-        if(Call.caller != recipient)
-            put(state { balance_of @ b = b
-                            { [Call.caller] = balance - amount
-                            , [recipient = 0] @ p = p + amount
-                            }
-                      }
-               )
-            Chain.event( Transfer(Call.caller, recipient, amount) )
+        require_balance(sender, amount)
+        put(state{ balance_of[sender] @ b = b - amount })
+        put(state{ balance_of[recipient = 0] @ b = b + amount })
+        Chain.event(Transfer(sender, recipient, amount))
 
-    stateful entrypoint transfer_allowance(sender: address, recipient: address, amount: int) =
-        Utils.require_positive(amount)
-        let allowance_before = Map.lookup_default(
-                Call.caller,
-                Map.lookup_default(sender,state.allowance,{}),
-                0
-                )
+    stateful function internal_change_allowance(allowance_accounts : allowance_accounts, value_change : int) =
+        let allowance = require_allowance(allowance_accounts, value_change)
+        let new_allowance = allowance + value_change
+        Utils.require_positive(new_allowance)
+        put(state{ allowances[allowance_accounts] = new_allowance })
+        Chain.event(Allowance(allowance_accounts.from_account, allowance_accounts.for_account, new_allowance))
 
-        require(allowance_before >= amount, "AedexV2Pair: INSUFFICIENT_ALLOWANCE")
+    stateful entrypoint transfer_allowance(from_account: address, to_account: address, value: int) =
+        let allowance_accounts = { from_account = from_account, for_account = Call.caller }
+        internal_transfer(from_account, to_account, value)
+        internal_change_allowance(allowance_accounts, -value)
 
-        let balance_recipient = Map.lookup_default(
-             recipient,
-             state.balance_of,
-             0
-             )
-        let balance_sender = Map.lookup_default( sender, state.balance_of,0 )
-        require(balance_sender >= amount,"AedexV2Pair: INSUFFICIENT_BALANCE_FOR_TRANSFER" )
+    stateful entrypoint change_allowance(for_account: address, value_change: int) =
+        let allowance_accounts = { from_account =  Call.caller, for_account = for_account }
+        internal_change_allowance(allowance_accounts, value_change)
 
-        put(state
-            { allowance @ a = a { [sender] @ s = s {[Call.caller] = allowance_before - amount }}
-            , balance_of @ b = b { [recipient] = balance_recipient + amount
-                                , [sender] = balance_sender - amount
-                                }
-            })
+    stateful entrypoint reset_allowance(for_account: address) =
+        let allowance_accounts = { from_account = Call.caller, for_account = for_account }
+        internal_change_allowance(allowance_accounts, - state.allowances[allowance_accounts])
 
-        Chain.event( Transfer(sender, recipient, amount) )
+    // INTERNALS
+    function get_balances() =
+        let balance0 = Option.default(0,state.token0.balance(Contract.address))
+        let balance1 = Option.default(0,state.token1.balance(Contract.address))
+        (balance0,balance1)
+
+
+    function timestamp() = Option.default(Chain.timestamp,state.debug_time)
+
+    stateful entrypoint set_debug_time(time: int) =
+        require(Option.is_some(state.debug_time),"AedexV2Pair: NOT_DEBUG_MODE")
+        put( state{ debug_time= Some(time)  } )
+
+    // update reserves and, on the first call per block, price accumulators
+    stateful function update(balance0: int, balance1: int, reserve0: int,reserve1: int  ) =
+        require( balance0 >= 0 && balance1 >= 0 && reserve0 >= 0 && reserve1 >= 0,"AedexV2Pair: LP" )
+
+        let block_timestamp = timestamp()
+
+        let time_elapsed = block_timestamp - state.block_timestamp_last
+        if (time_elapsed > 0 && reserve0 != 0 && reserve1 != 0)
+            put(state { price0_cumulative_last @ p = p + (UQ112x112.encode(reserve1)/reserve0)*time_elapsed
+                      , price1_cumulative_last @ p = p + (UQ112x112.encode(reserve0)/reserve1)*time_elapsed
+                })
+
+        put( state { reserve0 = balance0
+                   , reserve1 = balance1
+                   , block_timestamp_last = block_timestamp
+                   })
+        Chain.event( Sync(balance0, balance1) ) // actually new reserve0&reserve1
+
+    // if fee is on, mint liquidity equivalent to 1/6th of the growth in sqrt(k)
+    stateful function mint_fee(reserve0: int, reserve1: int): bool =
+        require(reserve0 >= 0 && reserve1 >= 0,"AedexV2Pair: LP")
+        let k_last = state.k_last // gas savings
+
+        switch(state.factory.fee_to())
+          Some(fee_to) =>
+            if (k_last != 0)
+                let root_k = Math.sqrt(reserve0 * reserve1)
+                let root_k_last_last = Math.sqrt(k_last)
+                if (root_k > root_k_last_last)
+                    let numerator = state.total_supply * (root_k - root_k_last_last)
+                    let denominator = root_k*5 + root_k_last_last
+                    let liquidity = numerator / denominator
+                    if (liquidity > 0) mint_update(Some(fee_to), liquidity)
+            true
+          None =>
+            if( k_last != 0) put( state { k_last = 0})
+            false
+
+    function require_allowance_not_existent(allowance_accounts : allowance_accounts) =
+        switch(allowance(allowance_accounts))
+            None => None
+            Some(_) => abort("AedexV2Pair: ALLOWANCE_ALREADY_EXISTENT")
+
+    function require_balance(account : address, value : int) =
+        switch(balance(account))
+          Some(balance) =>
+            require(balance >= value, "AedexV2Pair: INSUFFICIENT_BALANCE_FOR_TRANSFER")
+          None => abort("AedexV2Pair: BALANCE_ACCOUNT_NOT_EXISTENT")
+
+    function require_allowance(allowance_accounts : allowance_accounts, value : int) : int =
+        let allowance= Option.default(0,allowance(allowance_accounts))
+        Utils.require_positive(allowance + value)
+        require(allowance >= value, "AedexV2Pair: INSUFFICIENT_ALLOWANCE")
+        allowance
+
