@@ -298,13 +298,12 @@ contract AedexV2Pair =
                   })
         Chain.event( Burn(from,value) )
 
-    //TODO: we might want as meta_info to reflect token1&token0 meta_info
-    //find a suitable combination
-    entrypoint meta_info(): IAEX9Minimal.meta_info = {
-          name = "Aedex v2",
-          symbol = "AEDX-V2",
-          decimals = 18
-        }
+    entrypoint meta_info(): IAEX9Minimal.meta_info =
+        let meta0 = state.token0.meta_info()
+        let meta1 = state.token1.meta_info()
+        { name = Utils.concat_xs([meta0.name," vs ",meta1.name]),
+          symbol = Utils.concat_xs([meta0.symbol,"/",meta1.symbol]),
+          decimals = 18 }
 
     entrypoint total_supply() = state.total_supply
     entrypoint price0_cumulative_last() = state.price0_cumulative_last
