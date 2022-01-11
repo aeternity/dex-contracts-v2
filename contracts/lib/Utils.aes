@@ -18,6 +18,11 @@ namespace Utils =
         addIntToPayload("", x) = Int.to_str(x)
         addIntToPayload(acc, x) = String.concat( String.concat(acc,"|"), Int.to_str(x) )
 
+    function
+        concat_xs: (list(string)) => string
+        concat_xs([]) = ""
+        concat_xs(x::xs) = String.concat(x,concat_xs(xs))
+
     private function
         are_positive: (list(int)) => bool
         are_positive([]) = true
