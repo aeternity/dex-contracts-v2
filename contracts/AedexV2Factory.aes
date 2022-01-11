@@ -39,8 +39,6 @@ contract AedexV2Factory =
             , allow_debug_mode = Option.default(false,allow_debug_mode)
             }
 
-    //TODO: this is a hack to store it's own address into state as a IAedexV2Factory
-    //try finding something more suitable
     stateful entrypoint set_this_factory( this_factory: IAedexV2FactoryForPair ) =
         require(Contract.address == this_factory.address,"AedexV2Factory: NOT_SAME_FACTORY")
         put( state { this_factory = Some(this_factory) })
