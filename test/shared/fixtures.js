@@ -19,7 +19,6 @@ import crypto from 'crypto'
 import axios from 'axios'
 
 import {
-    makeExe,
     expandTo18Dec,
     exec,
     MINIMUM_LIQUIDITY,
@@ -111,10 +110,9 @@ const getContractEx = async ( { source, file, title }, params, contractAddress, 
                 }
             }
         )
-        const exe = makeExe( contract, client )
 
         return {
-            contract, exe,  deploy: async ( extra ) => {
+            contract, deploy: async ( extra ) => {
                 const deployment_result = await contract.deploy( params, extra )
                 console.debug( `%c----> Contract deployed: '${file || title}...'`, `color:green` )
 
@@ -211,7 +209,7 @@ const factoryFixture = async ( wallet, debugMode ) => {
         ],
     )
     await factory.deploy()
-    await factory.exe( x => x.set_this_factory( getA( factory ) ) )
+    await factory.set_this_factory( getA( factory ) )
     return factory
 }
 
@@ -259,39 +257,39 @@ const routerFixture = async ( wallet = wallet0 ) => {
     // deploy routers
     const router = await router01Fixture( factory, wae )
 
-    const pair01Address = await factory.exe( x => x.create_pair(
+    const pair01Address = await factory.create_pair(
         getA( tokenA ),
         getA( tokenB ),
         MINIMUM_LIQUIDITY,
-    ) )
+    )
 
     const pair01 = await getContract( "./contracts/AedexV2Pair.aes", [], pair01Address  )
 
-    const token0Address = ( await pair01.exe( x => x.token0() ) )
+    const token0Address = ( await pair01.token0() )
 
     const token0 = getA( tokenA ) === token0Address ? tokenA : tokenB
     const token1 = getA( tokenA ) === token0Address ? tokenB : tokenA
 
-    const pair1CAddress = await factory.exe( x => x.create_pair(
+    const pair1CAddress = await factory.create_pair(
         getA( token1 ),
         getA( tokenC ),
         MINIMUM_LIQUIDITY,
         undefined, {
             gas: 150000
         }
-    ) )
+    )
 
     //this should be used on longer path tests
     const pair1C = await getContract( "./contracts/AedexV2Pair.aes", [], pair1CAddress  )
 
-    const waePairAddress = await factory.exe( x => x.create_pair(
+    const waePairAddress = await factory.create_pair(
         getA( wae ),
         getA( waePartner ),
         MINIMUM_LIQUIDITY,
         undefined, {
             gas: 150000
         }
-    ) )
+    )
 
     const waePair = await getContract( "./contracts/AedexV2Pair.aes", [], waePairAddress  )
 
@@ -335,7 +333,7 @@ const pairFixture = async ( wallet = wallet0 ) => {
 
     const pair = await getContract( "./contracts/AedexV2Pair.aes", [], pairAddress  )
 
-    const token0Address = ( await pair.exe( x => x.token0() ) )
+    const token0Address = ( await pair.token0() )
 
     const token0 = getA( tokenA ) === token0Address ? tokenA : tokenB
     const token1 = getA( tokenA ) === token0Address ? tokenB : tokenA
@@ -367,9 +365,6 @@ const awaitOneKeyBlock = async ( client ) => {
     await client.awaitHeight( height + 1 )
 }
 const beforeEachWithSnapshot = ( str, work ) => {
-    //const getBlockHeight = async () => {
-        //return ( await exec( "curl -s localhost:3001/v2/status | jq '.top_block_height'" ) ).trim() * 1
-    //}
     let snapshotHeight = -1
     let client
     before( "initial snapshot: " + str, async () => {
