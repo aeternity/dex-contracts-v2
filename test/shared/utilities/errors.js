@@ -20,8 +20,11 @@ module.exports = {
     "AedexV2Router: EXPIRED"                      : "transaction expired, deadline is less than blockchain timestamp",
     "AedexV2Router: AMOUNT_LIST_IS_SHORTER"       : "internal error",
 
-    "WAE: LOW_BALANCE"   : "can't withdraw/transfer_allowance, the balance is to low",
-    "WAE: LOW_ALLOWANCE" : "can't transfer_allowance, the allowance is to low",
+    "WAE: LOW_BALANCE"                 : "can't withdraw/transfer_allowance, the balance is to low",
+    "WAE: LOW_ALLOWANCE"               : "can't transfer_allowance, the allowance is to low",
+    "WAE: ALLOWANCE_NOT_EXISTENT"      : "there is no allowance for current account",
+    "WAE: NON_NEGATIVE_VALUE_REQUIRED" : "one of the input amounts is negative",
+    "WAE: ALLOWANCE_ALREADY_EXISTENT"  : "can't initiate another allowance,there is an allowance already assigned for the current account, use change_allowance instead",
 
     "AedexV2Factory: FORBIDDEN"           : "wrong caller address",
     "AedexV2Factory: IDENTICAL_ADDRESSES" : "tokenA should differ from tokenB",

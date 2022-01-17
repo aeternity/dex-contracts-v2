@@ -69,10 +69,10 @@ describe( 'WAE', () => {
             )
         )
 
-        expect( await wae.allowance_unfolded(
-            wallet.address,
-            other.address
-        ),
+        expect( await wae.allowance( {
+            from_account : wallet.address,
+            for_account  : other.address
+        } ),
         ).to.eq( TEST_AMOUNT )
     } )
     it( 'transfer', async () => {
@@ -102,9 +102,10 @@ describe( 'WAE', () => {
             TEST_AMOUNT, {
                 onAccount: other.address,
             } )
-        expect( await wae.allowance_unfolded(
-            wallet.address,
-            other.address
+        expect( await wae.allowance( {
+            from_account : wallet.address,
+            for_account  : other.address
+        }
         ) ).to.eq( 0n )
         expect( await wae.balance( wallet.address ) ).to.eq(
             TOTAL_SUPPLY - TEST_AMOUNT
@@ -124,10 +125,10 @@ describe( 'WAE', () => {
                 onAccount: other.address,
             } )
 
-        expect( await wae.allowance_unfolded(
-            wallet.address,
-            other.address
-        ) ).to.eq( MaxUint256 - TEST_AMOUNT )
+        expect( await wae.allowance( {
+            from_account : wallet.address,
+            for_account  : other.address
+        } ) ).to.eq( MaxUint256 - TEST_AMOUNT )
         expect( await wae.balance( wallet.address ) ).to.eq(
             TOTAL_SUPPLY - TEST_AMOUNT
         )
