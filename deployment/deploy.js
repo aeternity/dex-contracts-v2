@@ -118,8 +118,6 @@ const deploy = async ( secretKey, network, compiler ) => {
     } catch ( ex ) {
         //empty
     }
-
-    //console.log(await contract.methods.getOwner())
 }
 
 module.exports = {

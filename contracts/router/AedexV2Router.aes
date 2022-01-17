@@ -170,7 +170,6 @@ payable contract AedexV2Router =
                 deadline
                 )
         token.transfer(to,amount_token)
-        //TODO: be sure is the right thing to do
         state.wae.withdraw(amount_ae)
         Chain.spend(to,amount_ae)
         (amount_token,amount_ae)

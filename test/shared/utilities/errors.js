@@ -26,9 +26,7 @@ module.exports = {
     "WAE: NON_NEGATIVE_VALUE_REQUIRED" : "one of the input amounts is negative",
     "WAE: ALLOWANCE_ALREADY_EXISTENT"  : "can't initiate another allowance,there is an allowance already assigned for the current account, use change_allowance instead",
 
-    "AedexV2Factory: NOT_SAME_FACTORY"    : "the factory provided should be the same as Contract.address",
     "AedexV2Factory: FORBIDDEN"           : "wrong caller address",
-    "AedexV2Factory: FACTORY_NOT_SET"     : "set_this_factory should be called before",
     "AedexV2Factory: IDENTICAL_ADDRESSES" : "tokenA should differ from tokenB",
     "AedexV2Factory: PAIR_EXISTS"         : "can't create another pair with same set of tokens",
 
