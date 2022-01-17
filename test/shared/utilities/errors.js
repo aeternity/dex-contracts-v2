@@ -23,9 +23,7 @@ module.exports = {
     "WAE: LOW_BALANCE"   : "can't withdraw/transfer_allowance, the balance is to low",
     "WAE: LOW_ALLOWANCE" : "can't transfer_allowance, the allowance is to low",
 
-    "AedexV2Factory: NOT_SAME_FACTORY"    : "the factory provided should be the same as Contract.address",
     "AedexV2Factory: FORBIDDEN"           : "wrong caller address",
-    "AedexV2Factory: FACTORY_NOT_SET"     : "set_this_factory should be called before",
     "AedexV2Factory: IDENTICAL_ADDRESSES" : "tokenA should differ from tokenB",
     "AedexV2Factory: PAIR_EXISTS"         : "can't create another pair with same set of tokens",
 

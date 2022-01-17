@@ -91,31 +91,33 @@ contract AedexV2Pair =
     //------------------------------------------------------------------------------
     // VIEWERS
     //------------------------------------------------------------------------------
-    //TODO: we might want as meta_info to reflect token1&token0 meta_info
-    //find a suitable combination
-    entrypoint meta_info(): IAEX9Minimal.meta_info = {
-          name = "Aedex v2",
-          symbol = "AEDX-V2",
-          decimals = 18
-        }
 
-    //TODO: even if we have mint and burn, the entrypoints signature and business
-    // differ from the aex9, a decision must be made how we deal with 'mintable' and
-    // 'burnable' extension.
-    entrypoint aex9_extensions() : list(string) = ["allowances"] // "mintable", "burnable"
+    entrypoint meta_info(): IAEX9Minimal.meta_info =
+        let meta0 = state.token0.meta_info()
+        let meta1 = state.token1.meta_info()
+        { name = Utils.concat_xs([meta0.name," vs ",meta1.name]),
+          symbol = Utils.concat_xs([meta0.symbol,"/",meta1.symbol]),
+          decimals = 18 }
+
+    entrypoint aex9_extensions() : list(string) = ["allowances"]
+
     entrypoint total_supply() : int = state.total_supply
 
     entrypoint balances() : balances = state.balance_of
+
     entrypoint balance(address: address): option(int) = Map.lookup(address,state.balance_of)
 
     entrypoint allowances() : allowances = state.allowances
+
     entrypoint allowance(allowance_accounts : allowance_accounts) : option(int) =
         Map.lookup(allowance_accounts, state.allowances)
+
     entrypoint allowance_for_caller(from_account: address) : option(int) =
         allowance({ from_account = from_account, for_account = Call.caller })
 
     //we don't have an owner to make veto decisions over the pair contract
     entrypoint owner() : address = Contract.address
+
 
     entrypoint price0_cumulative_last() = state.price0_cumulative_last
     entrypoint price1_cumulative_last() = state.price1_cumulative_last
@@ -130,8 +132,20 @@ contract AedexV2Pair =
     entrypoint minimum_liquidity() = state.min_liquidity
 
     entrypoint factory() = state.factory
+
     entrypoint token0() = state.token0
+
     entrypoint token1() = state.token1
+
+    //------------------------------------------------------------------------------
+    // STATEFUL 
+    //------------------------------------------------------------------------------
+
+    stateful entrypoint set_debug_time(time: int) =
+        require_positive([time])
+        require(Option.is_some(state.debug_time),"AedexV2Pair: NOT_DEBUG_MODE")
+        put( state{ debug_time= Some(time)  } )
+
 
     // this low-level function should be called from a contract which performs important safety checks
     stateful entrypoint mint(to: address): int =
@@ -249,10 +263,32 @@ contract AedexV2Pair =
             state.reserve1
             )
 
-    //AEX9 PART
+    stateful entrypoint create_allowance(for_account: address, value: int) =
+        require_positive([value])
+        let allowance_accounts = { from_account =  Call.caller, for_account = for_account }
+        require_allowance_not_existent(allowance_accounts)
+        put(state{ allowances[allowance_accounts] = value })
+        Chain.event(Allowance(Call.caller, for_account, value))
 
+    stateful entrypoint transfer(recipient: address , amount: int): unit =
+        internal_transfer(Call.caller, recipient, amount)
+
+    stateful entrypoint transfer_allowance(from_account: address, to_account: address, value: int) =
+        let allowance_accounts = { from_account = from_account, for_account = Call.caller }
+        internal_transfer(from_account, to_account, value)
+        internal_change_allowance(allowance_accounts, -value)
+
+    stateful entrypoint change_allowance(for_account: address, value_change: int) =
+        let allowance_accounts = { from_account =  Call.caller, for_account = for_account }
+        internal_change_allowance(allowance_accounts, value_change)
+
+    stateful entrypoint reset_allowance(for_account: address) =
+        let allowance_accounts = { from_account = Call.caller, for_account = for_account }
+        internal_change_allowance(allowance_accounts, - state.allowances[allowance_accounts])
+
+    // INTERNALS
     stateful function mint_update(to_opt: option(address),value: int) =
-        Utils.require_positive(value)
+        require_positive([value])
         switch(to_opt)
             Some(to) =>
                 put(state { total_supply @ p = p + value
@@ -277,60 +313,9 @@ contract AedexV2Pair =
                   })
         Chain.event( Burn(from,value) )
 
-
-    stateful entrypoint create_allowance(for_account: address, value: int) =
-        Utils.require_positive(value)
-        let allowance_accounts = { from_account =  Call.caller, for_account = for_account }
-        require_allowance_not_existent(allowance_accounts)
-        put(state{ allowances[allowance_accounts] = value })
-        Chain.event(Allowance(Call.caller, for_account, value))
-
-    stateful entrypoint transfer(recipient: address , amount: int): unit =
-        internal_transfer(Call.caller, recipient, amount)
-
-    stateful function internal_transfer(sender: address, recipient: address, amount: int) =
-        Utils.require_positive(amount)
-        require_balance(sender, amount)
-        put(state{ balance_of[sender] @ b = b - amount })
-        put(state{ balance_of[recipient = 0] @ b = b + amount })
-        Chain.event(Transfer(sender, recipient, amount))
-
-    stateful function internal_change_allowance(allowance_accounts : allowance_accounts, value_change : int) =
-        let allowance = require_allowance(allowance_accounts, value_change)
-        let new_allowance = allowance + value_change
-        Utils.require_positive(new_allowance)
-        put(state{ allowances[allowance_accounts] = new_allowance })
-        Chain.event(Allowance(allowance_accounts.from_account, allowance_accounts.for_account, new_allowance))
-
-    stateful entrypoint transfer_allowance(from_account: address, to_account: address, value: int) =
-        let allowance_accounts = { from_account = from_account, for_account = Call.caller }
-        internal_transfer(from_account, to_account, value)
-        internal_change_allowance(allowance_accounts, -value)
-
-    stateful entrypoint change_allowance(for_account: address, value_change: int) =
-        let allowance_accounts = { from_account =  Call.caller, for_account = for_account }
-        internal_change_allowance(allowance_accounts, value_change)
-
-    stateful entrypoint reset_allowance(for_account: address) =
-        let allowance_accounts = { from_account = Call.caller, for_account = for_account }
-        internal_change_allowance(allowance_accounts, - state.allowances[allowance_accounts])
-
-    // INTERNALS
-    function get_balances() =
-        let balance0 = Option.default(0,state.token0.balance(Contract.address))
-        let balance1 = Option.default(0,state.token1.balance(Contract.address))
-        (balance0,balance1)
-
-
-    function timestamp() = Option.default(Chain.timestamp,state.debug_time)
-
-    stateful entrypoint set_debug_time(time: int) =
-        require(Option.is_some(state.debug_time),"AedexV2Pair: NOT_DEBUG_MODE")
-        put( state{ debug_time= Some(time)  } )
-
     // update reserves and, on the first call per block, price accumulators
     stateful function update(balance0: int, balance1: int, reserve0: int,reserve1: int  ) =
-        require( balance0 >= 0 && balance1 >= 0 && reserve0 >= 0 && reserve1 >= 0,"AedexV2Pair: LP" )
+        require_positive([ balance0, balance1,reserve0,reserve1] )
 
         let block_timestamp = timestamp()
 
@@ -346,9 +331,35 @@ contract AedexV2Pair =
                    })
         Chain.event( Sync(balance0, balance1) ) // actually new reserve0&reserve1
 
+
+    stateful function internal_transfer(sender: address, recipient: address, amount: int) =
+        require_positive([amount])
+        require_balance(sender, amount)
+        put(state{ balance_of[sender] @ b = b - amount })
+        put(state{ balance_of[recipient = 0] @ b = b + amount })
+        Chain.event(Transfer(sender, recipient, amount))
+
+    stateful function internal_change_allowance(allowance_accounts : allowance_accounts, value_change : int) =
+        let allowance = require_allowance(allowance_accounts, value_change)
+        let new_allowance = allowance + value_change
+        require_positive([new_allowance])
+        put(state{ allowances[allowance_accounts] = new_allowance })
+        Chain.event(Allowance(allowance_accounts.from_account, allowance_accounts.for_account, new_allowance))
+
+    function get_balances() =
+        let balance0 = Option.default(0,state.token0.balance(Contract.address))
+        let balance1 = Option.default(0,state.token1.balance(Contract.address))
+        (balance0,balance1)
+
+
+    function timestamp() = Option.default(Chain.timestamp,state.debug_time)
+
+    function require_positive(xs: list(int)): unit =
+        Utils.require_positive_xs("AedexV2Pair",xs)
+
     // if fee is on, mint liquidity equivalent to 1/6th of the growth in sqrt(k)
     stateful function mint_fee(reserve0: int, reserve1: int): bool =
-        require(reserve0 >= 0 && reserve1 >= 0,"AedexV2Pair: LP")
+        require_positive([reserve0,reserve1])
         let k_last = state.k_last // gas savings
 
         switch(state.factory.fee_to())
@@ -379,7 +390,7 @@ contract AedexV2Pair =
 
     function require_allowance(allowance_accounts : allowance_accounts, value : int) : int =
         let allowance= Option.default(0,allowance(allowance_accounts))
-        Utils.require_positive(allowance + value)
+        require_positive([allowance + value])
         require(allowance >= value, "AedexV2Pair: INSUFFICIENT_ALLOWANCE")
         allowance
 

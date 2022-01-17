@@ -209,7 +209,6 @@ const factoryFixture = async ( wallet, debugMode ) => {
         ],
     )
     await factory.deploy()
-    await factory.set_this_factory( getA( factory ) )
     return factory
 }
 
