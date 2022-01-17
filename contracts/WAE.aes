@@ -10,44 +10,77 @@ contract WAE =
     type owner = address
     type spender = address
 
+    // This is a type alias for the allowances map
+    type allowances = map(IAEX9Minimal.allowance_accounts, int)
+
+    // This is a type alias for the balances map
+    type balances = map(owner, int)
+
     record state =
-        { balance_of: map(owner, int)
-        , allowance: map(owner, map(spender,int))
+        { balance_of: balances
+        , allowances: allowances
+        , owner : address      // the smart contract's owner address
         }
 
     entrypoint init() = {
           balance_of= {}
-        , allowance = {}
+        , allowances = {}
+        , owner = Call.caller
         }
 
     //------------------------------------------------------------------------------
     // viewers
     //------------------------------------------------------------------------------
 
+    // Get the token total supply
     entrypoint total_supply() = Contract.balance
-    entrypoint total_supply_str() = Int.to_str(Contract.balance)
 
 
+    // Get the token owner address
+    entrypoint owner(): address = state.owner
+
+    // Get the balances state
+    entrypoint balances(): balances = state.balance_of
+
+    // Get the token meta info
     entrypoint meta_info(): IAEX9Minimal.meta_info = {
           name = "Wrapped Aeternity",
           symbol = "WAE",
           decimals = 18
         }
 
+    // List of supported extensions
+    entrypoint aex9_extensions() : list(string) = ["allowances"]
+
+    // Get balance for address of `owner`
+    // returns option(int)
+    // If the `owner` address haven't had any token balance
+    // in this smart contract the return value is None
+    // Otherwise Some(int) is returned with the current balance
     entrypoint balance(address: address): option(int) =
-        //NOTE: tests are based on 0 not on null/undefined,
-        //we make this hack replacing None with Some(0)
-        Some(Map.lookup_default(address,state.balance_of,0))
+        Map.lookup(address,state.balance_of)
 
-    entrypoint allowance(accounts: IAEX9Minimal.allowance_accounts): option(int) =
-        let (owner,spender) = (accounts.from_account,accounts.for_account)
-        let spenderA = Map.lookup_default(owner,state.allowance,{})
-        Map.lookup(spender,spenderA)
+    // Get the allowances state
+    entrypoint allowances() : allowances =
+        state.allowances
 
-    entrypoint allowance_unfolded(
-             from_account: address,
-             for_account: address
-        ): option(int) = allowance({from_account = from_account, for_account = for_account})
+    // Get the allowance for passed `allowance_accounts` record
+    // returns option(int)
+    // This will lookup and return the allowed spendable amount
+    // from one address for another
+    // If there is no such allowance present result is None
+    // Otherwise Some(int) is returned with the allowance amount
+    entrypoint allowance(allowance_accounts : IAEX9Minimal.allowance_accounts) : option(int) =
+        Map.lookup(allowance_accounts, state.allowances)
+
+    // Get the allowance for caller from `from_account` address
+    // returns option(int)
+    // This will look up the allowances and return the allowed spendable amount
+    // from `from_account` for the transaction sender `Call.caller`
+    // If there is no such allowance present result is None
+    // Otherwise Some(int) is returned with the allowance amount
+    entrypoint allowance_for_caller(from_account: address) : option(int) =
+        allowance({ from_account = from_account, for_account = Call.caller })
 
     //------------------------------------------------------------------------------
     // stateful ones
@@ -68,29 +101,47 @@ contract WAE =
         Chain.spend( Call.caller,amount )
         Chain.event( Withdrawal(Call.caller, amount) )
 
-    stateful entrypoint create_allowance(guy: address, amount: int): unit =
-        put( state{allowance @ a = a{ [Call.caller = {} ] @ p = p { [guy] = amount }}})
-        Chain.event(Allowance(Call.caller, guy, amount))
+    // Create allowance for `for_account` to withdraw from your account `Call.caller`,
+    // multiple times, up to the `value` amount.
+    // This function will abort and fail if called again when there is allowance
+    // already set for these particular accounts pair.
+    stateful entrypoint create_allowance(for_account: address, value: int) =
+        // Check if the passed value is not negative
+        require_non_negative_value(value)
+        // Set the allowance account pair in the memory variable
+        let allowance_accounts = { from_account =  Call.caller, for_account = for_account }
+        // Check if there is no allowance already present in the state
+        // for these particular accounts pair.
+        require_allowance_not_existent(allowance_accounts)
+        // Save the allowance value for these accounts pair in the state
+        put(state{ allowances[allowance_accounts] = value })
+        // Fire Allowance event to include it in the transaction event log
+        Chain.event(Allowance(Call.caller, for_account, value))
+
+    // Allows to change the allowed spendable value for `for_account` with `value_change`
+    stateful entrypoint change_allowance(for_account: address, value_change: int) =
+        let allowance_accounts = { from_account =  Call.caller, for_account = for_account }
+        internal_change_allowance(allowance_accounts, value_change)
+
+    // Resets the allowance given `for_account` to zero.
+    stateful entrypoint reset_allowance(for_account: address) =
+        let allowance_accounts = { from_account = Call.caller, for_account = for_account }
+        internal_change_allowance(allowance_accounts, - state.allowances[allowance_accounts])
 
 
+    /// Transfer the balance of `value` from `Call.caller` to `to_account` account
     stateful entrypoint transfer(dst: address , amount: int): unit =
-        transfer_allowance(Call.caller, dst, amount)
+        internal_transfer(Call.caller, dst, amount)
 
-    stateful entrypoint transfer_allowance(src: address, dst: address, amount: int) =
-        let src_balance = Map.lookup_default(src,state.balance_of,0)
-        require(src_balance >= amount, "WAE: LOW_BALANCE")
-
-        if (src != Call.caller)
-            let src_allowance_map = Map.lookup_default(src,state.allowance,{})
-            let src_allowance = Map.lookup_default(Call.caller,src_allowance_map,0)
-            require(src_allowance >= amount, "WAE: LOW_ALLOWANCE")
-            put( state{ allowance @ a = a { [src = {}] @ s = s { [Call.caller] @ p = p - amount}}})
-
-        put( state { balance_of @ b = b {
-                [ src ] @ s = s - amount,
-                [ dst = 0 ] @ d = d + amount
-            } })
-        Chain.event( Transfer( src, dst, amount ) )
+    // Send `value` amount of tokens from address `from_account` to address `to_account`
+    // The transfer_allowance method is used for a withdraw workflow, allowing contracts to send
+    // tokens on your behalf, for example to "deposit" to a contract address and/or to charge
+    // fees in sub-token contract.
+    // The execution will abort and fail if there is no allowance set up previous this call
+    stateful entrypoint transfer_allowance(from_account: address, to_account: address, value: int) =
+        let allowance_accounts = { from_account = from_account, for_account = Call.caller }
+        internal_transfer(from_account, to_account, value)
+        internal_change_allowance(allowance_accounts, -value)
 
 
     datatype event
@@ -102,5 +153,54 @@ contract WAE =
 
         | Withdrawal(address /*indexed src*/, int /*amount*/)
 
+    //------------------------------------------------------------------------------
+    // internal functions
+    //------------------------------------------------------------------------------
 
+    stateful function internal_transfer(
+          from_account: address
+        , to_account: address
+        , value: int
+        ) =
 
+        require_non_negative_value(value)
+        require_balance(from_account, value)
+        put(state{ balance_of[from_account] @ b = b - value })
+        put(state{ balance_of[to_account = 0] @ b = b + value })
+        Chain.event(Transfer(from_account, to_account, value))
+
+    stateful function internal_change_allowance(
+          allowance_accounts : IAEX9Minimal.allowance_accounts
+        , value_change : int
+        ) =
+        let allowance = require_allowance(allowance_accounts, value_change)
+        let new_allowance = allowance + value_change
+        require_non_negative_value(new_allowance)
+        put(state{ allowances[allowance_accounts] = new_allowance })
+        Chain.event(Allowance(
+            allowance_accounts.from_account,
+            allowance_accounts.for_account,
+            new_allowance
+            ))
+
+    function require_allowance(
+          allowance_accounts : IAEX9Minimal.allowance_accounts
+        , value : int
+        ) : int =
+        switch(allowance(allowance_accounts))
+            Some(allowance) =>
+                require(allowance >= value, "WAE: LOW_ALLOWANCE")
+                allowance
+            None => abort("WAE: ALLOWANCE_NOT_EXISTENT")
+
+    function require_balance(account : address, amount : int) =
+        let src_balance = Map.lookup_default(account,state.balance_of,0)
+        require(src_balance >= amount, "WAE: LOW_BALANCE")
+
+    function require_non_negative_value(value : int) =
+        require(value >= 0, "WAE: NON_NEGATIVE_VALUE_REQUIRED")
+
+    function require_allowance_not_existent(allowance_accounts : IAEX9Minimal.allowance_accounts) =
+        switch(allowance(allowance_accounts))
+          None => None
+          Some(_) => abort("WAE: ALLOWANCE_ALREADY_EXISTENT")

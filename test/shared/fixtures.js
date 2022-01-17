@@ -268,8 +268,8 @@ const routerFixture = async ( wallet = wallet0 ) => {
 
     const token0Address = ( await pair01.exe( x => x.token0() ) )
 
-    const token0 = getA( tokenA ) === token0Address ? tokenA : tokenB
-    const token1 = getA( tokenA ) === token0Address ? tokenB : tokenA
+    const [ token0, token1 ] = getA( tokenA ) === token0Address 
+        ? [ tokenA, tokenB ] : [ tokenB, tokenA ]
 
     const pair1CAddress = await factory.exe( x => x.create_pair(
         getA( token1 ),
@@ -324,8 +324,8 @@ const pairFixture = async ( wallet = wallet0 ) => {
     const tokenB = await tokenFixture( 'B', liq )
 
     const createPairRet = await factory.contract.methods.create_pair(
-        getA( tokenA ),
         getA( tokenB ),
+        getA( tokenA ),
         MINIMUM_LIQUIDITY,
         //getA( factory ),
         1636041331999, //debug time
@@ -336,8 +336,8 @@ const pairFixture = async ( wallet = wallet0 ) => {
 
     const token0Address = ( await pair.exe( x => x.token0() ) )
 
-    const token0 = getA( tokenA ) === token0Address ? tokenA : tokenB
-    const token1 = getA( tokenA ) === token0Address ? tokenB : tokenA
+    const [ token0, token1 ] = getA( tokenA ) === token0Address 
+        ? [ tokenA, tokenB ] : [ tokenB, tokenA ]
 
     factory.expectEvents( createPairRet,
         emits( 'PairCreated' ).withArgs(
