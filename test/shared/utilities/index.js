@@ -24,23 +24,6 @@ function encodePrice( reserve0, reserve1 ) {
         ( BigInt( reserve0 ) * _2_pow_112 ) / BigInt( reserve1 ), // reserve0.mul( BigNumber.from( 2 ).pow( 112 ) ).div( reserve1 )
     ]
 }
-const makeExe = ( contract ) => async ( f, get ) => {
-    const tx = await f( contract.methods )
-
-    if ( get && typeof get == 'object' ) {
-        // client is an instance of the Universal Stamp
-        //tx.decodedEvents && console.log( tx.decodedEvents )
-        if ( get.events ) {
-            await get.events( tx.decodedEvents )
-        }
-        if ( get.results ) {
-            return await get.results( tx.decodedResult )
-        }
-        return tx.decodedResult
-    }
-
-    return get ? get( tx.decodedResult ) : tx.decodedResult
-}
 
 const expectToRevert = async ( f, msg ) => {
     try {
@@ -79,7 +62,6 @@ const events = ( tests ) => {
 module.exports = {
     exec,
     expectToRevert,
-    makeExe,
     expandTo18Dec,
     MaxUint128,
     MaxUint256,

@@ -51,7 +51,7 @@ describe( 'Pair Router', () => {
     let pair1C
     let waePair
     afterEach( async function() {
-        expect( await router.exe( x => x.balance() ) ).to.eq( 0n )
+        expect( ( await router.balance() ) || 0n ).to.eq( 0n )
     } )
     beforeEachWithSnapshot( 'first compile pool factory', async () => {
         ( {
@@ -70,9 +70,9 @@ describe( 'Pair Router', () => {
     const routerAddr = () =>  getAK( router )
 
     it( 'factory, WAE', async () => {
-        expect( await router.exe( x => x.factory() ) ).to.eq( getA( factory ) )
-        expect( await router.exe( x => x.wae() ) ).to.eq( getA( wae ) )
-        expect( await router.exe( x => x.wae_aex9() ) ).to.eq( getA( wae ) )
+        expect( await router.factory() ).to.eq( getA( factory ) )
+        expect( await router.wae() ).to.eq( getA( wae ) )
+        expect( await router.wae_aex9() ).to.eq( getA( wae ) )
     } )
     it( 'add_liquidity', async () => {
         const token0Amount = expandTo18Dec( 1 )
@@ -103,7 +103,10 @@ describe( 'Pair Router', () => {
                 wallet.address, getAK( pair ), token1Amount
             ) )
         pair.expectEvents( ret,
-            emits( 'LockLiquidity' ).withArgs(
+            emits( 'Mint' ).withArgs(
+                getAK( pair ),
+                MINIMUM_LIQUIDITY
+            ).emits( 'LockLiquidity' ).withArgs(
                 MINIMUM_LIQUIDITY
             ).emits( 'Mint' ).withArgs(
                 wallet.address, expectedLiquidity - MINIMUM_LIQUIDITY
@@ -142,7 +145,10 @@ describe( 'Pair Router', () => {
         )
 
         waePair.expectEvents( ret,
-            emits( 'LockLiquidity' ).withArgs(
+            emits( 'Mint' ).withArgs(
+                getAK( waePair ),
+                MINIMUM_LIQUIDITY
+            ).emits( 'LockLiquidity' ).withArgs(
                 MINIMUM_LIQUIDITY
             ).emits( 'Mint' ).withArgs(
                 wallet.address, expectedLiquidity - MINIMUM_LIQUIDITY
@@ -197,6 +203,10 @@ describe( 'Pair Router', () => {
         pair.expectEvents( ret,
             emits( 'Transfer' ).withArgs(
                 wallet.address, getAK( pair ), expectedLiquidity - MINIMUM_LIQUIDITY
+            ).emits( 'Allowance' ).withArgs(
+                wallet.address,
+                getAK( router ),
+                MaxUint256 - ( expectedLiquidity - MINIMUM_LIQUIDITY ),
             ).emits( 'Burn' ).withArgs(
                 getAK( pair ), expectedLiquidity - MINIMUM_LIQUIDITY
             ).emits( 'Sync' ).withArgs(
@@ -221,7 +231,7 @@ describe( 'Pair Router', () => {
                 token1Amount - 2000n
             )
         )
-        expect( await pair.balance( wallet.address ) ).to.eq( 0n )
+        expect( ( await pair.balance( wallet.address ) ) || 0n ).to.eq( 0n )
 
         const totalSupplyToken0 = await token0.total_supply()
         const totalSupplyToken1 = await token1.total_supply()
@@ -262,6 +272,10 @@ describe( 'Pair Router', () => {
                 wallet.address,
                 getAK( waePair ),
                 expectedLiquidity - MINIMUM_LIQUIDITY
+            ).emits( 'Allowance' ).withArgs(
+                wallet.address,
+                getAK( router ),
+                MaxUint256 - expectedLiquidity + MINIMUM_LIQUIDITY,
             ).emits( 'Burn' ).withArgs(
                 getAK( waePair ), expectedLiquidity - MINIMUM_LIQUIDITY
             ).emits( 'Sync' ).withArgs(
@@ -295,7 +309,7 @@ describe( 'Pair Router', () => {
         )
 
         expect(
-            await waePair.balance( wallet.address )
+            ( await waePair.balance( wallet.address ) ) || 0n
         ).to.eq( 0n )
         const totalSupplywaePartner = await waePartner.total_supply()
         const totalSupplywae = await wae.total_supply()
@@ -784,10 +798,10 @@ describe( 'Pair Router', () => {
         const outputAmount = expandTo18Dec( 1 )
 
         beforeEach( async () => {
-            await waePartner.exe( x => x.transfer(
+            await waePartner.transfer(
                 getAK( waePair ),
                 waePartnerAmount
-            ) )
+            )
             await wae.deposit( { amount: aeAmount.toString() } )
             await wae.transfer( getAK( waePair ), aeAmount )
             await waePair.mint( wallet.address, extraGas )

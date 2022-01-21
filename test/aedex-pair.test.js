@@ -68,7 +68,7 @@ describe( 'Pair Factory', () => {
     const balance = ( isToken0, address ) => {
         const token = isToken0 ? token0 : token1
         console.debug( `token${isToken0 ? 0 : 1}.balance( ${address})` )
-        return token.balance( address )
+        return token.balance( address ) || 0n
     }
 
     const token0Balance = ( address ) => balance( true, address )
@@ -108,7 +108,7 @@ describe( 'Pair Factory', () => {
     }
     const pairBalance = ( address ) => {
         console.debug( `pair.balance( ${address})` )
-        return pair.balance( address )
+        return pair.balance( address ) || 0n
     }
     const getReserves = async () => {
         console.debug( `pair.get_reserves()` )
@@ -153,7 +153,10 @@ describe( 'Pair Factory', () => {
         const ret = await mint( wallet.address )
 
         pair.expectEvents( ret,
-            emits( 'LockLiquidity' ).withArgs(
+            emits( 'Mint' ).withArgs(
+                getAK( pair ),
+                MINIMUM_LIQUIDITY
+            ).emits( 'LockLiquidity' ).withArgs(
                 MINIMUM_LIQUIDITY
             ).emits( 'Mint' ).withArgs(
                 wallet.address, expectedLiquidity - MINIMUM_LIQUIDITY
