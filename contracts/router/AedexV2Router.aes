@@ -22,11 +22,6 @@ payable contract AedexV2Router =
     type amount_ae = int
     type liquidity = int
 
-    //TODO: can we restrict from whom should this contract receive AE?
-    /*receive() external payable {*/
-        /*assert(msg.sender == WETH) // only accept ETH via fallback from the WETH contract*/
-    /*}*/
-
     entrypoint init( factory: IAedexV2Factory, wae: IWAE, wae_aex9: IAEX9Minimal) =
         require(wae.address == wae_aex9.address,"AedexV2Router: DIFFERENT_WAE_ADDRESSES")
         {   factory  = factory
