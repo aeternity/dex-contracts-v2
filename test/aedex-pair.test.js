@@ -138,6 +138,26 @@ describe( 'Pair Factory', () => {
         console.debug( `factory.set_fee_to( ${address})` )
         await factory.set_fee_to( address )
     }
+    const pairCreateAllowance = async ( address, amount ) => {
+        const amountBI = BigInt( amount )
+        console.log( `pair.create_allowance( ${address}, ${amountBI} )` )
+        return pair.create_allowance( address, amountBI )
+    }
+    const pairChangeAllowance = async ( address, amount ) => {
+        const amountBI = BigInt( amount )
+        console.log( `pair.change_allowance( ${address}, ${amountBI} )` )
+        return pair.change_allowance( address, amountBI )
+    }
+    const pairResetAllowance = async ( address ) => {
+        console.log( `pair.reset_allowance( ${address} )` )
+        return pair.reset_allowance( address )
+    }
+    const pairAllowance = async ( fromAcc, toAcc ) => {
+        console.log( `pair.allowance( ${fromAcc}, ${toAcc} )` )
+        return pair.allowance( {
+            from_account: fromAcc, for_account: toAcc
+        } )
+    }
 
     //------------------------------------------------------------------------------
     // entrypoint wrappers
@@ -269,6 +289,142 @@ describe( 'Pair Factory', () => {
                 wallet.address,
             )
         } )
+    } )
+    it( 'changes allowance into a smaller allowance', async () => {
+        const token0Amount = expandTo18Dec( 5 )
+        const token1Amount = expandTo18Dec( 10 )
+        await addLiquidity( token0Amount, token1Amount )
+        const expectedBalance = 7071067811865474244n
+        expect( await pairBalance( wallet.address ) ).to.eq( expectedBalance )
+
+        await pairCreateAllowance( getAK( pair ), expectedBalance )
+
+        const getAllowance = () => pairAllowance(
+            wallet.address,
+            getAK( pair ),
+        )
+
+        expect( await getAllowance() ).to.eq( expectedBalance )
+
+        const changeAllowanceAmount = - 1000000000000000000n
+
+        await pairChangeAllowance( getAK( pair ), changeAllowanceAmount   )
+
+        expect( await getAllowance() ).to.eq(
+            expectedBalance + changeAllowanceAmount
+        )
+
+    } )
+    it( 'fails to change allowance before creating it', async () => {
+        const token0Amount = expandTo18Dec( 5 )
+        const token1Amount = expandTo18Dec( 10 )
+        await addLiquidity( token0Amount, token1Amount )
+        const expectedBalance = 7071067811865474244n
+        expect( await pairBalance( wallet.address ) ).to.eq( expectedBalance )
+
+        const getAllowance = () => pairAllowance(
+            wallet.address,
+            getAK( pair ),
+        )
+
+        expect( await getAllowance() ).to.eq( undefined )
+
+        await expectToRevert(
+            () => pairChangeAllowance(
+                getAK( pair ),  - ( expectedBalance + 1n )
+            ),
+            'ALLOWANCE_NOT_EXISTENT'
+        )
+
+    } )
+    it( 'fails to change allowance because of negative number', async () => {
+        const token0Amount = expandTo18Dec( 5 )
+        const token1Amount = expandTo18Dec( 10 )
+        await addLiquidity( token0Amount, token1Amount )
+        const expectedBalance = 7071067811865474244n
+        expect( await pairBalance( wallet.address ) ).to.eq( expectedBalance )
+
+        await pairCreateAllowance( getAK( pair ), expectedBalance )
+
+        const getAllowance = () => pairAllowance(
+            wallet.address,
+            getAK( pair ),
+        )
+
+        expect( await getAllowance() ).to.eq( expectedBalance )
+
+        await expectToRevert(
+            () => pairChangeAllowance(
+                getAK( pair ),  - ( expectedBalance + 1n )
+            ),
+            'INSUFFICIENT_ALLOWANCE'
+        )
+
+    } )
+    it( 'changes allowance to a bigger allowance', async () => {
+        const token0Amount = expandTo18Dec( 5 )
+        const token1Amount = expandTo18Dec( 10 )
+        await addLiquidity( token0Amount, token1Amount )
+        const expectedBalance = 7071067811865474244n
+        expect( await pairBalance( wallet.address ) ).to.eq( expectedBalance )
+
+        await pairCreateAllowance( getAK( pair ), expectedBalance )
+
+        const getAllowance = () => pairAllowance(
+            wallet.address,
+            getAK( pair ),
+        )
+
+        expect( await getAllowance() ).to.eq( expectedBalance )
+
+        const changeAllowanceAmount = 1000000000000000000n
+
+        await pairChangeAllowance( getAK( pair ), changeAllowanceAmount   )
+
+        expect( await getAllowance() ).to.eq(
+            expectedBalance + changeAllowanceAmount
+        )
+
+    } )
+    it( 'changes allowance to zero', async () => {
+        const token0Amount = expandTo18Dec( 5 )
+        const token1Amount = expandTo18Dec( 10 )
+        await addLiquidity( token0Amount, token1Amount )
+        const expectedBalance = 7071067811865474244n
+        expect( await pairBalance( wallet.address ) ).to.eq( expectedBalance )
+
+        await pairCreateAllowance( getAK( pair ), expectedBalance )
+
+        const getAllowance = () => pairAllowance(
+            wallet.address,
+            getAK( pair ),
+        )
+
+        expect( await getAllowance() ).to.eq( expectedBalance )
+
+        await pairChangeAllowance( getAK( pair ), - expectedBalance   )
+
+        expect( await getAllowance() ).to.eq( 0n )
+    } )
+    it( 'resets allowance', async () => {
+        const token0Amount = expandTo18Dec( 5 )
+        const token1Amount = expandTo18Dec( 10 )
+        await addLiquidity( token0Amount, token1Amount )
+        const expectedBalance = 7071067811865474244n
+        expect( await pairBalance( wallet.address ) ).to.eq( expectedBalance )
+
+        await pairCreateAllowance( getAK( pair ), expectedBalance )
+
+        const getAllowance = () => pairAllowance(
+            wallet.address,
+            getAK( pair ),
+        )
+
+        expect( await getAllowance() ).to.eq( expectedBalance )
+
+        await pairResetAllowance( getAK( pair ) )
+
+        expect( await getAllowance() ).to.eq( 0n )
     } )
 
     it( 'swap:token0', async () => {
