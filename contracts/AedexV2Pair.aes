@@ -138,7 +138,7 @@ contract AedexV2Pair =
     entrypoint token1() = state.token1
 
     //------------------------------------------------------------------------------
-    // STATEFUL 
+    // STATEFUL
     //------------------------------------------------------------------------------
 
     stateful entrypoint set_debug_time(time: int) =
@@ -389,8 +389,8 @@ contract AedexV2Pair =
           None => abort("AedexV2Pair: BALANCE_ACCOUNT_NOT_EXISTENT")
 
     function require_allowance(allowance_accounts : allowance_accounts, value : int) : int =
-        let allowance= Option.default(0,allowance(allowance_accounts))
-        require_positive([allowance + value])
-        require(allowance >= value, "AedexV2Pair: INSUFFICIENT_ALLOWANCE")
-        allowance
-
+        switch(allowance(allowance_accounts))
+          Some(allowance) =>
+            require(allowance + value >= 0, "AedexV2Pair: INSUFFICIENT_ALLOWANCE")
+            allowance
+          None => abort("AedexV2Pair: ALLOWANCE_NOT_EXISTENT")

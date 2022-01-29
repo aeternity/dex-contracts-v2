@@ -43,6 +43,7 @@ module.exports = {
     "AedexV2Pair: INSUFFICIENT_BALANCE_FOR_TRANSFER" : "insuficient balance for transfer",
     "AedexV2Pair: BALANCE_ACCOUNT_NOT_EXISTENT"      : "there is no liquidity provided by this account",
     "AedexV2Pair: INSUFFICIENT_ALLOWANCE"            : "there is not enough allowance",
+    "AedexV2Pair: ALLOWANCE_NOT_EXISTENT"            : "there is no allowance created",
     "AedexV2Pair: INSUFFICIENT_TOTAL_SUPPLY"         : "internal error: total supply is less than liquidity available for burning",
     "AedexV2Pair: INSUFFICIENT_BALANCE_FOR_BURNING"  : "total supply is less than liquidity available for burning",
 
