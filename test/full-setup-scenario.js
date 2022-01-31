@@ -103,13 +103,13 @@ describe( 'Pair Router', () => {
 
     const userAmount = expandTo18Dec( 100000 )
     userWallets.map( x => {
-        it( `add found to token0 for ${x}`, async () => {
+        it( `add funds to token0 for ${x}`, async () => {
             await token0.transfer( x, userAmount )
         } )
-        it( `add found to token1 for ${x}`, async () => {
+        it( `add funds to token1 for ${x}`, async () => {
             await token1.transfer( x, userAmount )
         } )
-        it( `add found to waePartner for ${x}`, async () => {
+        it( `add funds to waePartner for ${x}`, async () => {
             await waePartner.transfer( x, userAmount )
         } )
     } )
