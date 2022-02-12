@@ -24,6 +24,7 @@ import {
 } from './shared/fixtures.js'
 
 import {
+    expectToRevert,
     expandTo18Dec,
     MaxUint256,
     emits,
@@ -49,6 +50,23 @@ describe( 'WAE', () => {
         
         await wae.deposit( { amount: TOTAL_SUPPLY.toString() } )
     } )
+
+    const waeCreateAllowance = async ( address, amount ) => {
+        const amountBI = BigInt( amount )
+        return wae.create_allowance( address, amountBI )
+    }
+    const waeChangeAllowance = async ( address, amount ) => {
+        const amountBI = BigInt( amount )
+        return wae.change_allowance( address, amountBI )
+    }
+    const waeResetAllowance = async ( address ) => {
+        return wae.reset_allowance( address )
+    }
+    const waeAllowance = async ( fromAcc, toAcc ) => {
+        return wae.allowance( {
+            from_account: fromAcc, for_account: toAcc
+        } )
+    }
     it( "name, symbol, decimals, totalSupply, balanceOf", async () => {
         const { name, symbol, decimals } = await wae.meta_info() 
         expect( name ).to.eq(  "Wrapped Aeternity" )
@@ -135,6 +153,90 @@ describe( 'WAE', () => {
         expect( await wae.balance( other.address ) ).to.eq(
             TEST_AMOUNT
         )
+    } )
+    const getOtherAllowance = () => waeAllowance(
+        wallet.address,
+        other.address,
+    )
+
+    it( 'changes allowance into a smaller allowance', async () => {
+        const expectedAllowance = 100n
+
+        await waeCreateAllowance( other.address, expectedAllowance  )
+
+        expect( await getOtherAllowance() ).to.eq( expectedAllowance )
+
+        const changeAllowanceAmount = - 50n
+
+        await waeChangeAllowance( other.address, changeAllowanceAmount )
+
+        expect( await getOtherAllowance() ).to.eq(
+            expectedAllowance + changeAllowanceAmount
+        )
+
+    } )
+    it( 'fails to change allowance before creating it', async () => {
+        expect( await getOtherAllowance() ).to.eq( undefined )
+
+        await expectToRevert(
+            () => waeChangeAllowance(
+                other.address,  20n
+            ),
+            'ALLOWANCE_NOT_EXISTENT'
+        )
+
+    } )
+    it( 'fails to change allowance with negative value', async () => {
+        const expectedAllowance = 100n
+
+        await waeCreateAllowance( other.address, expectedAllowance  )
+
+        expect( await getOtherAllowance() ).to.eq( expectedAllowance )
+
+        await expectToRevert(
+            () => waeChangeAllowance(
+                other.address,  - ( expectedAllowance + 1n )
+            ),
+            'LOW_ALLOWANCE'
+        )
+
+    } )
+    it( 'changes allowance to a bigger allowance', async () => {
+        const expectedAllowance = 100n
+
+        await waeCreateAllowance( other.address, expectedAllowance )
+
+        expect( await getOtherAllowance() ).to.eq( expectedAllowance )
+
+        const changeAllowanceAmount = 80n
+
+        await waeChangeAllowance( other.address, changeAllowanceAmount   )
+
+        expect( await getOtherAllowance() ).to.eq(
+            expectedAllowance + changeAllowanceAmount
+        )
+    } )
+    it( 'changes allowance to zero', async () => {
+        const expectedAllowance = 100n
+
+        await waeCreateAllowance( other.address, expectedAllowance )
+
+        expect( await getOtherAllowance() ).to.eq( expectedAllowance )
+
+        await waeChangeAllowance( other.address, - expectedAllowance   )
+
+        expect( await getOtherAllowance() ).to.eq( 0n )
+    } )
+    it( 'resets allowance', async () => {
+        const expectedAllowance = 100n
+
+        await waeCreateAllowance( other.address, expectedAllowance )
+
+        expect( await getOtherAllowance() ).to.eq( expectedAllowance )
+
+        await waeResetAllowance( other.address )
+
+        expect( await getOtherAllowance() ).to.eq( 0n )
     } )
 
 } )
