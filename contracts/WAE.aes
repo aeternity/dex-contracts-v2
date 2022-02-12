@@ -189,7 +189,7 @@ contract WAE =
         ) : int =
         switch(allowance(allowance_accounts))
             Some(allowance) =>
-                require(allowance >= value, "WAE: LOW_ALLOWANCE")
+                require(allowance + value >= 0, "WAE: LOW_ALLOWANCE")
                 allowance
             None => abort("WAE: ALLOWANCE_NOT_EXISTENT")
 
