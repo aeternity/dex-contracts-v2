@@ -11,5 +11,5 @@ namespace UQ112x112 =
     // encode a uint112 as a UQ112x112
     function encode(y: int): int =
         require(y>=0,"LP")
-        let q112 = 0x10000000000000000000000000000 // 2^112
+        let q112 = 0x10_000_000_000_000_000_000_000_000_000 // 2^112
         y * q112
