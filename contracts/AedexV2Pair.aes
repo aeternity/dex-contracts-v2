@@ -55,7 +55,11 @@ contract AedexV2Pair =
             , block_timestamp_last: int  // uses single storage slot, accessible via get_reserves
             , price0_cumulative_last: int
             , price1_cumulative_last: int
-            , min_liquidity: int
+            , min_liquidity: int  // Pairs burn the first MINIMUM_LIQUIDITY pool tokens. 
+                                  // We are choosing the default value of 1000 to ameliorate rounding errors 
+                                  // and increase the theoretical minimum tick size for liquidity provision.
+                                  // But other values can be chosen as well.
+
             , k_last: int // reserve0 * reserve1, as of immediately after the most recent liquidity event
                           // NOTE:
                           // refers to k from XYK model (x * y = k equation)
@@ -68,7 +72,7 @@ contract AedexV2Pair =
           factory: IAedexV2FactoryForPair
         , token0: IAEX9Minimal
         , token1: IAEX9Minimal
-        , min_liquidity: int
+        , min_liquidity: option(int)
         , debug_time: option(int)
         ) = {
               total_supply           = 0
@@ -85,7 +89,7 @@ contract AedexV2Pair =
             , price1_cumulative_last = 0
             , k_last                 = 0
             , debug_time             = debug_time
-            , min_liquidity          = min_liquidity
+            , min_liquidity          = Option.default(1000,min_liquidity)
         }
 
     //------------------------------------------------------------------------------
