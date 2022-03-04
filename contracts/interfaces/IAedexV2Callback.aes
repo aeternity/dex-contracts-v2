@@ -1,7 +1,14 @@
 @compiler >= 6
 
+// Gives the oportunity to the caller to make adjustments/verifications
+// after the transfer was done in a swap transaction
 contract interface IAedexV2Callback =
 
-    //to be called from swap after token transfers
+    // To be called from swap after token transfers are made.
+    // After this call the AedexV2Pair instance will make proper verifications to validate
+    // or to invalidate the transaction.
+    // Also the caller can make such invalidation during this call
+    // The amount0 and amount1 represent the amounts of token0 and token1 transfered
+    // to the sender's address
     entrypoint aedex_v2_call: (address /*sender*/, int /*amount0*/, int /*amount1*/) => unit
 

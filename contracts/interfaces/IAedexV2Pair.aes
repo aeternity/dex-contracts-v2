@@ -4,6 +4,7 @@ include "./IAedexV2Callback.aes"
 include "./IAEX9Minimal.aes"
 include "./IAedexV2FactoryForPair.aes"
 
+// Interface to be used by the router and by the tests for AedexV2Pair implementation
 contract interface IAedexV2Pair =
     entrypoint domain_separator: () => bytes(32)
     entrypoint nonces: (address /*owner*/) => int

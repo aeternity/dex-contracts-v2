@@ -1,4 +1,6 @@
 @compiler >= 6
 
+// Factory interface used as a reference into the pair
+// We don't use the IAedexV2Factory there because it will create a circular reference
 contract interface IAedexV2FactoryForPair =
     entrypoint fee_to: () => option(address)

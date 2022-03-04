@@ -1,5 +1,7 @@
 @compiler >= 6
 
+// Interface for tokens and pairs with minimal entrypoints.
+// Used in the contracts and in the tests
 contract interface IAEX9Minimal =
     record allowance_accounts = { from_account: address, for_account: address }
 
