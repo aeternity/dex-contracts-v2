@@ -90,7 +90,7 @@ contract AedexV2Factory =
                     , Address.to_contract( Contract.address )
                     , token0
                     , token1
-                    , min_liquidity
+                    , Some(min_liquidity)
                     , debug_time
                     )
 
