@@ -13,7 +13,7 @@ contract interface IAedexV2Pair =
           IAedexV2FactoryForPair
         , IAEX9Minimal
         , IAEX9Minimal
-        , int
+        , option(int)
         , option(int)
         ) => void
 
