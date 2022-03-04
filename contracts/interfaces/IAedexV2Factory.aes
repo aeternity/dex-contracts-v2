@@ -4,6 +4,7 @@ include "./IAEX9Minimal.aes"
 include "./IAedexV2Pair.aes"
 
 
+// Minimal entrypoint definition for Factory to be used inside the router and the tests
 contract interface IAedexV2Factory =
     entrypoint fee_to: () => option(address)
     entrypoint fee_to_setter: () => address
