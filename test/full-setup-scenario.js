@@ -39,6 +39,7 @@ const extraGas = { gas: 150000 }
 const userWallets = [
     'ak_2kE1RxHzsRE4LxDFu6WKi35BwPvrEawBjNtV788Gje3yqADvwR', // bm
     'ak_rRVV9aDnmmLriPePDSvfTUvepZtR2rbYk2Mx4GCqGLcc1DMAq', // keno
+    'ak_2AVeRypSdS4ZosdKWW1C4avWU4eeC2Yq7oP7guBGy8jkxdYVUy', // nikita
 ]
 
 describe( 'Pair Router', () => {
@@ -47,20 +48,20 @@ describe( 'Pair Router', () => {
     let waePartner
     let router
 
-    const multuplier = 1000000
+    const multiplier = 1000000
     before( 'first compile pool factory', async () => {
         ( {
             token0,
             token1,
             waePartner,
             router,
-        } = await routerFixture( undefined, 1000 * multuplier ) )
+        } = await routerFixture( undefined, 1000 * multiplier ) )
     } )
     const routerAddr = () =>  getAK( router )
 
     it( 'add_liquidity', async () => {
-        const token0Amount = expandTo18Dec( 1 * multuplier )
-        const token1Amount = expandTo18Dec( 4 * multuplier )
+        const token0Amount = expandTo18Dec( 1 * multiplier )
+        const token1Amount = expandTo18Dec( 4 * multiplier )
 
         await token0.create_allowance( routerAddr(), MaxUint256 )
         await token1.create_allowance( routerAddr(), MaxUint256 )
@@ -80,8 +81,8 @@ describe( 'Pair Router', () => {
     } )
 
     it( 'add_liquidity_ae', async () => {
-        const waePartnerAmount = expandTo18Dec( 100  )
-        const aeAmount = expandTo18Dec( 400  )
+        const waePartnerAmount = expandTo18Dec( 1  )
+        const aeAmount = expandTo18Dec( 4  )
 
         await waePartner.create_allowance( routerAddr(), MaxUint256 )
 
@@ -101,7 +102,7 @@ describe( 'Pair Router', () => {
 
     } )
 
-    const userAmount = expandTo18Dec( 100000 )
+    const userAmount = expandTo18Dec( 200 * multiplier )
     userWallets.map( x => {
         it( `add funds to token0 for ${x}`, async () => {
             await token0.transfer( x, userAmount )
