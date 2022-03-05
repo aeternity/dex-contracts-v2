@@ -55,4 +55,4 @@ main contract AedexV2Factory =
   entrypoint get_pair : (IAEX9Minimal, IAEX9Minimal) => option(IAedexV2Pair)
   stateful entrypoint set_fee_to : (address) => unit
   stateful entrypoint set_fee_to_setter : (address) => unit
-  stateful entrypoint create_pair : (IAEX9Minimal, IAEX9Minimal, int, option(int)) => IAedexV2Pair
+  stateful entrypoint create_pair : (IAEX9Minimal, IAEX9Minimal, option(int), option(int)) => IAedexV2Pair
