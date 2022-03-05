@@ -71,7 +71,9 @@ contract AedexV2Factory =
     stateful entrypoint create_pair(
           token_a: IAEX9Minimal
         , token_b: IAEX9Minimal
-        , min_liquidity: int
+        , min_liquidity: option(int) // the minimum liquidity constant for the pair
+                                     // see AedexV2Pair `init` description for more information
+                                     // about the default value
         , debug_time: option(int)
         ): IAedexV2Pair =
 
@@ -90,7 +92,7 @@ contract AedexV2Factory =
                     , Address.to_contract( Contract.address )
                     , token0
                     , token1
-                    , Some(min_liquidity)
+                    , min_liquidity
                     , debug_time
                     )
 

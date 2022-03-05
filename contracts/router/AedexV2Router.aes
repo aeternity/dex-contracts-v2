@@ -36,7 +36,7 @@ payable contract AedexV2Router =
 
     // **** ADD LIQUIDITY ****
 
-    //just creates the pair if it is the case and calculates the amount
+    // just creates the pair if it is the case and calculates the amount
     // based on parameters and pair reserves
     function add_liquidity'(
           token_a: IAEX9Minimal
@@ -45,7 +45,7 @@ payable contract AedexV2Router =
         , amount_b_desired: int
         , amount_a_min: int
         , amount_b_min: int
-        , min_liquidity: int
+        , min_liquidity: option(int)
         ): (amount_a *  amount_b) =
         let factory = state.factory
         // create the pair if it doesn't exist yet
@@ -74,6 +74,9 @@ payable contract AedexV2Router =
                 require(amount_a_optimal >= amount_a_min, "AedexV2Router: INSUFFICIENT_A_AMOUNT")
                 (amount_a_optimal, amount_b_desired)
 
+    // Adds liquidity for a certain Pair of regular AEX9 tokens.
+    // If the pair doesn't exists the pair will be created at this moment
+    // and the min_liquidity will be locked
     stateful entrypoint add_liquidity(
               token_a: IAEX9Minimal
             , token_b: IAEX9Minimal
@@ -82,8 +85,9 @@ payable contract AedexV2Router =
             , amount_a_min: int
             , amount_b_min: int
             , to: address
-            , min_liquidity: int // the minimum liquidity constant for the pair
-                                 // in case the pair is not yet created
+            , min_liquidity: option(int) // the minimum liquidity constant for the pair
+                                         // in case the pair is not yet created
+                                         // see AedexV2Pair `init` description for more information
             , deadline: int
         ): (amount_a * amount_b * liquidity) =
         require_deadline(deadline)
@@ -93,21 +97,25 @@ payable contract AedexV2Router =
                 amount_a_min, amount_b_min,
                 min_liquidity
                 )
-        //getting pair and transfer to its address the tokens
+        // Get the pair and transfer the tokens to its address
         let pair: IAedexV2Pair = AedexV2Library.pair_for( state.factory, token_a, token_b )
         token_a.transfer_allowance( Call.caller,pair.address,amount_a )
         token_b.transfer_allowance( Call.caller,pair.address,amount_b )
         let minted_liquidity = pair.mint(to)
         ( amount_a, amount_b, minted_liquidity )
 
+    // Adds liquidity for a certain Pair of a regular AEX9 token and AE.
+    // If the Pair doesn't exists the pair will be created at this moment
+    // and the min_liquidity will be locked
     payable stateful entrypoint add_liquidity_ae(
         token: IAEX9Minimal
         , amount_token_desired: int
         , amount_token_min: int
         , amount_ae_min: int
         , to: address
-        , min_liquidity: int // the minimum liquidity constant for the pair
-                             // in case the pair is not yet created
+        , min_liquidity: option(int) // the minimum liquidity constant for the pair
+                                     // in case the pair is not yet created
+                                     // see AedexV2Pair `init` description for more information
         , deadline: int
         ):  (amount_token * amount_ae * liquidity) =
         require_deadline(deadline)
