@@ -55,8 +55,8 @@ contract AedexV2Pair =
             , block_timestamp_last: int  // uses single storage slot, accessible via get_reserves
             , price0_cumulative_last: int
             , price1_cumulative_last: int
-            , min_liquidity: int  // Pairs burn the first MINIMUM_LIQUIDITY pool tokens. 
-                                  // We are choosing the default value of 1000 to ameliorate rounding errors 
+            , min_liquidity: int  // Pairs burn the first MINIMUM_LIQUIDITY pool tokens.
+                                  // We are choosing the default value of 1000 to ameliorate rounding errors
                                   // and increase the theoretical minimum tick size for liquidity provision.
                                   // But other values can be chosen as well.
 
@@ -153,16 +153,16 @@ contract AedexV2Pair =
 
     // this low-level function should be called from a contract which performs important safety checks
     stateful entrypoint mint(to: address): int =
-        let (reserve0, reserve1) = (state.reserve0,state.reserve1) // gas savings
+        let (reserve0, reserve1) = (state.reserve0,state.reserve1)
         let (balance0,balance1) = get_balances()
         let amount0 = balance0 - reserve0
         let amount1 = balance1 - reserve1
 
         let fee_on = mint_fee(reserve0, reserve1)
-        let total_supply = state.total_supply // gas savings, must be defined here since totalSupply can update in gc
+        let total_supply = state.total_supply // must be defined here since totalSupply can update in gc
 
         let liquidity =
-                let min_liq = state.min_liquidity // gas savings
+                let min_liq = state.min_liquidity
                 if (total_supply == 0)
                     mint_update(None, min_liq) // permanently lock the first MINIMUM_LIQUIDITY tokens
                     Math.sqrt(amount0 * amount1) - min_liq
@@ -179,21 +179,19 @@ contract AedexV2Pair =
 
     // this low-level function should be called from a contract which performs important safety checks
     stateful entrypoint burn(to: address): IAedexV2Pair.amounts =
-        let (reserve0, reserve1) = (state.reserve0,state.reserve1) // gas savings
-        let token0 = state.token0                                   // gas savings
-        let token1 = state.token1                                   // gas savings
+        let (reserve0, reserve1) = (state.reserve0,state.reserve1)
         let (balance0,balance1) = get_balances()
         let liquidity = Option.default(0,balance(Contract.address))
 
         let fee_on = mint_fee(reserve0, reserve1)
-        let total_supply = state.total_supply // gas savings, must be defined here since totalSupply
+        let total_supply = state.total_supply // must be defined here since totalSupply
                                                // can update in mintFee
         let amount0 = (liquidity*balance0) / total_supply // using balances ensures pro-rata distribution
         let amount1 = (liquidity*balance1) / total_supply // using balances ensures pro-rata distribution
         burn_update(Contract.address, liquidity)
         require(amount0 >= 0 && amount1 >= 0,"AedexV2Pair: NEGATIVE_VALUE_ON_TRANSFER")
-        token0.transfer(to, amount0)
-        token1.transfer(to, amount1)
+        state.token0.transfer(to, amount0)
+        state.token1.transfer(to, amount1)
         let (balance0,balance1) = get_balances()
 
         update(balance0, balance1, reserve0, reserve1)
@@ -209,7 +207,7 @@ contract AedexV2Pair =
         callback_opt: option(IAedexV2Callback)
         ): unit =
         require(amount0_out > 0 || amount1_out > 0, "AedexV2Pair: INSUFFICIENT_OUTPUT_AMOUNT")
-        let (reserve0, reserve1) = (state.reserve0,state.reserve1) // gas savings
+        let (reserve0, reserve1) = (state.reserve0,state.reserve1)
         require(amount0_out < reserve0 && amount1_out < reserve1, "AedexV2Pair: INSUFFICIENT_LIQUIDITY")
 
 
@@ -364,7 +362,7 @@ contract AedexV2Pair =
     // if fee is on, mint liquidity equivalent to 1/6th of the growth in sqrt(k)
     stateful function mint_fee(reserve0: int, reserve1: int): bool =
         require_positive([reserve0,reserve1])
-        let k_last = state.k_last // gas savings
+        let k_last = state.k_last
 
         switch(state.factory.fee_to())
           Some(fee_to) =>
