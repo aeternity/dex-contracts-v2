@@ -73,7 +73,6 @@ payable contract AedexV2Router =
                 (amount_a_desired, amount_b_optimal)
             else
                 let amount_a_optimal = AedexV2Library.quote(amount_b_desired, reserve_b, reserve_a)
-                require(amount_a_optimal =< amount_a_desired, "AedexV2Router: OPTIMAL_GREATER_THEN_DESIRED")
                 require(amount_a_optimal >= amount_a_min, "AedexV2Router: INSUFFICIENT_A_AMOUNT")
                 (amount_a_optimal, amount_b_desired)
 
