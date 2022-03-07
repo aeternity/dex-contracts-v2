@@ -86,18 +86,18 @@ contract WAE =
     // stateful ones
     //------------------------------------------------------------------------------
     payable stateful entrypoint deposit(): unit =
-        put(state{balance_of @ b = b { [ Call.caller = 0] @ value = value + Call.value} })
+        put(state{balance_of[ Call.caller = 0] @ value = value + Call.value })
         Chain.event( Deposit(Call.caller, Call.value) )
 
     payable stateful entrypoint deposit_to(to: address): unit =
-        put(state{balance_of @ b = b { [ to = 0] @ value = value + Call.value} })
+        put(state{balance_of[ to = 0] @ value = value + Call.value })
         Chain.event( Deposit(Call.caller, Call.value) )
         Chain.event( Transfer( Call.caller, to, Call.value ) )
 
     stateful entrypoint withdraw(amount: int): unit =
         let caller_balance: int = Map.lookup_default(Call.caller,state.balance_of,0)
         require(caller_balance >= amount, "WAE: LOW_BALANCE")
-        put(state{balance_of @ b = b { [ Call.caller ] = caller_balance - amount} })
+        put(state{balance_of[ Call.caller ] = caller_balance - amount })
         Chain.spend( Call.caller,amount )
         Chain.event( Withdrawal(Call.caller, amount) )
 
