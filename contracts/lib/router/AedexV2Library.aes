@@ -9,8 +9,8 @@ namespace AedexV2Library =
 
     // returns sorted token addresses, used to handle return values from pairs sorted in this order
     function sort_tokens(
-              tokenA: IAEX9Minimal
-            , tokenB: IAEX9Minimal
+          tokenA: IAEX9Minimal
+        , tokenB: IAEX9Minimal
         ): (IAEX9Minimal*IAEX9Minimal) =
         require(tokenA.address != tokenB.address, "AedexV2Library: IDENTICAL_ADDRESSES")
         if(tokenA.address < tokenB.address)
@@ -26,36 +26,36 @@ namespace AedexV2Library =
         amountA*reserveB / reserveA
 
     function pair_for(
-            factory: IAedexV2Factory
-            , tokenA: IAEX9Minimal
-            , tokenB: IAEX9Minimal
+          factory: IAedexV2Factory
+        , tokenA: IAEX9Minimal
+        , tokenB: IAEX9Minimal
         ): IAedexV2Pair =
-        switch(factory.get_pair(tokenA,tokenB))
+        switch(factory.get_pair(tokenA, tokenB))
             Some(pair) => pair
             None => abort("AedexV2Library: NO_PAIR_FOUND")
 
     // fetches and sorts the reserves for a pair
     function get_reserves(
-            factory: IAedexV2Factory
-            , tokenA: IAEX9Minimal
-            , tokenB: IAEX9Minimal
+          factory: IAedexV2Factory
+        , tokenA: IAEX9Minimal
+        , tokenB: IAEX9Minimal
         ): (int /*reserveA*/ * int /*reserveB*/) =
-        let (token0,_) = sort_tokens(tokenA, tokenB)
-        let pair = pair_for(factory,tokenA,tokenB)
+        let (token0, _) = sort_tokens(tokenA, tokenB)
+        let pair = pair_for(factory, tokenA, tokenB)
         let reserves_ret = pair.get_reserves()
-        let (reserve0,reserve1) = (reserves_ret.reserve0,reserves_ret.reserve1)
+        let (reserve0, reserve1) = (reserves_ret.reserve0, reserves_ret.reserve1)
         if( tokenA == token0)
-            (reserve0,reserve1)
+            (reserve0, reserve1)
         else
-            (reserve1,reserve0)
+            (reserve1, reserve0)
 
     private function apply_fee(amount: int): int= amount*997 // the fee is 0.3%
 
     // given an input amount of an asset and pair reserves, returns the maximum output amount of the other asset
     function get_amount_out(
-              amount_in: int
-            , reserve_in: int
-            , reserve_out: int
+          amount_in: int
+        , reserve_in: int
+        , reserve_out: int
         ): int =
         require(amount_in > 0, "AedexV2Library: INSUFFICIENT_INPUT_AMOUNT")
         require(reserve_in > 0 && reserve_out > 0, "AedexV2Library: INSUFFICIENT_LIQUIDITY")
@@ -66,9 +66,9 @@ namespace AedexV2Library =
 
     // given an output amount of an asset and pair reserves, returns a required input amount of the other asset
     function get_amount_in(
-              amount_out: int
-            , reserve_in: int
-            , reserve_out: int
+          amount_out: int
+        , reserve_in: int
+        , reserve_out: int
         ): int =
         require(amount_out > 0, "AedexV2Library: INSUFFICIENT_OUTPUT_AMOUNT")
         require(reserve_in > 0 && reserve_out > 0, "AedexV2Library: INSUFFICIENT_LIQUIDITY")
@@ -79,47 +79,47 @@ namespace AedexV2Library =
 
     // performs chained get_amount_out calculations on any number of pairs
     function get_amounts_out(
-            factory: IAedexV2Factory
-            , amount_in: int
-            , path: list(IAEX9Minimal)
+          factory: IAedexV2Factory
+        , amount_in: int
+        , path: list(IAEX9Minimal)
         ): list(int) =
         require(List.length(path) >= 2, "AedexV2Library: INVALID_PATH")
         let amounts = amount_in::[]
-        _get_amounts_out(factory,amounts,path)
+        _get_amounts_out(factory, amounts, path)
 
     private function _get_amounts_out(
-            factory: IAedexV2Factory
-            , amounts: list(int)
-            , path: list(IAEX9Minimal)
-        ): list(int) = switch((path,amounts))
-            (_::[],_) => List.reverse(amounts)
-            (tokenA::tokenB::_path,prev_amount::_) =>
-                let (reserve_in,reserve_out) = get_reserves(factory,tokenA,tokenB)
-                let new_amount = get_amount_out(prev_amount,reserve_in,reserve_out)
-                _get_amounts_out(factory,new_amount::amounts,tokenB::_path)
-            (_,[]) => abort("AedexV2Library: INTERNAL_ERROR_AMOUNTS_VOID")
-            ([],_) => abort("AedexV2Library: INTERNAL_ERROR_PATH_VOID")
+          factory: IAedexV2Factory
+        , amounts: list(int)
+        , path: list(IAEX9Minimal)
+        ): list(int) = switch((path, amounts))
+            (_::[], _) => List.reverse(amounts)
+            (tokenA::tokenB::_path, prev_amount::_) =>
+                let (reserve_in, reserve_out) = get_reserves(factory, tokenA, tokenB)
+                let new_amount = get_amount_out(prev_amount, reserve_in, reserve_out)
+                _get_amounts_out(factory, new_amount::amounts, tokenB::_path)
+            (_, []) => abort("AedexV2Library: INTERNAL_ERROR_AMOUNTS_VOID")
+            ([], _) => abort("AedexV2Library: INTERNAL_ERROR_PATH_VOID")
 
     // performs chained get_amount_in calculations on any number of pairs
     function get_amounts_in(
-              factory: IAedexV2Factory
-            , amount_out: int
-            , path: list(IAEX9Minimal)
+          factory: IAedexV2Factory
+        , amount_out: int
+        , path: list(IAEX9Minimal)
         ): list(int) =
         require(List.length(path) >= 2, "AedexV2Library: INVALID_PATH")
         let amounts = amount_out::[]
-        _get_amounts_in(factory,amounts,List.reverse(path))
+        _get_amounts_in(factory, amounts, List.reverse(path))
 
     private function _get_amounts_in(
-            factory: IAedexV2Factory
-            , amounts: list(int)
-            , path: list(IAEX9Minimal)
-        ): list(int) = switch((path,amounts))
-            (_,[]) => abort("AedexV2Library: INTERNAL_ERROR_AMOUNTS_VOID")
-            ([],_) => abort("AedexV2Library: INTERNAL_ERROR_PATH_VOID")
-            (_::[],_) => amounts
-            (tokenB::tokenA::_path,prev_amount::_) =>
-                let (reserve_in,reserve_out) = get_reserves(factory,tokenA,tokenB)
-                let new_amount = get_amount_in(prev_amount,reserve_in,reserve_out)
-                _get_amounts_in(factory,new_amount::amounts,tokenA::_path)
+          factory: IAedexV2Factory
+        , amounts: list(int)
+        , path: list(IAEX9Minimal)
+        ): list(int) = switch((path, amounts))
+            (_, []) => abort("AedexV2Library: INTERNAL_ERROR_AMOUNTS_VOID")
+            ([], _) => abort("AedexV2Library: INTERNAL_ERROR_PATH_VOID")
+            (_::[], _) => amounts
+            (tokenB::tokenA::_path, prev_amount::_) =>
+                let (reserve_in, reserve_out) = get_reserves(factory, tokenA, tokenB)
+                let new_amount = get_amount_in(prev_amount, reserve_in, reserve_out)
+                _get_amounts_in(factory, new_amount::amounts, tokenA::_path)
 

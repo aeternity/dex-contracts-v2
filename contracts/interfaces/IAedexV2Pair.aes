@@ -32,7 +32,7 @@ contract interface IAedexV2Pair =
 
     stateful entrypoint mint: (address) => int
     stateful entrypoint mint2: (address) => int
-    record amounts =  { amount0: int,amount1: int }
+    record amounts =  { amount0: int, amount1: int }
     stateful entrypoint burn: (address /*to*/) => amounts
 
     stateful entrypoint swap: (

@@ -4,24 +4,24 @@ include "String.aes"
 include "List.aes"
 
 namespace Utils =
-    function require_positive(prefix: string,x: int) =
-        require(x >= 0,String.concat(prefix,": LP"))
+    function require_positive(prefix: string, x: int) =
+        require(x >= 0, String.concat(prefix, ": LP"))
 
     function
-        require_positive_xs: ( string,list(int)) => unit
-        require_positive_xs(_,[]) = ()
-        require_positive_xs(prefix,xs) =
-            require(are_positive(xs),String.concat(prefix,": LP"))
+        require_positive_xs: ( string, list(int)) => unit
+        require_positive_xs(_, []) = ()
+        require_positive_xs(prefix, xs) =
+            require(are_positive(xs), String.concat(prefix, ": LP"))
 
     function
-        addIntToPayload: (string,int) => string
+        addIntToPayload: (string, int) => string
         addIntToPayload("", x) = Int.to_str(x)
-        addIntToPayload(acc, x) = String.concat( String.concat(acc,"|"), Int.to_str(x) )
+        addIntToPayload(acc, x) = String.concat( String.concat(acc, "|"), Int.to_str(x) )
 
     function
         concat_xs: (list(string)) => string
         concat_xs([]) = ""
-        concat_xs(x::xs) = String.concat(x,concat_xs(xs))
+        concat_xs(x::xs) = String.concat(x, concat_xs(xs))
 
     private function
         are_positive: (list(int)) => bool
@@ -29,13 +29,12 @@ namespace Utils =
         are_positive(x::xs) = x >= 0 && are_positive(xs)
 
     function xsToPayload(xs: list(int)): string =
-        List.foldl(addIntToPayload,"",xs)
-
+        List.foldl(addIntToPayload, "", xs)
 
     function
-        addAddrToPayload: (string,address) => string
+        addAddrToPayload: (string, address) => string
         addAddrToPayload("", x) = Address.to_str(x)
-        addAddrToPayload(acc, x) = String.concat( String.concat(acc,"|"), Address.to_str(x) )
+        addAddrToPayload(acc, x) = String.concat( String.concat(acc, "|"), Address.to_str(x) )
 
     function addrsToPayload(xs: list(address)): string =
-        List.foldl(addAddrToPayload,"",xs)
+        List.foldl(addAddrToPayload, "", xs)
