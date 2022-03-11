@@ -35,7 +35,6 @@ contract WAE =
     // Get the token total supply
     entrypoint total_supply() = Contract.balance
 
-
     // Get the token owner address
     entrypoint owner(): address = state.owner
 
@@ -44,9 +43,9 @@ contract WAE =
 
     // Get the token meta info
     entrypoint meta_info(): IAEX9Minimal.meta_info = {
-          name = "Wrapped Aeternity",
-          symbol = "WAE",
-          decimals = 18
+          name = "Wrapped Aeternity"
+        , symbol = "WAE"
+        , decimals = 18
         }
 
     // List of supported extensions
@@ -58,7 +57,7 @@ contract WAE =
     // in this smart contract the return value is None
     // Otherwise Some(int) is returned with the current balance
     entrypoint balance(address: address): option(int) =
-        Map.lookup(address,state.balance_of)
+        Map.lookup(address, state.balance_of)
 
     // Get the allowances state
     entrypoint allowances() : allowances =
@@ -95,10 +94,10 @@ contract WAE =
         Chain.event( Transfer( Call.caller, to, Call.value ) )
 
     stateful entrypoint withdraw(amount: int): unit =
-        let caller_balance: int = Map.lookup_default(Call.caller,state.balance_of,0)
+        let caller_balance: int = Map.lookup_default(Call.caller, state.balance_of, 0)
         require(caller_balance >= amount, "WAE: LOW_BALANCE")
         put(state{balance_of[ Call.caller ] = caller_balance - amount })
-        Chain.spend( Call.caller,amount )
+        Chain.spend( Call.caller, amount )
         Chain.event( Withdrawal(Call.caller, amount) )
 
     // Create allowance for `for_account` to withdraw from your account `Call.caller`,
@@ -162,7 +161,6 @@ contract WAE =
         , to_account: address
         , value: int
         ) =
-
         require_non_negative_value(value)
         require_balance(from_account, value)
         put(state{ balance_of[from_account] @ b = b - value })
@@ -194,7 +192,7 @@ contract WAE =
             None => abort("WAE: ALLOWANCE_NOT_EXISTENT")
 
     function require_balance(account : address, amount : int) =
-        let src_balance = Map.lookup_default(account,state.balance_of,0)
+        let src_balance = Map.lookup_default(account, state.balance_of, 0)
         require(src_balance >= amount, "WAE: LOW_BALANCE")
 
     function require_non_negative_value(value : int) =
