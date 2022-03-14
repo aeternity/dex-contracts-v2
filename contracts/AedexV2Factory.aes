@@ -60,9 +60,9 @@ contract AedexV2Factory =
     function validate_fee_to_setter() =
         require(Call.caller == state.fee_to_setter, "AedexV2Factory: FORBIDDEN")
 
-    stateful entrypoint set_fee_to(fee_to: address) =
+    stateful entrypoint set_fee_to(fee_to: option(address)) =
         validate_fee_to_setter()
-        put(state { fee_to = Some(fee_to) })
+        put(state { fee_to = fee_to })
 
     stateful entrypoint set_fee_to_setter(fee_to_setter: address) =
         validate_fee_to_setter()
