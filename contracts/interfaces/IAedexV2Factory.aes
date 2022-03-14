@@ -20,5 +20,5 @@ contract interface IAedexV2Factory =
             , option(int)     // debug_time
         ) => IAedexV2Pair     // pair
 
-    entrypoint set_fee_to: (address) => unit
+    entrypoint set_fee_to: (option(address)) => unit
     entrypoint set_fee_toSetter: (address) => unit
