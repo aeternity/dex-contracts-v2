@@ -114,7 +114,7 @@ const deploy = async ( secretKey, network, compiler ) => {
             ),
         ]
     try {
-        await deployments[4]()
+        await deployments[2]()
     } catch ( ex ) {
         //empty
     }
