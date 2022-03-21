@@ -39,23 +39,28 @@ payable contract AedexV2Router =
 
     // **** ADD LIQUIDITY ****
 
-    // just creates the pair if it is the case and calculates the amount
-    // based on parameters and pair reserves
-    function add_liquidity'(
+    //creates the pair if it doesn't exists
+    function ensure_pair_existence(
+          token_a: IAEX9Minimal
+        , token_b: IAEX9Minimal
+        , min_liquidity: option(int)
+        ) =
+        let factory = state.factory
+        // create the pair if it doesn't exists yet
+        if( Option.is_none( factory.get_pair(token_a, token_b) ))
+           factory.create_pair(token_a, token_b, min_liquidity, None)
+           ()
+
+    // calculates the amount based on parameters and pair reserves
+    function compute_add_liquidity_amounts(
           token_a: IAEX9Minimal
         , token_b: IAEX9Minimal
         , amount_a_desired: int
         , amount_b_desired: int
         , amount_a_min: int
         , amount_b_min: int
-        , min_liquidity: option(int)
         ): (amount_a *  amount_b) =
-        let factory = state.factory
-        // create the pair if it doesn't exist yet
-        if( Option.is_none( factory.get_pair(token_a, token_b) ))
-           factory.create_pair(token_a, token_b, min_liquidity, None)
-           ()
-        let (reserve_a, reserve_b) = AedexV2Library.get_reserves( factory, token_a, token_b )
+        let (reserve_a,reserve_b) = AedexV2Library.get_reserves( state.factory, token_a, token_b )
 
         if (reserve_a == 0 && reserve_b == 0)
             (amount_a_desired, amount_b_desired)
@@ -93,11 +98,11 @@ payable contract AedexV2Router =
             , deadline: int
         ): (amount_a * amount_b * liquidity) =
         require_deadline(deadline)
-        let (amount_a, amount_b) = add_liquidity'(
+        ensure_pair_existence(token_a, token_b, min_liquidity)
+        let (amount_a, amount_b) = compute_add_liquidity_amounts(
                 token_a, token_b,
                 amount_a_desired, amount_b_desired,
-                amount_a_min, amount_b_min,
-                min_liquidity
+                amount_a_min, amount_b_min
                 )
         // Get the pair and transfer the tokens to its address
         let pair: IAedexV2Pair = AedexV2Library.pair_for( state.factory, token_a, token_b )
@@ -121,17 +126,17 @@ payable contract AedexV2Router =
         , deadline: int
         ):  (amount_token * amount_ae * liquidity) =
         require_deadline(deadline)
-        let (wae_aex9, wae) = (state.wae_aex9, state.wae)
-        let (amount_token, amount_ae) = add_liquidity'(
+        let wae_aex9 = state.wae_aex9
+        ensure_pair_existence(token, wae_aex9, min_liquidity)
+        let (amount_token, amount_ae) = compute_add_liquidity_amounts(
                 token, wae_aex9,
                 amount_token_desired, Call.value,
-                amount_token_min, amount_ae_min,
-                min_liquidity
+                amount_token_min, amount_ae_min
                 )
         let pair: IAedexV2Pair = AedexV2Library.pair_for(state.factory, token, wae_aex9)
         token.transfer_allowance(Call.caller, pair.address, amount_token)
 
-        wae.deposit_to(pair.address, value=amount_ae)
+        state.wae.deposit_to(pair.address, value=amount_ae)
         let liquidity = pair.mint(to)
         if (Call.value > amount_ae)
             Chain.spend(Call.caller, Call.value - amount_ae) // refund dust ae, if any

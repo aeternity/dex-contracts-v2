@@ -48,7 +48,7 @@ contract interface IAedexV2Factory =
   entrypoint all_pairs : (int) => IAedexV2Pair
   entrypoint all_pairs_length : () => int
   stateful entrypoint create_pair : (IAEX9Minimal, IAEX9Minimal, option(int), option(int)) => IAedexV2Pair
-  entrypoint set_fee_to : (address) => unit
+  entrypoint set_fee_to : (option(address)) => unit
   entrypoint set_fee_toSetter : (address) => unit
 
 
