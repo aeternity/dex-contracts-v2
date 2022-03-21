@@ -189,11 +189,13 @@ contract AedexV2Pair =
                                                // can update in mintFee
         let amount0 = (liquidity*balance0) / total_supply // using balances ensures pro-rata distribution
         let amount1 = (liquidity*balance1) / total_supply // using balances ensures pro-rata distribution
-        burn_update(Contract.address, liquidity)
-        require(amount0 >= 0 && amount1 >= 0, "AedexV2Pair: NEGATIVE_VALUE_ON_TRANSFER")
+        //in most of the cases balance(Contract.address) will equal the liquidity,
+        //unless during the mint_fee the balance(Contract.address) increased
+        burn_update(liquidity)
+        require(amount0 >= 0 && amount1 >= 0,"AedexV2Pair: NEGATIVE_VALUE_ON_TRANSFER")
         state.token0.transfer(to, amount0)
         state.token1.transfer(to, amount1)
-        let (balance0, balance1) = get_balances()
+        let (balance0,balance1) = get_balances()
 
         update(balance0, balance1, reserve0, reserve1)
         if (fee_on)  put( state{ k_last = state.reserve0*state.reserve1 }) // reserve0 and reserve1 are up-to-date
@@ -304,20 +306,20 @@ contract AedexV2Pair =
                 Chain.event( Mint( Contract.address, value ))
                 Chain.event( LockLiquidity(value) )
 
-    stateful function burn_update(from: address, value: int) =
+    stateful function burn_update(value: int) =
         require(value > 0, "AedexV2Pair: INSUFFICIENT_LIQUIDITY_BURNED")
         let total_supply = state.total_supply // we are using twice: verification and update
         require(total_supply >= value , "AedexV2Pair: INSUFFICIENT_TOTAL_SUPPLY")
-        let balance = state.balance_of[ from ] // using twice: verification and update
+        let balance = state.balance_of[ Contract.address ] // using twice: verification and update
         require(balance >= value , "AedexV2Pair: INSUFFICIENT_BALANCE_FOR_BURNING")
         put(state { total_supply  = total_supply - value
-                  , balance_of[ from ] = balance - value
+                  , balance_of[ Contract.address ] = balance - value
                   })
-        Chain.event( Burn(from, value) )
+        Chain.event( Burn(Contract.address, value) )
 
     // update reserves and, on the first call per block, price accumulators
-    stateful function update(balance0: int, balance1: int, reserve0: int, reserve1: int  ) =
-        require_positive([ balance0, balance1, reserve0, reserve1] )
+    stateful function update(balance0: int, balance1: int, reserve0: int, reserve1: int) =
+        require_positive([ balance0, balance1, reserve0, reserve1])
 
         let block_timestamp = timestamp()
 
