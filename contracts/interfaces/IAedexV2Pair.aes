@@ -6,8 +6,6 @@ include "./IAedexV2FactoryForPair.aes"
 
 // Interface to be used by the router and by the tests for AedexV2Pair implementation
 contract interface IAedexV2Pair =
-    entrypoint domain_separator: () => bytes(32)
-    entrypoint nonces: (address /*owner*/) => int
     entrypoint balance: (address) => option(int)
 
     entrypoint init : (
@@ -19,20 +17,17 @@ contract interface IAedexV2Pair =
         ) => void
 
     entrypoint minimum_liquidity: () => int
-    entrypoint do_minimum_liquidity: () => int
     entrypoint factory: () => IAedexV2FactoryForPair
     entrypoint token0: () => IAEX9Minimal
     entrypoint token1: () => IAEX9Minimal
 
     record reserves = { reserve0: int , reserve1: int, blockTimestampLast: int }
-    entrypoint getReserves: () => reserves
-    entrypoint price0_cumulativeLast: () => int
-    entrypoint price1_cumulativeLast: () => int
+    entrypoint price0_cumulative_last: () => int
+    entrypoint price1_cumulative_last: () => int
     entrypoint k_last: () => int
 
     stateful entrypoint mint: (address) => int
-    stateful entrypoint mint2: (address) => int
-    record amounts =  { amount0: int, amount1: int }
+    record amounts = { amount0: int, amount1: int }
     stateful entrypoint burn: (address /*to*/) => amounts
 
     stateful entrypoint swap: (
@@ -42,7 +37,7 @@ contract interface IAedexV2Pair =
         , option(IAedexV2Callback) /*callback*/
         ) => unit
 
-    stateful entrypoint skim: (IAEX9Minimal /*to*/) => unit
+    stateful entrypoint skim: (address /*to*/) => unit
     stateful entrypoint sync: () => unit
 
     record reserves = {
