@@ -74,10 +74,13 @@ contract AedexV2Factory =
     stateful entrypoint create_pair(
           token_a: IAEX9Minimal
         , token_b: IAEX9Minimal
-        , min_liquidity: option(int) // the minimum liquidity constant for the pair
-                                     // see AedexV2Pair `init` description for more information
-                                     // about the default value
-        , debug_time: option(int)
+        , min_liquidity: option(int)    // the minimum liquidity constant for the pair
+                                        // see AedexV2Pair `init` description for more information
+                                        // about the default value
+
+        , debug_time: option(int)       // this can be Some(value) only when factory was
+                                        // initialized with allow_debug_mode = true, otherwise
+                                        // the transaction will fail
         ): IAedexV2Pair =
 
         require(token_a != token_b, "AedexV2Factory: IDENTICAL_ADDRESSES")

@@ -74,7 +74,12 @@ contract AedexV2Pair =
         , token0: IAEX9Minimal
         , token1: IAEX9Minimal
         , min_liquidity: option(int)
-        , debug_time: option(int)
+        , debug_time: option(int)       // If this is set to Some(...) the pair will enter in debug mode
+                                        // and `timestamp()` will get the value from it. After this point,
+                                        // to modify it's value `set_debug_time` should be called.
+                                        // Otherwise if the contract initialization sets `debug_time` to `None`,
+                                        // `timestamp()` will be reflected by the Chain.timestamp
+                                        // and any further set_debug_time call will result with an error
         ) = {
               total_supply           = 0
             , balance_of             = {}
