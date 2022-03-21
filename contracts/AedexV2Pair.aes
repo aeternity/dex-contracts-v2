@@ -128,7 +128,6 @@ contract AedexV2Pair =
     //we don't have an owner to make veto decisions over the pair contract
     entrypoint owner() : address = Contract.address
 
-
     entrypoint price0_cumulative_last() = state.price0_cumulative_last
     entrypoint price1_cumulative_last() = state.price1_cumulative_last
 
@@ -137,7 +136,6 @@ contract AedexV2Pair =
             , reserve1 = state.reserve1
             , block_timestamp_last = state.block_timestamp_last
         }
-
 
     entrypoint minimum_liquidity() = state.min_liquidity
 
@@ -148,7 +146,7 @@ contract AedexV2Pair =
     entrypoint token1() = state.token1
 
     //------------------------------------------------------------------------------
-    // STATEFUL
+    // STATEFUL SPECIFIC ENTRYPOINTS
     //------------------------------------------------------------------------------
 
     stateful entrypoint set_debug_time(time: int) =
@@ -156,8 +154,13 @@ contract AedexV2Pair =
         require(Option.is_some(state.debug_time), "AedexV2Pair: NOT_DEBUG_MODE")
         put( state { debug_time = Some(time) } )
 
-
-    // this low-level function should be called from a contract which performs important safety checks
+    // New Pair tokens will be minted and assigned to the given address based on the received token0 and token1 amounts.
+    // The newly received tokens are inferred from the difference between state.balance0/1 and state.reserve0/1. 
+    // After the Pair tokens will be minted the reserves amounts will be updated to reflect the current token balances.
+    // Usage: From the caller contract, befor calling the mint entrypoint, token0 & token1 amounts 
+    // should be transfered to the Pair address (Contract.address)
+    // NOTE(1): If factory.set_fee_to() is set to Some( address ), the liquidity representing the fee will be minted to that address 
+    // NOTE(2): This low-level function should be called from a contract which performs important safety checks
     stateful entrypoint mint(to: address): int =
         let (reserve0, reserve1) = (state.reserve0, state.reserve1)
         let (balance0, balance1) = get_balances()
@@ -182,8 +185,17 @@ contract AedexV2Pair =
         Chain.event( PairMint(Call.caller, amount0, amount1) )
         liquidity
 
-
-    // this low-level function should be called from a contract which performs important safety checks
+    // Burns (removes) Pair tokens and transfers the token0/1 amounts to a given address.
+    // Usage: 
+    //  1. Prior the call the desiered liquidity must be transfered from the liquidity provider balance 
+    //  to the Pair address 
+    //  2. Call the burn entrypoint with the destiantion wallet in which the tokens(0&1) are expected to be received
+    // How it works:
+    // 1. All the Pair tokens found in state.balance_of[Contract.address] will be removed
+    // and the exact value will be substracted from the state.totalSupply
+    // 2. Token0/1 amounts ,proportional with the burned liquidity, will be transfered to the given address
+    // NOTE(1): If factory.set_fee_to() is set to Some( address ), liquidity representing the fee, will be minted to that address 
+    // NOTE(2): This low-level function should be called from a contract which performs important safety checks
     stateful entrypoint burn(to: address): IAedexV2Pair.amounts =
         let (reserve0, reserve1) = (state.reserve0, state.reserve1)
         let (balance0, balance1) = get_balances()
@@ -207,7 +219,11 @@ contract AedexV2Pair =
         Chain.event( PairBurn(Call.caller, to, Utils.xsToPayload([amount0, amount1])) )
         {amount0 = amount0, amount1 = amount1}
 
-    // this low-level function should be called from a contract which performs important safety checks
+    // Transfers expected token amounts(`amount0_out` & `amount1_out`) to a given address (`to`) in exchange 
+    // for the counterpart token amounts(1&0) expected to be received into Pair address (Contract.address).
+    // The input tokens should be transfered prior the swap entrypoint call or at the latest during the 
+    // callback_opt call (if this was provided)
+    // NOTE: This low-level function should be called from a contract which performs important safety checks
     stateful entrypoint swap(
           amount0_out: int
         , amount1_out: int
@@ -245,7 +261,7 @@ contract AedexV2Pair =
             Utils.xsToPayload([ amount0_in, amount1_in, amount0_out, amount1_out])
             ))
 
-    // force balances to match reserves
+    // Force balances to match reserves
     stateful entrypoint skim(to: address ) =
         let token0 = state.token0
         let token1 = state.token1
@@ -258,7 +274,7 @@ contract AedexV2Pair =
         token0.transfer(to, amount0)
         token1.transfer(to, amount1)
 
-    // force reserves to match balances
+    // Force reserves to match balances
     stateful entrypoint sync() =
         let token0 = state.token0
         let token1 = state.token1
@@ -271,6 +287,10 @@ contract AedexV2Pair =
             , state.reserve0
             , state.reserve1
             )
+
+    //------------------------------------------------------------------------------
+    // AEX9 STATEFUL ENTRYPOINTS
+    //------------------------------------------------------------------------------
 
     stateful entrypoint create_allowance(for_account: address, value: int) =
         require_positive([value])
@@ -295,7 +315,10 @@ contract AedexV2Pair =
         let allowance_accounts = { from_account = Call.caller, for_account = for_account }
         internal_change_allowance(allowance_accounts, - state.allowances[allowance_accounts])
 
+    //------------------------------------------------------------------------------
     // INTERNALS
+    //------------------------------------------------------------------------------
+
     stateful function mint_update(to_opt: option(address), value: int) =
         require_positive([value])
         switch(to_opt)
@@ -322,7 +345,7 @@ contract AedexV2Pair =
                   })
         Chain.event( Burn(Contract.address, value) )
 
-    // update reserves and, on the first call per block, price accumulators
+    // Update reserves and, on the first call per block, price accumulators
     stateful function update(balance0: int, balance1: int, reserve0: int, reserve1: int) =
         require_positive([ balance0, balance1, reserve0, reserve1])
 
@@ -366,7 +389,7 @@ contract AedexV2Pair =
     function require_positive(xs: list(int)): unit =
         Utils.require_positive_xs("AedexV2Pair", xs)
 
-    // if fee is on, mint liquidity equivalent to 1/6th of the growth in sqrt(k)
+    // If fee is on, mint liquidity equivalent to 1/6th of the growth in sqrt(k)
     stateful function mint_fee(reserve0: int, reserve1: int): bool =
         require_positive([reserve0, reserve1])
         let k_last = state.k_last

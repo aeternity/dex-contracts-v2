@@ -8,7 +8,9 @@ include "./interfaces/IAedexV2FactoryForPair.aes"
 contract AedexV2Factory =
     type tokenIdPair = (IAEX9Minimal*IAEX9Minimal)
     record state = {
+              // the fee collector where minting fees will be transfered
               fee_to: option(address)
+              // the owner allowed for changing fee_to value
             , fee_to_setter: address
             , pairs: map(tokenIdPair, IAedexV2Pair)
             , all_pairs: list(IAedexV2Pair)
@@ -21,11 +23,11 @@ contract AedexV2Factory =
                   address /*indexed token0*/
                 , address /*indexed token1*/
                 , address /*pair*/
-                , string /*uint*/
+                , string  /*uint*/
                 )
 
-    //WARNING: use allow_debug_mode (= Some(true)) only in development.
-    //Never initialize a factory in production/mainnet with debug_mode activated
+    // WARNING: use allow_debug_mode (= Some(true)) only in development.
+    // Never initialize a factory in production/mainnet with debug_mode activated
     entrypoint init(
           fee_to_setter: address
         , pair_model: IAedexV2Pair
@@ -57,10 +59,12 @@ contract AedexV2Factory =
     function validate_fee_to_setter() =
         require(Call.caller == state.fee_to_setter, "AedexV2Factory: FORBIDDEN")
 
+    // Changes the address for the fee collector
     stateful entrypoint set_fee_to(fee_to: option(address)) =
         validate_fee_to_setter()
         put(state { fee_to = fee_to })
 
+    // Sets the account in charge of the future changes over the fee collector's address
     stateful entrypoint set_fee_to_setter(fee_to_setter: address) =
         validate_fee_to_setter()
         put(state { fee_to_setter = fee_to_setter })
@@ -71,6 +75,8 @@ contract AedexV2Factory =
         else
             (token_b, token_a)
 
+    // Creates a new Pair based on the given tokens.
+    // If the pair already exists the transaction will fail
     stateful entrypoint create_pair(
           token_a: IAEX9Minimal
         , token_b: IAEX9Minimal
