@@ -6,10 +6,11 @@ include "./interfaces/IAedexV2Pair.aes"
 include "./interfaces/IAedexV2FactoryForPair.aes"
 
 contract AedexV2Factory =
+    type tokenIdPair = (IAEX9Minimal*IAEX9Minimal)
     record state = {
               fee_to: option(address)
             , fee_to_setter: address
-            , pairs: map(IAEX9Minimal, map(IAEX9Minimal, IAedexV2Pair))
+            , pairs: map(tokenIdPair, IAedexV2Pair)
             , all_pairs: list(IAedexV2Pair)
             , pair_model: IAedexV2Pair
             , allow_debug_mode: bool
@@ -51,11 +52,7 @@ contract AedexV2Factory =
           token_a: IAEX9Minimal
         , token_b: IAEX9Minimal
         ): option(IAedexV2Pair) =
-
-        let (token0, token1) = sort_tokens(token_a, token_b)
-        switch(Map.lookup(token0, state.pairs))
-            None => None
-            Some(m) => Map.lookup(token1, m)
+        Map.lookup(sort_tokens(token_a, token_b), state.pairs)
 
     function validate_fee_to_setter() =
         require(Call.caller == state.fee_to_setter, "AedexV2Factory: FORBIDDEN")
@@ -86,11 +83,8 @@ contract AedexV2Factory =
         require(token_a != token_b, "AedexV2Factory: IDENTICAL_ADDRESSES")
         let (token0, token1) = sort_tokens(token_a, token_b)
 
-        let has_old_value =
-                Map.member(
-                    token1,
-                    Map.lookup_default(token0, state.pairs, {})
-                    )
+        let has_old_value = Map.member((token0, token1), state.pairs)
+
         require(!has_old_value, "AedexV2Factory: PAIR_EXISTS")
         require(state.allow_debug_mode || Option.is_none(debug_time), "AedexV2Factory: NOT_DEBUG_MODE")
         let pair = Chain.clone(
@@ -102,12 +96,8 @@ contract AedexV2Factory =
                     , debug_time
                     )
 
-        let update_token0_map = (p: map(IAEX9Minimal, map(IAEX9Minimal, IAedexV2Pair))) =>
-            let old_t0_map: map(IAEX9Minimal, IAedexV2Pair) = Map.lookup_default(token0, p, {})
-            old_t0_map { [token1] = pair }
-
         let new_all_pairs = pair::state.all_pairs
-        put( state { pairs @ p = p { [token0] = update_token0_map(p) }
+        put( state { pairs[(token0, token1)] = pair
                    , all_pairs = new_all_pairs
                    })
         Chain.event( PairCreated(
