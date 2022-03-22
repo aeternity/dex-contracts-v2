@@ -37,16 +37,41 @@ const other = {
     ...WALLETS[1],
     address: WALLETS[1].publicKey
 }
-var factory, token0, token1
+var factory, token0, token1, pair0
 
 describe( 'Pair Factory', () => {
     beforeEachWithSnapshot( 'first compile pool factory', async () => {
-        ( { factory, token0, token1 } = await pairFixture() )
+        ( { factory, token0, token1, pair: pair0 } = await pairFixture() )
     } )
     it( 'feeTo, feeToSetter, allPairsLength', async () => {
         expect( await factory.fee_to() ).to.eq( undefined )
         expect( await factory.fee_to_setter() ).to.eq( wallet.address )
         expect( await factory.all_pairs_length() ).to.eq( 1n )
+        expect( await factory.get_nth_pair( 0 ) ).to.eq( getA( pair0 ) )
+        expect( await factory.get_all_pairs() ).to.eql( [ getA( pair0 ) ] )
+
+        const fakeToken2 = 'ct_A8WVnCuJ7t1DjAJf4y8hJrAEVpt1T9ypG3nNBdbpKmpthGvUm'
+        const fakeToken3 = 'ct_2kE1RxHzsRE4LxDFu6WKi35BwPvrEawBjNtV788Gje3yqADvwR'
+        const pair1  = await factory.create_pair( getA( token0 ), fakeToken2 )
+        const pair2  = await factory.create_pair( getA( token0 ), fakeToken3 )
+        const pair3  = await factory.create_pair( getA( token1 ), fakeToken2 )
+        const pair4  = await factory.create_pair( getA( token1 ), fakeToken3 )
+
+        expect( await factory.all_pairs_length() ).to.eq( 5n )
+
+        const allPairs = [ getA( pair0 ), pair1, pair2, pair3, pair4 ].reverse()
+
+        for ( var i = 0 ; i < allPairs.length ; i ++ ) {
+            expect ( await factory.get_nth_pair( i ) ).to.eq(  allPairs[i] )
+        }
+
+        expect( await factory.get_all_pairs() ).to.eql( allPairs )
+
+        // out of index
+        await expectToRevert(
+            () => factory.get_nth_pair( 5 ),
+            'Out of index get'
+        )
     } )
     it( 'fails to create same pairs', async () => {
         await expectToRevert(
