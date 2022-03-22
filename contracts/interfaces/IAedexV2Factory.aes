@@ -10,8 +10,9 @@ contract interface IAedexV2Factory =
     entrypoint fee_to_setter: () => address
 
     entrypoint get_pair: (IAEX9Minimal /*tokenA*/, IAEX9Minimal /*tokenB*/) => option(IAedexV2Pair)
-    entrypoint all_pairs: (int) => IAedexV2Pair
+    entrypoint get_nth_pair: (int /*index*/) => IAedexV2Pair
     entrypoint all_pairs_length: () => int
+    entrypoint get_all_pairs: () => list(IAedexV2Pair)
 
     stateful entrypoint create_pair: (
               IAEX9Minimal    // tokenA
