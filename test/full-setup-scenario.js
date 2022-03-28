@@ -18,7 +18,7 @@ const { defaultWallets: WALLETS } = require( '../config/wallets.json' )
 
 import {
     getA,
-    routerFixture,
+    mainnetFixture,
     getAK,
 } from './shared/fixtures'
 
@@ -49,59 +49,14 @@ describe( 'Pair Router', () => {
     let router
 
     const multiplier = 1000000
-    before( 'first compile pool factory', async () => {
+    it( 'first compile pool factory', async () => {
         ( {
             token0,
             token1,
             waePartner,
             router,
-        } = await routerFixture( undefined, 1000 * multiplier ) )
-    } )
-    const routerAddr = () =>  getAK( router )
-
-    it( 'add_liquidity', async () => {
-        const token0Amount = expandTo18Dec( 1 * multiplier )
-        const token1Amount = expandTo18Dec( 4 * multiplier )
-
-        await token0.create_allowance( routerAddr(), MaxUint256 )
-        await token1.create_allowance( routerAddr(), MaxUint256 )
-
-        await router.add_liquidity(
-            getA( token0 ),
-            getA( token1 ),
-            token0Amount,
-            token1Amount,
-            0n,
-            0n,
-            wallet.address,
-            MINIMUM_LIQUIDITY,
-            MaxUint256,
-            extraGas,
-        )
-    } )
-
-    it( 'add_liquidity_ae', async () => {
-        const waePartnerAmount = expandTo18Dec( 1  )
-        const aeAmount = expandTo18Dec( 4  )
-
-        await waePartner.create_allowance( routerAddr(), MaxUint256 )
-
-        await router.add_liquidity_ae(
-            getA( waePartner ),
-            waePartnerAmount,
-            waePartnerAmount,
-            aeAmount,
-            wallet.address,
-            MINIMUM_LIQUIDITY,
-            MaxUint256,
-            {
-                ...extraGas,
-                amount: aeAmount.toString(),
-            }
-        )
-
-    } )
-
+        } = await mainnetFixture( undefined, 1000 * multiplier, 'ak_2kE1RxHzsRE4LxDFu6WKi35BwPvrEawBjNtV788Gje3yqADvwR' ) )
+    })
     const userAmount = expandTo18Dec( 200 * multiplier )
     userWallets.map( x => {
         it( `add funds to token0 for ${x}`, async () => {
@@ -114,5 +69,4 @@ describe( 'Pair Router', () => {
             await waePartner.transfer( x, userAmount )
         } )
     } )
-
 } )

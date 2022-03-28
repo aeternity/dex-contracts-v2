@@ -17,7 +17,6 @@
 const { expect } = require( 'chai' )
 
 const { defaultWallets: WALLETS } = require( '../config/wallets.json' )
-
 import {
     getA,
     pairFixture,

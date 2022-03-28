@@ -34,7 +34,7 @@ import contractUtils from '../../utils/contract-utils'
 import FungibleTokenFull from 'aeternity-fungible-token/FungibleTokenFull.aes'
 const FungibleTokenFullWithString = 'include "String.aes"\n' + FungibleTokenFull
 
-const NETWORK_NAME = "testnet"
+const NETWORK_NAME = "mainnet"
 const wallet0 = {
     ...WALLETS[0],
     address: WALLETS[0].publicKey
@@ -195,7 +195,7 @@ const calleeFixture = async ( ) => {
     await callee.deploy()
     return callee
 }
-const factoryFixture = async ( wallet, debugMode ) => {
+const factoryFixture = async ( wallet, debugMode, setFeeTo = wallet.address ) => {
     if ( !pairModel ) {
         await pairModelFixture()
     }
@@ -241,6 +241,48 @@ const router01Fixture = async ( factory, wae ) => {
     await token.deploy()
     return token
 }
+
+//
+// MAINNET
+//
+const mainnetFixture = async ( wallet = wallet0,initialTokenAmount, setFeeTo ) => {
+
+    const liq = expandTo18Dec( initialTokenAmount || 10000 )
+    const tokenA = await tokenFixture( 'A', liq )
+    const tokenB = await tokenFixture( 'B', liq )
+    const tokenC = await tokenFixture( 'C', liq )
+
+    const wae = await waeFixture()
+    const waePartner = await tokenFixture( 'WaeP', liq )
+
+    const factory = await factoryFixture( wallet, undefined, setFeeTo )
+
+    // deploy routers
+    const router = await router01Fixture( factory, wae )
+
+
+    const ret = {
+        token0: tokenA,
+        token1: tokenB,
+        tokenC,
+        wae,
+        waePartner,
+        factory,
+        router,
+    }
+    const addresses = Object.keys( ret ).reduce( ( acc, key ) => {
+        const value = ret[key]
+        const cloned = { ...acc }
+        cloned[key] = getA( value )
+        return cloned
+    }, {} )
+    console.debug( addresses )
+    return ret
+}
+
+//
+// ROUTER
+// 
 
 const routerFixture = async ( wallet = wallet0, initialTokenAmount ) => {
     const liq = expandTo18Dec( initialTokenAmount || 10000 )
@@ -390,6 +432,7 @@ const beforeEachWithSnapshot = ( str, work ) => {
 }
 
 module.exports = {
+    mainnetFixture,
     beforeEachWithSnapshot,
     createClient,
     pairFixture,
