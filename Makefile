@@ -17,6 +17,8 @@ testPair:
 	npm run test:aedex-pair-break
 testRouter:
 	npm run test:aedex-router-break
+testSetup:
+	npm run test:full-setup-scenario-break
 testFactoryPool:
 	npm run test:aedex-pool-factory-break
 testWAE:

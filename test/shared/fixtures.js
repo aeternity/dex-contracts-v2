@@ -34,7 +34,7 @@ import contractUtils from '../../utils/contract-utils'
 import FungibleTokenFull from 'aeternity-fungible-token/FungibleTokenFull.aes'
 const FungibleTokenFullWithString = 'include "String.aes"\n' + FungibleTokenFull
 
-const NETWORK_NAME = "local"
+const NETWORK_NAME = "testnet"
 const wallet0 = {
     ...WALLETS[0],
     address: WALLETS[0].publicKey
@@ -242,8 +242,8 @@ const router01Fixture = async ( factory, wae ) => {
     return token
 }
 
-const routerFixture = async ( wallet = wallet0 ) => {
-    const liq = expandTo18Dec( 10000 )
+const routerFixture = async ( wallet = wallet0, initialTokenAmount ) => {
+    const liq = expandTo18Dec( initialTokenAmount || 10000 )
     const tokenA = await tokenFixture( 'A', liq )
     const tokenB = await tokenFixture( 'B', liq )
     const tokenC = await tokenFixture( 'C', liq )
