@@ -16,6 +16,9 @@
     "test:aedex-router": "mocha ./test/aedex-router.test.js --timeout 0 --exit",
     "test:aedex-router-break": "mocha ./test/aedex-router.test.js  --timeout 0 --exit -b --failed-first",
     "test:aedex-router-debug": "node --inspect-brk node_modules/.bin/mocha ./test/aedex-router.test.js --timeout 0 --exit -b",
+    "test:full-setup-scenario": "mocha ./test/full-setup-scenario.js --timeout 0 --exit",
+    "test:full-setup-scenario-break": "mocha ./test/full-setup-scenario.js  --timeout 0 --exit -b --failed-first",
+    "test:full-setup-scenario-debug": "node --inspect-brk node_modules/.bin/mocha ./test/full-setup-scenario.js --timeout 0 --exit -b",
     "test:aedex-pair": "mocha ./test/aedex-pair.test.js --timeout 0 --exit",
     "test:aedex-pair-break": "mocha ./test/aedex-pair.test.js  --timeout 0 --exit -b --failed-first",
     "test:aedex-pair-debug": "node --inspect-brk node_modules/.bin/mocha ./test/aedex-pair.test.js --timeout 0 --exit -b"
