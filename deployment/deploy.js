@@ -14,7 +14,7 @@
  *  OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
  *  PERFORMANCE OF THIS SOFTWARE.
  */
-const { Universal, MemoryAccount, Node, Crypto } = require( '@aeternity/aepp-sdk' )
+const { AeSdk, Node, MemoryAccount, getAddressFromPriv  } = require( '@aeternity/aepp-sdk' )
 const contractUtils = require( '../utils/contract-utils' )
 const fs = require( 'fs' )
 
@@ -28,25 +28,25 @@ const deploy = async ( secretKey, network, compiler ) => {
     }
     const KEYPAIR = {
         secretKey : secretKey,
-        publicKey : Crypto.getAddressFromPriv( secretKey )
+        publicKey : getAddressFromPriv( secretKey )
     }
     const NETWORK_NAME = network ? network : DEFAULT_NETWORK_NAME
 
-    const client = await Universal.compose( {
-        deepProps: { Ae: { defaults: { interval: 10 } } }
-    } )( {
-        nodes: [
-            {
-                name     : NETWORK_NAME, instance : await Node( {
-                    url           : NETWORKS[NETWORK_NAME].nodeUrl,
-                    ignoreVersion : true
-                } )
-            },
-        ],
+    const instance = new Node( NETWORKS[NETWORK_NAME].nodeUrl, { ignoreVersion: true } )
+
+    const client = new AeSdk( {
+        nodes       : [ { name: NETWORK_NAME, instance } ],
         compilerUrl : compiler ? compiler : NETWORKS[NETWORK_NAME].compilerUrl,
-        accounts    : [ MemoryAccount( { keypair: KEYPAIR } ) ],
+        interval    : 50,
         address     : KEYPAIR.publicKey
-    } )
+    } ) 
+    const accounts = [ new MemoryAccount( { keypair: KEYPAIR } )  ]
+    await Promise.all(
+        accounts.map( ( account, index ) => client.addAccount(
+            account,
+            { select: index === 0 },
+        ) ),
+    )
     // a filesystem object must be passed to the compiler if the contract uses custom includes
 
     const deployContract_ = async ( { source, file }, params, interfaceName ) => {
@@ -54,15 +54,16 @@ const deploy = async ( secretKey, network, compiler ) => {
             console.log( '----------------------------------------------------------------------------------------------------' )
             console.log( `%cdeploying '${source}...'`, `color:green` )
 
-            var filesystem, contract_content
+            var fileSystem, contract_content
             if ( file ) {
-                filesystem       = contractUtils.getFilesystem( file )
+                fileSystem       = contractUtils.getFilesystem( file )
                 contract_content = contractUtils.getContractContent( file )
             } else {
                 contract_content = source
             }
 
-            const contract          = await client.getContractInstance( { source: contract_content, filesystem } )
+            console.log( contract_content )
+            const contract          = await client.getContractInstance( { source: contract_content, fileSystem } )
             const deployment_result = await contract.deploy( params )
             console.log( deployment_result )
             console.log( '-------------------------------------  END  ---------------------------------------------------------' )
@@ -72,7 +73,7 @@ const deploy = async ( secretKey, network, compiler ) => {
                 if ( !fs.existsSync( parent ) ) {
                     fs.mkdirSync( parent )
                 }
-                fs.writeFileSync( parent + '/' + interfaceName, contract.interface, 'utf-8' )
+                fs.writeFileSync( parent + '/' + interfaceName, contract._aci.interface, 'utf-8' )
                 console.log( 'Inteface generated at: ' + parent + "/" + interfaceName )
             }
             return { deployment_result, contract }
@@ -114,7 +115,8 @@ const deploy = async ( secretKey, network, compiler ) => {
             ),
         ]
     try {
-        for ( const dep of deployments ) { await dep() }
+        //for ( const dep of deployments ) { await dep() }
+        await deployments[1]()
     } catch ( ex ) {
         //empty
     }

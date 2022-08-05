@@ -21,6 +21,7 @@ const { defaultWallets: WALLETS } = require( '../config/wallets.json' )
 import {
     waeFixture,
     beforeEachWithSnapshot,
+    createClient,
 } from './shared/fixtures.js'
 
 import {
@@ -44,7 +45,14 @@ const other = {
 }
 
 describe( 'WAE', () => {
+    let getAccount
     let wae
+    before( async () => {
+        const sdk = await createClient()
+        getAccount = ( address ) => {
+            return sdk.accounts[address]
+        }
+    } )
     beforeEachWithSnapshot( 'first compile pool factory', async () => {
         wae = await waeFixture()
         
@@ -118,7 +126,7 @@ describe( 'WAE', () => {
             wallet.address,
             other.address,
             TEST_AMOUNT, {
-                onAccount: other.address,
+                onAccount: getAccount( other.address ),
             } )
         expect( await wae.allowance( {
             from_account : wallet.address,
@@ -140,7 +148,7 @@ describe( 'WAE', () => {
             wallet.address,
             other.address,
             TEST_AMOUNT.toString(), {
-                onAccount: other.address,
+                onAccount: getAccount( other.address ),
             } )
 
         expect( await wae.allowance( {

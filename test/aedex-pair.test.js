@@ -299,10 +299,12 @@ describe( 'Pair Factory', () => {
 
         await pairCreateAllowance( getAK( pair ), expectedBalance )
 
-        const getAllowance = () => pairAllowance(
-            wallet.address,
-            getAK( pair ),
-        )
+        const getAllowance = () => {
+            return pairAllowance(
+                wallet.address,
+                getAK( pair ),
+            )
+        }
 
         expect( await getAllowance() ).to.eq( expectedBalance )
 
@@ -525,7 +527,7 @@ describe( 'Pair Factory', () => {
             emits( 'Burn' ).withArgs(
                 getAK( pair ), expectedLiquidity - MINIMUM_LIQUIDITY
             ).emits( 'Sync' ).withArgs(
-                1000, 1000
+                1000n, 1000n
             ).emits( 'PairBurn' ).withArgs(
                 wallet.address,
                 wallet.address,

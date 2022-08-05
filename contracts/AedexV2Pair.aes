@@ -1,5 +1,3 @@
-@compiler >= 6
-
 include "./lib/Utils.aes"
 include "./lib/UQ112x112.aes"
 include "./lib/Math.aes"

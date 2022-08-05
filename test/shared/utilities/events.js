@@ -10,7 +10,7 @@ function withArgsProcess( argsT, parentCall ) {
             if ( arg == null ) {
                 return { head, tail }
             } else {
-                const [ decodedHead, decodedTail ] = headAndTail( head.decoded || [] )
+                const [ decodedHead, decodedTail ] = headAndTail( head.args || [] )
                 expect(
                     decodedHead,
                     `there is no arguments left but ${args.length} more ${args.length > 1 ? 'are' : 'is'} expected`
@@ -27,11 +27,15 @@ function withArgsProcess( argsT, parentCall ) {
                         }
                     }
                 } else {
-                    expect( decodedHead ).to.eq( typeof arg !== 'string' && arg != null ? arg.toString() : arg  )
+                    if ( typeof decodedHead === typeof arg ) {
+                        expect( decodedHead ).to.eq( arg )
+                    } else {
+                        expect( decodedHead ).to.eq( typeof arg !== 'string' && arg != null ? arg.toString() : arg  )
+                    }
                 }
                 return loop( tailArgs, {
                     ...head,
-                    decoded: decodedTail,
+                    args: decodedTail,
                 }, tail )
 
             }
