@@ -16,7 +16,7 @@
  */
 import { assert } from 'chai'
 import crypto from 'crypto'
-import axios from 'axios'
+const http = require( 'http' )
 
 import {
     expandTo18Dec,
@@ -25,7 +25,7 @@ import {
     emits,
 } from './utilities'
 
-import { Universal, MemoryAccount, Node } from '@aeternity/aepp-sdk'
+import { AeSdk, Node, MemoryAccount } from '@aeternity/aepp-sdk'
 
 import NETWORKS from '../../config/network.json'
 
@@ -40,6 +40,29 @@ const wallet0 = {
     address: WALLETS[0].publicKey
 }
 
+async function get( url ) {
+    return new Promise( ( resolve, reject ) => {
+    // eslint-disable-next-line consistent-return
+        const req = http.request( url, { method: 'GET' }, ( res ) => {
+            if ( res.statusCode < 200 || res.statusCode > 299 ) {
+                return reject( new Error( `HTTP status code ${res.statusCode}` ) )
+            }
+
+            const body = []
+            res.on( 'data', ( chunk ) => body.push( chunk ) )
+            res.on( 'end', () => resolve( Buffer.concat( body ).toString() ) )
+        } )
+
+        req.on( 'error', ( err ) => reject( err ) )
+
+        req.on( 'timeout', () => {
+            req.destroy()
+            reject( new Error( 'Request time out' ) )
+        } )
+
+        req.end()
+    } )
+}
 const hash = ( content ) =>
     crypto.createHash( 'md5' ).update( content ).digest( 'hex' )
 
@@ -71,18 +94,23 @@ const getContent = ( { source, file } ) => {
 }
 
 const createClient = async ( wallet = WALLETS[0] ) => {
-    const node = await Node( { url: NETWORKS[NETWORK_NAME].nodeUrl, ignoreVersion: true } )
+    const instance = new Node( NETWORKS[NETWORK_NAME].nodeUrl, { ignoreVersion: true } )
 
-    return await Universal.compose( {
-        deepProps: { Ae: { defaults: { interval: 10 } } }
-    } )( {
-        nodes: [
-            { name: NETWORK_NAME, instance: node },
-        ],
+    const aeSdk = new AeSdk( {
+        nodes       : [ { name: NETWORK_NAME, instance } ],
         compilerUrl : NETWORKS[NETWORK_NAME].compilerUrl,
-        accounts    : [ MemoryAccount( { keypair: wallet } ), MemoryAccount( { keypair: WALLETS[1] } )  ],
+        interval    : 50,
         address     : wallet.publicKey
-    } )
+    } ) 
+    const accounts = [ new MemoryAccount( { keypair: wallet } ), new MemoryAccount( { keypair: WALLETS[1] } )  ]
+    await Promise.all(
+        accounts.map( ( account, index ) => aeSdk.addAccount(
+            account,
+            { select: index === 0 },
+        ) ),
+    )
+
+    return aeSdk
 }
 
 const getContract = ( file, params, contractAddress, wallet = WALLETS[0] ) =>
@@ -103,10 +131,10 @@ const getContractEx = async ( { source, file, title }, params, contractAddress, 
         const contract           = await client.getContractInstance(
             {
                 source          : contract_content,
-                filesystem,
+                fileSystem      : filesystem,
                 contractAddress : contractAddress || undefined,
                 opt             : {
-                    gas: 4500000
+                    gas: 4500000,
                 }
             }
         )
@@ -119,10 +147,10 @@ const getContractEx = async ( { source, file, title }, params, contractAddress, 
                 return deployment_result
             },
             ...createWrappedMethods( contract ),
-            expectEvents: ( { result:{ log } }, tests ) => {
-                const events = contract.decodeEvents( log )
+            expectEvents: ( { result }, tests ) => {
+                const events = contract.decodeEvents( result.log, { omitUnknown: true } )
                 const filtered = ( events || [] ).filter(
-                    x =>  x.address == contract.deployInfo.address
+                    x =>  x.contract.address == contract.deployInfo.address
                 ).reverse()
                 if ( tests ) {
                     tests.events( {
@@ -337,6 +365,7 @@ const pairFixture = async ( wallet = wallet0 ) => {
     const [ token0, token1 ] = getA( tokenA ) === token0Address 
         ? [ tokenA, tokenB ] : [ tokenB, tokenA ]
 
+    console.log( [ getAK( token0 ), getAK( token1 ), cttoak( pairAddress ) ] )
     factory.expectEvents( createPairRet,
         emits( 'PairCreated' ).withArgs(
             getAK( token0 ),
@@ -360,7 +389,7 @@ const pairFixture = async ( wallet = wallet0 ) => {
 }
 const awaitOneKeyBlock = async ( client ) => {
     const height = await client.height()
-    await axios.get( 'http://localhost:3001/emit_kb?n=1' )
+    await get( 'http://localhost:3001/emit_kb?n=1' )
     await client.awaitHeight( height + 1 )
 }
 const beforeEachWithSnapshot = ( str, work ) => {
@@ -382,8 +411,9 @@ const beforeEachWithSnapshot = ( str, work ) => {
         //const currentBlockHeight = await getBlockHeight()
         const currentBlockHeight = await client.height()
         if ( currentBlockHeight > snapshotHeight ) {
-            const cmd = `docker exec aedex_node_1 bin/aeternity db_rollback --height ${snapshotHeight}`
-            await exec( cmd )
+            //const cmd = `docker exec aedex_node_1 bin/aeternity db_rollback --height ${snapshotHeight}`
+            //await exec( cmd )
+            await get( `http://localhost:3001/rollback?height=${snapshotHeight}` )
             await awaitOneKeyBlock( client )
         }  
     } )

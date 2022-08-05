@@ -38,7 +38,7 @@ const wallet = {
     address: WALLETS[0].publicKey
 }
 
-const extraGas = { gas: 150000 }
+const extraGas = { gas: 150000, omitUnknown: true }
 describe( 'Pair Router', () => {
     let token0
     let token1
@@ -210,7 +210,7 @@ describe( 'Pair Router', () => {
             ).emits( 'Burn' ).withArgs(
                 getAK( pair ), expectedLiquidity - MINIMUM_LIQUIDITY
             ).emits( 'Sync' ).withArgs(
-                500, 2000
+                500n, 2000n
             ).emits( 'PairBurn' ).withArgs(
                 getAK( router ),
                 wallet.address,
@@ -279,8 +279,8 @@ describe( 'Pair Router', () => {
             ).emits( 'Burn' ).withArgs(
                 getAK( waePair ), expectedLiquidity - MINIMUM_LIQUIDITY
             ).emits( 'Sync' ).withArgs(
-                waePairToken0 === getA( waePartner ) ? 500 : 2000,
-                waePairToken0 === getA( waePartner ) ? 2000 : 500
+                waePairToken0 === getA( waePartner ) ? 500n : 2000n,
+                waePairToken0 === getA( waePartner ) ? 2000n : 500n
             ).emits( 'PairBurn' ).withArgs(
                 getAK( router ),
                 getAK( router ),

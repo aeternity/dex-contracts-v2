@@ -21,6 +21,7 @@ import {
     getA,
     pairFixture,
     beforeEachWithSnapshot,
+    createClient,
 } from './shared/fixtures'
 
 import {
@@ -39,7 +40,14 @@ const other = {
 }
 var factory, token0, token1, pair0
 
+var client
+const onAccount = ( address ) => ( {
+    onAccount: client.accounts[address]
+} )
 describe( 'Pair Factory', () => {
+    before( "createClient", async () => {
+        client = await createClient()
+    } )
     beforeEachWithSnapshot( 'first compile pool factory', async () => {
         ( { factory, token0, token1, pair: pair0 } = await pairFixture() )
     } )
@@ -100,7 +108,7 @@ describe( 'Pair Factory', () => {
         await expectToRevert(
             () =>  factory.set_fee_to(
                 other.address, {
-                    onAccount: other.address,
+                    ...onAccount( other.address ),
                 } )
             ,
             "AedexV2Factory: FORBIDDEN"
@@ -113,7 +121,7 @@ describe( 'Pair Factory', () => {
         await expectToRevert(
             () =>  factory.set_fee_to_setter(
                 other.address, {
-                    onAccount: other.address,
+                    ...onAccount( other.address ),
                 } )
             ,
             "AedexV2Factory: FORBIDDEN"
