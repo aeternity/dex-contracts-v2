@@ -5,7 +5,7 @@ This repo contains the contracts to the Superhero decentralized exchange (DEX).
 The Superhero DEX consists of multiple parts:
 - [UI](https://github.com/aeternity/dex-ui)
 - [Backend](https://github.com/aeternity/dex-backend)
-- [Contracts(this repo)](https://github.com/aeternity/dex-contracts-v2)
+- [Contracts (this repo)](https://github.com/aeternity/dex-contracts-v2)
 
 ## Access
 
@@ -14,7 +14,8 @@ feel free to run it on your own machine following these instructions:
 
 ## Audit
 
-In April 2022 QuviQ provided an audit for the contracts. Please find the report [here](./Dex2_Audit_20220419.pdf)
+In April 2022 QuviQ provided an audit for the contracts. Please find the [report](./Dex2_Audit_20220419.pdf) in this repo.
+The audit contains no further recommendations or actions that need to be performed to ensure a secure dex contract.
 
 ## Development
 
