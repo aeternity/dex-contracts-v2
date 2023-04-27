@@ -20,12 +20,11 @@ const http = require( 'http' )
 
 import {
     expandTo18Dec,
-    exec,
     MINIMUM_LIQUIDITY,
     emits,
 } from './utilities'
 
-import { AeSdk, Node, MemoryAccount } from '@aeternity/aepp-sdk'
+import { AeSdk, Node, MemoryAccount, CompilerHttp } from '@aeternity/aepp-sdk'
 
 import NETWORKS from '../../config/network.json'
 
@@ -97,12 +96,12 @@ const createClient = async ( wallet = WALLETS[0] ) => {
     const instance = new Node( NETWORKS[NETWORK_NAME].nodeUrl, { ignoreVersion: true } )
 
     const aeSdk = new AeSdk( {
-        nodes       : [ { name: NETWORK_NAME, instance } ],
-        compilerUrl : NETWORKS[NETWORK_NAME].compilerUrl,
-        interval    : 50,
-        address     : wallet.publicKey
-    } ) 
-    const accounts = [ new MemoryAccount( { keypair: wallet } ), new MemoryAccount( { keypair: WALLETS[1] } )  ]
+        nodes      : [ { name: NETWORK_NAME, instance } ],
+        onCompiler : new CompilerHttp( NETWORKS[NETWORK_NAME].compilerUrl ),
+        interval   : 50,
+        address    : wallet.publicKey
+    } )
+    const accounts = [ new MemoryAccount( wallet.secretKey ), new MemoryAccount( WALLETS[1].secretKey )  ]
     await Promise.all(
         accounts.map( ( account, index ) => aeSdk.addAccount(
             account,
@@ -128,12 +127,12 @@ const getContractEx = async ( { source, file, title }, params, contractAddress, 
             contract_content,
         } = getContent( { source, file } )
 
-        const contract           = await client.getContractInstance(
+        const contract           = await client.initializeContract(
             {
-                source          : contract_content,
-                fileSystem      : filesystem,
-                contractAddress : contractAddress || undefined,
-                opt             : {
+                sourceCode : contract_content,
+                fileSystem : filesystem,
+                address    : contractAddress || undefined,
+                opt        : {
                     gas: 4500000,
                 }
             }
@@ -141,16 +140,16 @@ const getContractEx = async ( { source, file, title }, params, contractAddress, 
 
         return {
             contract, deploy: async ( extra ) => {
-                const deployment_result = await contract.deploy( params, extra )
+                const deployment_result = await contract.$deploy( params, extra )
                 console.debug( `%c----> Contract deployed: '${file || title}...'`, `color:green` )
-
+                contract.deployInfo = deployment_result
                 return deployment_result
             },
+            contractAddress : contractAddress || undefined,
             ...createWrappedMethods( contract ),
-            expectEvents: ( { result }, tests ) => {
-                const events = contract.decodeEvents( result.log, { omitUnknown: true } )
+            expectEvents    : ( { decodedEvents: events }, tests ) => {
                 const filtered = ( events || [] ).filter(
-                    x =>  x.contract.address == contract.deployInfo.address
+                    x =>  x.contract.address == ( contractAddress || contract.deployInfo.address )
                 ).reverse()
                 if ( tests ) {
                     tests.events( {
@@ -178,7 +177,7 @@ const formatMethodName = ( str ) => {
 }
 //move
 const createWrappedMethods =  ( contract, extractor ) => {
-    const methods = contract.methods
+    const methods = contract
     const keys = Object.keys( methods )
     const wrappedMethods = keys.reduce( ( acc, key ) => {
         const method = methods[key]
@@ -193,7 +192,7 @@ const createWrappedMethods =  ( contract, extractor ) => {
     return wrappedMethods
 }
 
-const getA = x => x.contract.deployInfo.address
+const getA = x => x.contractAddress || x.contract.deployInfo.address
 
 const getAK = contract => cttoak( getA( contract ) )
 const cttoak = ( value ) => value.replace( "ct_", "ak_" )
@@ -294,7 +293,7 @@ const routerFixture = async ( wallet = wallet0 ) => {
 
     const token0Address = ( await pair01.token0() )
 
-    const [ token0, token1 ] = getA( tokenA ) === token0Address 
+    const [ token0, token1 ] = getA( tokenA ) === token0Address
         ? [ tokenA, tokenB ] : [ tokenB, tokenA ]
 
     const pair1CAddress = await factory.create_pair(
@@ -349,7 +348,7 @@ const pairFixture = async ( wallet = wallet0 ) => {
     const tokenA = await tokenFixture( 'A', liq )
     const tokenB = await tokenFixture( 'B', liq )
 
-    const createPairRet = await factory.contract.methods.create_pair(
+    const createPairRet = await factory.contract.create_pair(
         getA( tokenB ),
         getA( tokenA ),
         MINIMUM_LIQUIDITY,
@@ -362,7 +361,7 @@ const pairFixture = async ( wallet = wallet0 ) => {
 
     const token0Address = ( await pair.token0() )
 
-    const [ token0, token1 ] = getA( tokenA ) === token0Address 
+    const [ token0, token1 ] = getA( tokenA ) === token0Address
         ? [ tokenA, tokenB ] : [ tokenB, tokenA ]
 
     console.log( [ getAK( token0 ), getAK( token1 ), cttoak( pairAddress ) ] )
@@ -388,7 +387,7 @@ const pairFixture = async ( wallet = wallet0 ) => {
     return ret
 }
 const awaitOneKeyBlock = async ( client ) => {
-    const height = await client.height()
+    const height = await client.getHeight()
     await get( 'http://localhost:3001/emit_kb?n=1' )
     await client.awaitHeight( height + 1 )
 }
@@ -401,21 +400,17 @@ const beforeEachWithSnapshot = ( str, work ) => {
         await work()
         console.debug( "initial work ... DONE " )
         // get the snapshot height
-        //snapshotHeight = await getBlockHeight()
-        snapshotHeight = await client.height()
+        snapshotHeight = await client.getHeight()
         console.debug( `snapshot block height: ${snapshotHeight}` )
         await awaitOneKeyBlock( client )
     } )
 
     afterEach( "reset to snapshot", async () => {
-        //const currentBlockHeight = await getBlockHeight()
-        const currentBlockHeight = await client.height()
+        const currentBlockHeight = await client.getHeight()
         if ( currentBlockHeight > snapshotHeight ) {
-            //const cmd = `docker exec aedex_node_1 bin/aeternity db_rollback --height ${snapshotHeight}`
-            //await exec( cmd )
             await get( `http://localhost:3001/rollback?height=${snapshotHeight}` )
             await awaitOneKeyBlock( client )
-        }  
+        }
     } )
 }
 

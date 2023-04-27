@@ -7,6 +7,16 @@ contract interface IAEX9Minimal =
 
     record meta_info = { name : string , symbol : string , decimals : int }
 
+    datatype event
+        // AEX9 compliant events
+        = Transfer(address /*indexed from*/, address /*indexed to*/, int /*value*/)
+        | Approval(address /*indexed owner*/, address /*indexed spender*/, int /*value*/)
+        | Allowance(address /*indexed owner*/, address /*indexed spender*/, int /*value*/)
+        | Mint(address /*indexed owner*/, int /*value*/)
+        | Burn(address /*indexed owner*/, int /*value*/)
+        // For WAE
+        | Deposit(address /*indexed dst*/, int /*ae*/)
+        | Withdrawal(address /*indexed src*/, int /*amount*/)
 
     //This function returns meta information associated with the token contract.
     entrypoint meta_info: () => meta_info

@@ -38,7 +38,7 @@ const wallet = {
     address: WALLETS[0].publicKey
 }
 
-const extraGas = { gas: 150000, omitUnknown: true }
+const extraGas = { gas: 150000 }
 describe( 'Pair Router', () => {
     let token0
     let token1
@@ -82,7 +82,7 @@ describe( 'Pair Router', () => {
         await token0.create_allowance( routerAddr(), MaxUint256 )
         await token1.create_allowance( routerAddr(), MaxUint256 )
 
-        const ret = await router.contract.methods.add_liquidity(
+        const ret = await router.contract.add_liquidity(
             getA( token0 ),
             getA( token1 ),
             token0Amount,
@@ -130,7 +130,7 @@ describe( 'Pair Router', () => {
         await waePartner.create_allowance( routerAddr(), MaxUint256 )
 
         const waePairToken0 = await waePair.token0()
-        const ret = await router.contract.methods.add_liquidity_ae(
+        const ret = await router.contract.add_liquidity_ae(
             getA( waePartner ),
             waePartnerAmount,
             waePartnerAmount,
@@ -189,7 +189,7 @@ describe( 'Pair Router', () => {
 
         const expectedLiquidity = expandTo18Dec( 2 )
         await pair.create_allowance( routerAddr(), MaxUint256 )
-        const ret = await router.contract.methods.remove_liquidity(
+        const ret = await router.contract.remove_liquidity(
             getA( token0 ),
             getA( token1 ),
             expectedLiquidity - MINIMUM_LIQUIDITY,
@@ -257,7 +257,7 @@ describe( 'Pair Router', () => {
 
         const expectedLiquidity = expandTo18Dec( 2 )
         await waePair.create_allowance( routerAddr(), MaxUint256 )
-        const ret = await router.contract.methods.remove_liquidity_ae(
+        const ret = await router.contract.remove_liquidity_ae(
             getA( waePartner ),
             expectedLiquidity - MINIMUM_LIQUIDITY,
             0,
@@ -331,7 +331,7 @@ describe( 'Pair Router', () => {
             await token0.create_allowance( routerAddr(), MaxUint256 )
         } )
         it( 'happy path', async () => {
-            const ret = await router.contract.methods.swap_exact_tokens_for_tokens(
+            const ret = await router.contract.swap_exact_tokens_for_tokens(
                 swapAmount,
                 0,
                 [ getA( token0 ), getA( token1 ) ],
@@ -387,7 +387,7 @@ describe( 'Pair Router', () => {
             await token0.create_allowance( routerAddr(), MaxUint256 )
         } )
         it( 'happy path', async () => {
-            const ret = await router.contract.methods.swap_exact_tokens_for_tokens(
+            const ret = await router.contract.swap_exact_tokens_for_tokens(
                 swapAmount,
                 0,
                 [ getA( token0 ), getA( token1 ), getA( tokenC ) ],
@@ -473,7 +473,7 @@ describe( 'Pair Router', () => {
 
         it( 'happy path', async () => {
             await token0.create_allowance( getAK( router ), MaxUint256 )
-            const ret = await router.contract.methods.swap_tokens_for_exact_tokens(
+            const ret = await router.contract.swap_tokens_for_exact_tokens(
                 outputAmount,
                 MaxUint256,
                 [ getA( token0 ), getA( token1 ) ],
@@ -528,7 +528,7 @@ describe( 'Pair Router', () => {
 
         it( 'happy path', async () => {
             await token0.create_allowance( getAK( router ), MaxUint256 )
-            const ret = await router.contract.methods.swap_tokens_for_exact_tokens(
+            const ret = await router.contract.swap_tokens_for_exact_tokens(
                 outputAmount,
                 MaxUint256,
                 [ getA( token0 ), getA( token1 ), getA( tokenC ) ],
@@ -616,7 +616,7 @@ describe( 'Pair Router', () => {
 
         it( 'happy path', async () => {
             const waePairToken0 = await waePair.token0()
-            const ret = await router.contract.methods.swap_exact_ae_for_tokens(
+            const ret = await router.contract.swap_exact_ae_for_tokens(
                 0,
                 [ getA( wae ), getA( waePartner ) ]
                 , wallet.address
@@ -682,7 +682,7 @@ describe( 'Pair Router', () => {
         it( 'happy path', async () => {
             const waePairToken0 = await waePair.token0()
             await waePartner.create_allowance( getAK( router ), MaxUint256 )
-            const ret = await router.contract.methods.swap_tokens_for_exact_ae(
+            const ret = await router.contract.swap_tokens_for_exact_ae(
                 outputAmount,
                 MaxUint256,
                 [ getA( waePartner ), getA( wae ) ],
@@ -745,7 +745,7 @@ describe( 'Pair Router', () => {
             await waePartner.create_allowance( getAK( router ), MaxUint256 )
             const waePairToken0 = await waePair.token0()
             const isWaeToken0 = waePairToken0 === getA( waePartner )
-            const ret = await router.contract.methods.swap_exact_tokens_for_ae(
+            const ret = await router.contract.swap_exact_tokens_for_ae(
                 swapAmount,
                 0,
                 [ getA( waePartner ), getA( wae ) ],
@@ -810,7 +810,7 @@ describe( 'Pair Router', () => {
         it( 'happy path', async () => {
             const waePairToken0 = await waePair.token0()
             const isWaeToken0 = waePairToken0 === getA( waePartner )
-            const ret = await router.contract.methods.swap_ae_for_exact_tokens(
+            const ret = await router.contract.swap_ae_for_exact_tokens(
                 outputAmount,
                 [ getA( wae ), getA( waePartner ) ],
                 wallet.address,

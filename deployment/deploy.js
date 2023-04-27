@@ -14,40 +14,31 @@
  *  OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
  *  PERFORMANCE OF THIS SOFTWARE.
  */
-const { AeSdk, Node, MemoryAccount, getAddressFromPriv  } = require( '@aeternity/aepp-sdk' )
+const { AeSdk, Node, MemoryAccount, CompilerHttp  } = require( '@aeternity/aepp-sdk' )
 const contractUtils = require( '../utils/contract-utils' )
 const fs = require( 'fs' )
 
 const NETWORKS = require( '../config/network.json' )
 const DEFAULT_NETWORK_NAME = 'local'
 const FungibleTokenFull = require( 'aeternity-fungible-token/FungibleTokenFull.aes.js' )
+const FungibleToken = require( 'aeternity-fungible-token/FungibleToken.aes.js' )
 
 const deploy = async ( secretKey, network, compiler ) => {
     if ( !secretKey ) {
         throw new Error( `Required option missing: secretKey` )
     }
-    const KEYPAIR = {
-        secretKey : secretKey,
-        publicKey : getAddressFromPriv( secretKey )
-    }
     const NETWORK_NAME = network ? network : DEFAULT_NETWORK_NAME
 
     const instance = new Node( NETWORKS[NETWORK_NAME].nodeUrl, { ignoreVersion: true } )
 
+    const cmp = new CompilerHttp( compiler ? compiler : NETWORKS[NETWORK_NAME].compilerUrl )
     const client = new AeSdk( {
-        nodes       : [ { name: NETWORK_NAME, instance } ],
-        compilerUrl : compiler ? compiler : NETWORKS[NETWORK_NAME].compilerUrl,
-        interval    : 50,
-        address     : KEYPAIR.publicKey
-    } ) 
-    const accounts = [ new MemoryAccount( { keypair: KEYPAIR } )  ]
-    await Promise.all(
-        accounts.map( ( account, index ) => client.addAccount(
-            account,
-            { select: index === 0 },
-        ) ),
-    )
-    // a filesystem object must be passed to the compiler if the contract uses custom includes
+        nodes      : [ { name: NETWORK_NAME, instance } ],
+        onCompiler : cmp,
+        interval   : 50,
+    } )
+
+    client.addAccount( new MemoryAccount(  secretKey ), { select: true } )
 
     const deployContract_ = async ( { source, file }, params, interfaceName ) => {
         try {
@@ -56,6 +47,7 @@ const deploy = async ( secretKey, network, compiler ) => {
 
             var fileSystem, contract_content
             if ( file ) {
+                // a filesystem object must be passed to the compiler if the contract uses custom includes
                 fileSystem       = contractUtils.getFilesystem( file )
                 contract_content = contractUtils.getContractContent( file )
             } else {
@@ -63,18 +55,21 @@ const deploy = async ( secretKey, network, compiler ) => {
             }
 
             console.log( contract_content )
-            const contract          = await client.getContractInstance( { source: contract_content, fileSystem } )
-            const deployment_result = await contract.deploy( params )
+            const contract          = await client.initializeContract( { sourceCode: contract_content, fileSystem } )
+            const deployment_result = await contract.$deploy( params )
+            // just to use the address and aci
             console.log( deployment_result )
             console.log( '-------------------------------------  END  ---------------------------------------------------------' )
 
             if ( interfaceName ) {
-                const parent = "./contracts/interfaces/for-export"
+                const parent = "deployment/aci"
                 if ( !fs.existsSync( parent ) ) {
                     fs.mkdirSync( parent )
                 }
-                fs.writeFileSync( parent + '/' + interfaceName, contract._aci.interface, 'utf-8' )
-                console.log( 'Inteface generated at: ' + parent + "/" + interfaceName )
+                const fileName = parent + '/' + interfaceName + '.aci.json'
+                const aci =  JSON.stringify( contract._aci, null, 4 )
+                fs.writeFileSync( fileName, aci, 'utf-8' )
+                console.log( 'Interface generated at: ' + fileName )
             }
             return { deployment_result, contract }
         } catch ( ex ) {
@@ -92,31 +87,36 @@ const deploy = async ( secretKey, network, compiler ) => {
 
     const fakeAddress = 'ct_A8WVnCuJ7t1DjAJf4y8hJrAEVpt1T9ypG3nNBdbpKmpthGvUm'
     const fakeAddressAk = 'ak_A8WVnCuJ7t1DjAJf4y8hJrAEVpt1T9ypG3nNBdbpKmpthGvUm'
-    const FungibleTokenFullWithString = 'include "String.aes"\n' + FungibleTokenFull
+    const withString = ( source ) => 'include "String.aes"\n' + source
+    const FungibleTokenFullWithString = withString( FungibleTokenFull )
+    const FungibleTokenWithString = withString( FungibleToken )
     const deployments =
         [
             /* 00 */ () => deployContract( './test/contracts/BuildAll.aes', []  ),
             /* 01 */ () => deployContract( './contracts/AedexV2Pair.aes',
                 [ fakeAddress, fakeAddress, fakeAddress, 0, undefined ],
-                'IAedexV2Pair.aes',
+                'AedexV2Pair',
             ),
             /* 02 */ () => deployContract(
                 './contracts/router/AedexV2Router.aes',
                 [ fakeAddress, fakeAddress, fakeAddress ],
-                'IAedexV2Router.aes',
+                'AedexV2Router',
             ),
-            /* 03 */ () => deployContract( './contracts/WAE.aes', [], 'IWAE.aes' ),
+            /* 03 */ () => deployContract( './contracts/WAE.aes', [], 'WAE' ),
             /* 04 */ () => deployContract( './contracts/AedexV2Factory.aes',
                 [ fakeAddressAk, fakeAddress ],
-                'IAedexV2Factory.aes'
+                'AedexV2Factory'
             ),
             /* 05 */ () => deploySource( FungibleTokenFullWithString,
-                [ "-", 0, "-", 0 ],
+                [ "-", 0, "-", 0 ], "FungibleTokenFull"
+            ),
+            /* 06 */ () => deploySource( FungibleTokenWithString,
+                [ "-", 0, "-", 0 ], "FungibleToken"
             ),
         ]
     try {
-        //for ( const dep of deployments ) { await dep() }
-        await deployments[1]()
+        for ( const dep of deployments ) { await dep() }
+        //await deployments[1]()
     } catch ( ex ) {
         //empty
     }

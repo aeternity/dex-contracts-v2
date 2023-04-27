@@ -86,7 +86,7 @@ describe( 'WAE', () => {
         expect( await wae.balance( wallet.address ) ).to.eq( TOTAL_SUPPLY )
     } )
     it( 'approve', async () => {
-        const ret = await wae.contract.methods.create_allowance( other.address, TEST_AMOUNT )
+        const ret = await wae.contract.create_allowance( other.address, TEST_AMOUNT )
         wae.expectEvents( ret,
             emits( "Allowance" ).withArgs(
                 wallet.address,
@@ -102,7 +102,7 @@ describe( 'WAE', () => {
         ).to.eq( TEST_AMOUNT )
     } )
     it( 'transfer', async () => {
-        const ret = await wae.contract.methods.transfer( other.address, TEST_AMOUNT )
+        const ret = await wae.contract.transfer( other.address, TEST_AMOUNT )
 
         wae.expectEvents( ret,
             emits( "Transfer" ).withArgs(
