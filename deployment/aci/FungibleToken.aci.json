@@ -1,0 +1,199 @@
+[
+    {
+        "namespace": {
+            "name": "ListInternal",
+            "typedefs": []
+        }
+    },
+    {
+        "namespace": {
+            "name": "List",
+            "typedefs": []
+        }
+    },
+    {
+        "namespace": {
+            "name": "String",
+            "typedefs": []
+        }
+    },
+    {
+        "namespace": {
+            "name": "Option",
+            "typedefs": []
+        }
+    },
+    {
+        "contract": {
+            "event": {
+                "variant": [
+                    {
+                        "Transfer": [
+                            "address",
+                            "address",
+                            "int"
+                        ]
+                    }
+                ]
+            },
+            "functions": [
+                {
+                    "arguments": [],
+                    "name": "aex9_extensions",
+                    "payable": false,
+                    "returns": {
+                        "list": [
+                            "string"
+                        ]
+                    },
+                    "stateful": false
+                },
+                {
+                    "arguments": [
+                        {
+                            "name": "name",
+                            "type": "string"
+                        },
+                        {
+                            "name": "decimals",
+                            "type": "int"
+                        },
+                        {
+                            "name": "symbol",
+                            "type": "string"
+                        },
+                        {
+                            "name": "initial_owner_balance",
+                            "type": {
+                                "option": [
+                                    "int"
+                                ]
+                            }
+                        }
+                    ],
+                    "name": "init",
+                    "payable": false,
+                    "returns": "FungibleToken.state",
+                    "stateful": false
+                },
+                {
+                    "arguments": [],
+                    "name": "meta_info",
+                    "payable": false,
+                    "returns": "FungibleToken.meta_info",
+                    "stateful": false
+                },
+                {
+                    "arguments": [],
+                    "name": "total_supply",
+                    "payable": false,
+                    "returns": "int",
+                    "stateful": false
+                },
+                {
+                    "arguments": [],
+                    "name": "owner",
+                    "payable": false,
+                    "returns": "address",
+                    "stateful": false
+                },
+                {
+                    "arguments": [],
+                    "name": "balances",
+                    "payable": false,
+                    "returns": "FungibleToken.balances",
+                    "stateful": false
+                },
+                {
+                    "arguments": [
+                        {
+                            "name": "account",
+                            "type": "address"
+                        }
+                    ],
+                    "name": "balance",
+                    "payable": false,
+                    "returns": {
+                        "option": [
+                            "int"
+                        ]
+                    },
+                    "stateful": false
+                },
+                {
+                    "arguments": [
+                        {
+                            "name": "to_account",
+                            "type": "address"
+                        },
+                        {
+                            "name": "value",
+                            "type": "int"
+                        }
+                    ],
+                    "name": "transfer",
+                    "payable": false,
+                    "returns": {
+                        "tuple": []
+                    },
+                    "stateful": true
+                }
+            ],
+            "kind": "contract_main",
+            "name": "FungibleToken",
+            "payable": false,
+            "state": {
+                "record": [
+                    {
+                        "name": "owner",
+                        "type": "address"
+                    },
+                    {
+                        "name": "total_supply",
+                        "type": "int"
+                    },
+                    {
+                        "name": "balances",
+                        "type": "FungibleToken.balances"
+                    },
+                    {
+                        "name": "meta_info",
+                        "type": "FungibleToken.meta_info"
+                    }
+                ]
+            },
+            "typedefs": [
+                {
+                    "name": "meta_info",
+                    "typedef": {
+                        "record": [
+                            {
+                                "name": "name",
+                                "type": "string"
+                            },
+                            {
+                                "name": "symbol",
+                                "type": "string"
+                            },
+                            {
+                                "name": "decimals",
+                                "type": "int"
+                            }
+                        ]
+                    },
+                    "vars": []
+                },
+                {
+                    "name": "balances",
+                    "typedef": {
+                        "map": [
+                            "address",
+                            "int"
+                        ]
+                    },
+                    "vars": []
+                }
+            ]
+        }
+    }
+]

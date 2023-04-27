@@ -1,0 +1,533 @@
+[
+    {
+        "namespace": {
+            "name": "Option",
+            "typedefs": []
+        }
+    },
+    {
+        "namespace": {
+            "name": "ListInternal",
+            "typedefs": []
+        }
+    },
+    {
+        "namespace": {
+            "name": "List",
+            "typedefs": []
+        }
+    },
+    {
+        "namespace": {
+            "name": "String",
+            "typedefs": []
+        }
+    },
+    {
+        "contract": {
+            "event": {
+                "variant": [
+                    {
+                        "Transfer": [
+                            "address",
+                            "address",
+                            "int"
+                        ]
+                    },
+                    {
+                        "Approval": [
+                            "address",
+                            "address",
+                            "int"
+                        ]
+                    },
+                    {
+                        "Allowance": [
+                            "address",
+                            "address",
+                            "int"
+                        ]
+                    },
+                    {
+                        "Mint": [
+                            "address",
+                            "int"
+                        ]
+                    },
+                    {
+                        "Burn": [
+                            "address",
+                            "int"
+                        ]
+                    },
+                    {
+                        "Deposit": [
+                            "address",
+                            "int"
+                        ]
+                    },
+                    {
+                        "Withdrawal": [
+                            "address",
+                            "int"
+                        ]
+                    }
+                ]
+            },
+            "functions": [
+                {
+                    "arguments": [],
+                    "name": "meta_info",
+                    "payable": false,
+                    "returns": "IAEX9Minimal.meta_info",
+                    "stateful": false
+                },
+                {
+                    "arguments": [],
+                    "name": "total_supply",
+                    "payable": false,
+                    "returns": "int",
+                    "stateful": false
+                },
+                {
+                    "arguments": [
+                        {
+                            "name": "_1",
+                            "type": "address"
+                        }
+                    ],
+                    "name": "balance",
+                    "payable": false,
+                    "returns": {
+                        "option": [
+                            "int"
+                        ]
+                    },
+                    "stateful": false
+                },
+                {
+                    "arguments": [
+                        {
+                            "name": "_1",
+                            "type": "IAEX9Minimal.allowance_accounts"
+                        }
+                    ],
+                    "name": "allowance",
+                    "payable": false,
+                    "returns": {
+                        "option": [
+                            "int"
+                        ]
+                    },
+                    "stateful": false
+                },
+                {
+                    "arguments": [
+                        {
+                            "name": "_1",
+                            "type": "address"
+                        },
+                        {
+                            "name": "_2",
+                            "type": "int"
+                        }
+                    ],
+                    "name": "transfer",
+                    "payable": false,
+                    "returns": "unit",
+                    "stateful": true
+                },
+                {
+                    "arguments": [
+                        {
+                            "name": "_1",
+                            "type": "address"
+                        },
+                        {
+                            "name": "_2",
+                            "type": "int"
+                        }
+                    ],
+                    "name": "create_allowance",
+                    "payable": false,
+                    "returns": "unit",
+                    "stateful": true
+                },
+                {
+                    "arguments": [
+                        {
+                            "name": "_1",
+                            "type": "address"
+                        },
+                        {
+                            "name": "_2",
+                            "type": "address"
+                        },
+                        {
+                            "name": "_3",
+                            "type": "int"
+                        }
+                    ],
+                    "name": "transfer_allowance",
+                    "payable": false,
+                    "returns": "unit",
+                    "stateful": true
+                }
+            ],
+            "kind": "contract_interface",
+            "name": "IAEX9Minimal",
+            "payable": false,
+            "typedefs": [
+                {
+                    "name": "allowance_accounts",
+                    "typedef": {
+                        "record": [
+                            {
+                                "name": "from_account",
+                                "type": "address"
+                            },
+                            {
+                                "name": "for_account",
+                                "type": "address"
+                            }
+                        ]
+                    },
+                    "vars": []
+                },
+                {
+                    "name": "meta_info",
+                    "typedef": {
+                        "record": [
+                            {
+                                "name": "name",
+                                "type": "string"
+                            },
+                            {
+                                "name": "symbol",
+                                "type": "string"
+                            },
+                            {
+                                "name": "decimals",
+                                "type": "int"
+                            }
+                        ]
+                    },
+                    "vars": []
+                }
+            ]
+        }
+    },
+    {
+        "namespace": {
+            "name": "Utils",
+            "typedefs": []
+        }
+    },
+    {
+        "contract": {
+            "event": {
+                "variant": [
+                    {
+                        "Transfer": [
+                            "address",
+                            "address",
+                            "int"
+                        ]
+                    },
+                    {
+                        "Allowance": [
+                            "address",
+                            "address",
+                            "int"
+                        ]
+                    },
+                    {
+                        "Deposit": [
+                            "address",
+                            "int"
+                        ]
+                    },
+                    {
+                        "Withdrawal": [
+                            "address",
+                            "int"
+                        ]
+                    }
+                ]
+            },
+            "functions": [
+                {
+                    "arguments": [],
+                    "name": "init",
+                    "payable": false,
+                    "returns": "WAE.state",
+                    "stateful": false
+                },
+                {
+                    "arguments": [],
+                    "name": "total_supply",
+                    "payable": false,
+                    "returns": "int",
+                    "stateful": false
+                },
+                {
+                    "arguments": [],
+                    "name": "owner",
+                    "payable": false,
+                    "returns": "address",
+                    "stateful": false
+                },
+                {
+                    "arguments": [],
+                    "name": "balances",
+                    "payable": false,
+                    "returns": "WAE.balances",
+                    "stateful": false
+                },
+                {
+                    "arguments": [],
+                    "name": "meta_info",
+                    "payable": false,
+                    "returns": "IAEX9Minimal.meta_info",
+                    "stateful": false
+                },
+                {
+                    "arguments": [],
+                    "name": "aex9_extensions",
+                    "payable": false,
+                    "returns": {
+                        "list": [
+                            "string"
+                        ]
+                    },
+                    "stateful": false
+                },
+                {
+                    "arguments": [
+                        {
+                            "name": "address",
+                            "type": "address"
+                        }
+                    ],
+                    "name": "balance",
+                    "payable": false,
+                    "returns": {
+                        "option": [
+                            "int"
+                        ]
+                    },
+                    "stateful": false
+                },
+                {
+                    "arguments": [],
+                    "name": "allowances",
+                    "payable": false,
+                    "returns": "WAE.allowances",
+                    "stateful": false
+                },
+                {
+                    "arguments": [
+                        {
+                            "name": "allowance_accounts",
+                            "type": "IAEX9Minimal.allowance_accounts"
+                        }
+                    ],
+                    "name": "allowance",
+                    "payable": false,
+                    "returns": {
+                        "option": [
+                            "int"
+                        ]
+                    },
+                    "stateful": false
+                },
+                {
+                    "arguments": [
+                        {
+                            "name": "from_account",
+                            "type": "address"
+                        }
+                    ],
+                    "name": "allowance_for_caller",
+                    "payable": false,
+                    "returns": {
+                        "option": [
+                            "int"
+                        ]
+                    },
+                    "stateful": false
+                },
+                {
+                    "arguments": [],
+                    "name": "deposit",
+                    "payable": true,
+                    "returns": "unit",
+                    "stateful": true
+                },
+                {
+                    "arguments": [
+                        {
+                            "name": "to",
+                            "type": "address"
+                        }
+                    ],
+                    "name": "deposit_to",
+                    "payable": true,
+                    "returns": "unit",
+                    "stateful": true
+                },
+                {
+                    "arguments": [
+                        {
+                            "name": "amount",
+                            "type": "int"
+                        }
+                    ],
+                    "name": "withdraw",
+                    "payable": false,
+                    "returns": "unit",
+                    "stateful": true
+                },
+                {
+                    "arguments": [
+                        {
+                            "name": "for_account",
+                            "type": "address"
+                        },
+                        {
+                            "name": "value",
+                            "type": "int"
+                        }
+                    ],
+                    "name": "create_allowance",
+                    "payable": false,
+                    "returns": {
+                        "tuple": []
+                    },
+                    "stateful": true
+                },
+                {
+                    "arguments": [
+                        {
+                            "name": "for_account",
+                            "type": "address"
+                        },
+                        {
+                            "name": "value_change",
+                            "type": "int"
+                        }
+                    ],
+                    "name": "change_allowance",
+                    "payable": false,
+                    "returns": {
+                        "tuple": []
+                    },
+                    "stateful": true
+                },
+                {
+                    "arguments": [
+                        {
+                            "name": "for_account",
+                            "type": "address"
+                        }
+                    ],
+                    "name": "reset_allowance",
+                    "payable": false,
+                    "returns": {
+                        "tuple": []
+                    },
+                    "stateful": true
+                },
+                {
+                    "arguments": [
+                        {
+                            "name": "dst",
+                            "type": "address"
+                        },
+                        {
+                            "name": "amount",
+                            "type": "int"
+                        }
+                    ],
+                    "name": "transfer",
+                    "payable": false,
+                    "returns": "unit",
+                    "stateful": true
+                },
+                {
+                    "arguments": [
+                        {
+                            "name": "from_account",
+                            "type": "address"
+                        },
+                        {
+                            "name": "to_account",
+                            "type": "address"
+                        },
+                        {
+                            "name": "value",
+                            "type": "int"
+                        }
+                    ],
+                    "name": "transfer_allowance",
+                    "payable": false,
+                    "returns": {
+                        "tuple": []
+                    },
+                    "stateful": true
+                }
+            ],
+            "kind": "contract_main",
+            "name": "WAE",
+            "payable": false,
+            "state": {
+                "record": [
+                    {
+                        "name": "balance_of",
+                        "type": "WAE.balances"
+                    },
+                    {
+                        "name": "allowances",
+                        "type": "WAE.allowances"
+                    },
+                    {
+                        "name": "owner",
+                        "type": "address"
+                    }
+                ]
+            },
+            "typedefs": [
+                {
+                    "name": "owner",
+                    "typedef": "address",
+                    "vars": []
+                },
+                {
+                    "name": "spender",
+                    "typedef": "address",
+                    "vars": []
+                },
+                {
+                    "name": "allowances",
+                    "typedef": {
+                        "map": [
+                            "IAEX9Minimal.allowance_accounts",
+                            "int"
+                        ]
+                    },
+                    "vars": []
+                },
+                {
+                    "name": "balances",
+                    "typedef": {
+                        "map": [
+                            "WAE.owner",
+                            "int"
+                        ]
+                    },
+                    "vars": []
+                }
+            ]
+        }
+    }
+]

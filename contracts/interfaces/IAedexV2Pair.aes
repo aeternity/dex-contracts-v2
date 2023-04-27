@@ -8,6 +8,24 @@ include "./IAedexV2FactoryForPair.aes"
 contract interface IAedexV2Pair =
     entrypoint balance: (address) => option(int)
 
+    datatype event
+        // AedexV2Pair specific events
+        = LockLiquidity(int)
+        | PairMint(address /*indexed sender*/, int /*amount0*/, int /*amount1*/)
+        | PairBurn(address /*indexed sender*/, address /*indexed to*/, string /*int amount0 | int amount1*/ )
+        | SwapTokens(
+            address /*indexed sender*/
+            , address /*indexed to*/
+            , string
+            /*
+            , int amount0_in,
+            , int amount1_in,
+            , int amount0_out,
+            , int amount1_out,
+            */
+        )
+        //represents the new pair balances of token0 and token1
+        | Sync(int /*reserve0*/, int /*reserve1*/)
     entrypoint init : (
           IAedexV2FactoryForPair
         , IAEX9Minimal

@@ -1,0 +1,1110 @@
+[
+    {
+        "namespace": {
+            "name": "ListInternal",
+            "typedefs": []
+        }
+    },
+    {
+        "namespace": {
+            "name": "List",
+            "typedefs": []
+        }
+    },
+    {
+        "namespace": {
+            "name": "String",
+            "typedefs": []
+        }
+    },
+    {
+        "namespace": {
+            "name": "Utils",
+            "typedefs": []
+        }
+    },
+    {
+        "namespace": {
+            "name": "UQ112x112",
+            "typedefs": []
+        }
+    },
+    {
+        "namespace": {
+            "name": "Math",
+            "typedefs": []
+        }
+    },
+    {
+        "contract": {
+            "functions": [
+                {
+                    "arguments": [
+                        {
+                            "name": "_1",
+                            "type": "address"
+                        },
+                        {
+                            "name": "_2",
+                            "type": "int"
+                        },
+                        {
+                            "name": "_3",
+                            "type": "int"
+                        }
+                    ],
+                    "name": "aedex_v2_call",
+                    "payable": false,
+                    "returns": "unit",
+                    "stateful": false
+                }
+            ],
+            "kind": "contract_interface",
+            "name": "IAedexV2Callback",
+            "payable": false,
+            "typedefs": []
+        }
+    },
+    {
+        "contract": {
+            "event": {
+                "variant": [
+                    {
+                        "Transfer": [
+                            "address",
+                            "address",
+                            "int"
+                        ]
+                    },
+                    {
+                        "Approval": [
+                            "address",
+                            "address",
+                            "int"
+                        ]
+                    },
+                    {
+                        "Allowance": [
+                            "address",
+                            "address",
+                            "int"
+                        ]
+                    },
+                    {
+                        "Mint": [
+                            "address",
+                            "int"
+                        ]
+                    },
+                    {
+                        "Burn": [
+                            "address",
+                            "int"
+                        ]
+                    },
+                    {
+                        "Deposit": [
+                            "address",
+                            "int"
+                        ]
+                    },
+                    {
+                        "Withdrawal": [
+                            "address",
+                            "int"
+                        ]
+                    }
+                ]
+            },
+            "functions": [
+                {
+                    "arguments": [],
+                    "name": "meta_info",
+                    "payable": false,
+                    "returns": "IAEX9Minimal.meta_info",
+                    "stateful": false
+                },
+                {
+                    "arguments": [],
+                    "name": "total_supply",
+                    "payable": false,
+                    "returns": "int",
+                    "stateful": false
+                },
+                {
+                    "arguments": [
+                        {
+                            "name": "_1",
+                            "type": "address"
+                        }
+                    ],
+                    "name": "balance",
+                    "payable": false,
+                    "returns": {
+                        "option": [
+                            "int"
+                        ]
+                    },
+                    "stateful": false
+                },
+                {
+                    "arguments": [
+                        {
+                            "name": "_1",
+                            "type": "IAEX9Minimal.allowance_accounts"
+                        }
+                    ],
+                    "name": "allowance",
+                    "payable": false,
+                    "returns": {
+                        "option": [
+                            "int"
+                        ]
+                    },
+                    "stateful": false
+                },
+                {
+                    "arguments": [
+                        {
+                            "name": "_1",
+                            "type": "address"
+                        },
+                        {
+                            "name": "_2",
+                            "type": "int"
+                        }
+                    ],
+                    "name": "transfer",
+                    "payable": false,
+                    "returns": "unit",
+                    "stateful": true
+                },
+                {
+                    "arguments": [
+                        {
+                            "name": "_1",
+                            "type": "address"
+                        },
+                        {
+                            "name": "_2",
+                            "type": "int"
+                        }
+                    ],
+                    "name": "create_allowance",
+                    "payable": false,
+                    "returns": "unit",
+                    "stateful": true
+                },
+                {
+                    "arguments": [
+                        {
+                            "name": "_1",
+                            "type": "address"
+                        },
+                        {
+                            "name": "_2",
+                            "type": "address"
+                        },
+                        {
+                            "name": "_3",
+                            "type": "int"
+                        }
+                    ],
+                    "name": "transfer_allowance",
+                    "payable": false,
+                    "returns": "unit",
+                    "stateful": true
+                }
+            ],
+            "kind": "contract_interface",
+            "name": "IAEX9Minimal",
+            "payable": false,
+            "typedefs": [
+                {
+                    "name": "allowance_accounts",
+                    "typedef": {
+                        "record": [
+                            {
+                                "name": "from_account",
+                                "type": "address"
+                            },
+                            {
+                                "name": "for_account",
+                                "type": "address"
+                            }
+                        ]
+                    },
+                    "vars": []
+                },
+                {
+                    "name": "meta_info",
+                    "typedef": {
+                        "record": [
+                            {
+                                "name": "name",
+                                "type": "string"
+                            },
+                            {
+                                "name": "symbol",
+                                "type": "string"
+                            },
+                            {
+                                "name": "decimals",
+                                "type": "int"
+                            }
+                        ]
+                    },
+                    "vars": []
+                }
+            ]
+        }
+    },
+    {
+        "contract": {
+            "functions": [
+                {
+                    "arguments": [],
+                    "name": "fee_to",
+                    "payable": false,
+                    "returns": {
+                        "option": [
+                            "address"
+                        ]
+                    },
+                    "stateful": false
+                }
+            ],
+            "kind": "contract_interface",
+            "name": "IAedexV2FactoryForPair",
+            "payable": false,
+            "typedefs": []
+        }
+    },
+    {
+        "contract": {
+            "event": {
+                "variant": [
+                    {
+                        "LockLiquidity": [
+                            "int"
+                        ]
+                    },
+                    {
+                        "PairMint": [
+                            "address",
+                            "int",
+                            "int"
+                        ]
+                    },
+                    {
+                        "PairBurn": [
+                            "address",
+                            "address",
+                            "string"
+                        ]
+                    },
+                    {
+                        "SwapTokens": [
+                            "address",
+                            "address",
+                            "string"
+                        ]
+                    },
+                    {
+                        "Sync": [
+                            "int",
+                            "int"
+                        ]
+                    }
+                ]
+            },
+            "functions": [
+                {
+                    "arguments": [
+                        {
+                            "name": "_1",
+                            "type": "address"
+                        }
+                    ],
+                    "name": "balance",
+                    "payable": false,
+                    "returns": {
+                        "option": [
+                            "int"
+                        ]
+                    },
+                    "stateful": false
+                },
+                {
+                    "arguments": [
+                        {
+                            "name": "_1",
+                            "type": "IAedexV2FactoryForPair"
+                        },
+                        {
+                            "name": "_2",
+                            "type": "IAEX9Minimal"
+                        },
+                        {
+                            "name": "_3",
+                            "type": "IAEX9Minimal"
+                        },
+                        {
+                            "name": "_4",
+                            "type": {
+                                "option": [
+                                    "int"
+                                ]
+                            }
+                        },
+                        {
+                            "name": "_5",
+                            "type": {
+                                "option": [
+                                    "int"
+                                ]
+                            }
+                        }
+                    ],
+                    "name": "init",
+                    "payable": false,
+                    "returns": "void",
+                    "stateful": false
+                },
+                {
+                    "arguments": [],
+                    "name": "minimum_liquidity",
+                    "payable": false,
+                    "returns": "int",
+                    "stateful": false
+                },
+                {
+                    "arguments": [],
+                    "name": "factory",
+                    "payable": false,
+                    "returns": "IAedexV2FactoryForPair",
+                    "stateful": false
+                },
+                {
+                    "arguments": [],
+                    "name": "token0",
+                    "payable": false,
+                    "returns": "IAEX9Minimal",
+                    "stateful": false
+                },
+                {
+                    "arguments": [],
+                    "name": "token1",
+                    "payable": false,
+                    "returns": "IAEX9Minimal",
+                    "stateful": false
+                },
+                {
+                    "arguments": [],
+                    "name": "price0_cumulative_last",
+                    "payable": false,
+                    "returns": "int",
+                    "stateful": false
+                },
+                {
+                    "arguments": [],
+                    "name": "price1_cumulative_last",
+                    "payable": false,
+                    "returns": "int",
+                    "stateful": false
+                },
+                {
+                    "arguments": [],
+                    "name": "k_last",
+                    "payable": false,
+                    "returns": "int",
+                    "stateful": false
+                },
+                {
+                    "arguments": [
+                        {
+                            "name": "_1",
+                            "type": "address"
+                        }
+                    ],
+                    "name": "mint",
+                    "payable": false,
+                    "returns": "int",
+                    "stateful": true
+                },
+                {
+                    "arguments": [
+                        {
+                            "name": "_1",
+                            "type": "address"
+                        }
+                    ],
+                    "name": "burn",
+                    "payable": false,
+                    "returns": "IAedexV2Pair.amounts",
+                    "stateful": true
+                },
+                {
+                    "arguments": [
+                        {
+                            "name": "_1",
+                            "type": "int"
+                        },
+                        {
+                            "name": "_2",
+                            "type": "int"
+                        },
+                        {
+                            "name": "_3",
+                            "type": "address"
+                        },
+                        {
+                            "name": "_4",
+                            "type": {
+                                "option": [
+                                    "IAedexV2Callback"
+                                ]
+                            }
+                        }
+                    ],
+                    "name": "swap",
+                    "payable": false,
+                    "returns": "unit",
+                    "stateful": true
+                },
+                {
+                    "arguments": [
+                        {
+                            "name": "_1",
+                            "type": "address"
+                        }
+                    ],
+                    "name": "skim",
+                    "payable": false,
+                    "returns": "unit",
+                    "stateful": true
+                },
+                {
+                    "arguments": [],
+                    "name": "sync",
+                    "payable": false,
+                    "returns": "unit",
+                    "stateful": true
+                },
+                {
+                    "arguments": [],
+                    "name": "get_reserves",
+                    "payable": false,
+                    "returns": "IAedexV2Pair.reserves",
+                    "stateful": false
+                },
+                {
+                    "arguments": [
+                        {
+                            "name": "_1",
+                            "type": "address"
+                        },
+                        {
+                            "name": "_2",
+                            "type": "address"
+                        },
+                        {
+                            "name": "_3",
+                            "type": "int"
+                        }
+                    ],
+                    "name": "transfer_allowance",
+                    "payable": false,
+                    "returns": "unit",
+                    "stateful": true
+                }
+            ],
+            "kind": "contract_interface",
+            "name": "IAedexV2Pair",
+            "payable": false,
+            "typedefs": [
+                {
+                    "name": "amounts",
+                    "typedef": {
+                        "record": [
+                            {
+                                "name": "amount0",
+                                "type": "int"
+                            },
+                            {
+                                "name": "amount1",
+                                "type": "int"
+                            }
+                        ]
+                    },
+                    "vars": []
+                },
+                {
+                    "name": "reserves",
+                    "typedef": {
+                        "record": [
+                            {
+                                "name": "reserve0",
+                                "type": "int"
+                            },
+                            {
+                                "name": "reserve1",
+                                "type": "int"
+                            },
+                            {
+                                "name": "block_timestamp_last",
+                                "type": "int"
+                            }
+                        ]
+                    },
+                    "vars": []
+                }
+            ]
+        }
+    },
+    {
+        "namespace": {
+            "name": "Option",
+            "typedefs": []
+        }
+    },
+    {
+        "contract": {
+            "event": {
+                "variant": [
+                    {
+                        "Transfer": [
+                            "address",
+                            "address",
+                            "int"
+                        ]
+                    },
+                    {
+                        "Approval": [
+                            "address",
+                            "address",
+                            "int"
+                        ]
+                    },
+                    {
+                        "Allowance": [
+                            "address",
+                            "address",
+                            "int"
+                        ]
+                    },
+                    {
+                        "Mint": [
+                            "address",
+                            "int"
+                        ]
+                    },
+                    {
+                        "Burn": [
+                            "address",
+                            "int"
+                        ]
+                    },
+                    {
+                        "LockLiquidity": [
+                            "int"
+                        ]
+                    },
+                    {
+                        "PairMint": [
+                            "address",
+                            "int",
+                            "int"
+                        ]
+                    },
+                    {
+                        "PairBurn": [
+                            "address",
+                            "address",
+                            "string"
+                        ]
+                    },
+                    {
+                        "SwapTokens": [
+                            "address",
+                            "address",
+                            "string"
+                        ]
+                    },
+                    {
+                        "Sync": [
+                            "int",
+                            "int"
+                        ]
+                    }
+                ]
+            },
+            "functions": [
+                {
+                    "arguments": [
+                        {
+                            "name": "factory",
+                            "type": "IAedexV2FactoryForPair"
+                        },
+                        {
+                            "name": "token0",
+                            "type": "IAEX9Minimal"
+                        },
+                        {
+                            "name": "token1",
+                            "type": "IAEX9Minimal"
+                        },
+                        {
+                            "name": "min_liquidity",
+                            "type": {
+                                "option": [
+                                    "int"
+                                ]
+                            }
+                        },
+                        {
+                            "name": "debug_time",
+                            "type": {
+                                "option": [
+                                    "int"
+                                ]
+                            }
+                        }
+                    ],
+                    "name": "init",
+                    "payable": false,
+                    "returns": "AedexV2Pair.state",
+                    "stateful": false
+                },
+                {
+                    "arguments": [],
+                    "name": "meta_info",
+                    "payable": false,
+                    "returns": "IAEX9Minimal.meta_info",
+                    "stateful": false
+                },
+                {
+                    "arguments": [],
+                    "name": "aex9_extensions",
+                    "payable": false,
+                    "returns": {
+                        "list": [
+                            "string"
+                        ]
+                    },
+                    "stateful": false
+                },
+                {
+                    "arguments": [],
+                    "name": "total_supply",
+                    "payable": false,
+                    "returns": "int",
+                    "stateful": false
+                },
+                {
+                    "arguments": [],
+                    "name": "balances",
+                    "payable": false,
+                    "returns": "AedexV2Pair.balances",
+                    "stateful": false
+                },
+                {
+                    "arguments": [
+                        {
+                            "name": "address",
+                            "type": "address"
+                        }
+                    ],
+                    "name": "balance",
+                    "payable": false,
+                    "returns": {
+                        "option": [
+                            "int"
+                        ]
+                    },
+                    "stateful": false
+                },
+                {
+                    "arguments": [],
+                    "name": "allowances",
+                    "payable": false,
+                    "returns": "AedexV2Pair.allowances",
+                    "stateful": false
+                },
+                {
+                    "arguments": [
+                        {
+                            "name": "allowance_accounts",
+                            "type": "AedexV2Pair.allowance_accounts"
+                        }
+                    ],
+                    "name": "allowance",
+                    "payable": false,
+                    "returns": {
+                        "option": [
+                            "int"
+                        ]
+                    },
+                    "stateful": false
+                },
+                {
+                    "arguments": [
+                        {
+                            "name": "from_account",
+                            "type": "address"
+                        }
+                    ],
+                    "name": "allowance_for_caller",
+                    "payable": false,
+                    "returns": {
+                        "option": [
+                            "int"
+                        ]
+                    },
+                    "stateful": false
+                },
+                {
+                    "arguments": [],
+                    "name": "owner",
+                    "payable": false,
+                    "returns": "address",
+                    "stateful": false
+                },
+                {
+                    "arguments": [],
+                    "name": "price0_cumulative_last",
+                    "payable": false,
+                    "returns": "int",
+                    "stateful": false
+                },
+                {
+                    "arguments": [],
+                    "name": "price1_cumulative_last",
+                    "payable": false,
+                    "returns": "int",
+                    "stateful": false
+                },
+                {
+                    "arguments": [],
+                    "name": "get_reserves",
+                    "payable": false,
+                    "returns": "IAedexV2Pair.reserves",
+                    "stateful": false
+                },
+                {
+                    "arguments": [],
+                    "name": "minimum_liquidity",
+                    "payable": false,
+                    "returns": "int",
+                    "stateful": false
+                },
+                {
+                    "arguments": [],
+                    "name": "factory",
+                    "payable": false,
+                    "returns": "IAedexV2FactoryForPair",
+                    "stateful": false
+                },
+                {
+                    "arguments": [],
+                    "name": "token0",
+                    "payable": false,
+                    "returns": "IAEX9Minimal",
+                    "stateful": false
+                },
+                {
+                    "arguments": [],
+                    "name": "token1",
+                    "payable": false,
+                    "returns": "IAEX9Minimal",
+                    "stateful": false
+                },
+                {
+                    "arguments": [
+                        {
+                            "name": "time",
+                            "type": "int"
+                        }
+                    ],
+                    "name": "set_debug_time",
+                    "payable": false,
+                    "returns": {
+                        "tuple": []
+                    },
+                    "stateful": true
+                },
+                {
+                    "arguments": [
+                        {
+                            "name": "to",
+                            "type": "address"
+                        }
+                    ],
+                    "name": "mint",
+                    "payable": false,
+                    "returns": "int",
+                    "stateful": true
+                },
+                {
+                    "arguments": [
+                        {
+                            "name": "to",
+                            "type": "address"
+                        }
+                    ],
+                    "name": "burn",
+                    "payable": false,
+                    "returns": "IAedexV2Pair.amounts",
+                    "stateful": true
+                },
+                {
+                    "arguments": [
+                        {
+                            "name": "amount0_out",
+                            "type": "int"
+                        },
+                        {
+                            "name": "amount1_out",
+                            "type": "int"
+                        },
+                        {
+                            "name": "to",
+                            "type": "address"
+                        },
+                        {
+                            "name": "callback_opt",
+                            "type": {
+                                "option": [
+                                    "IAedexV2Callback"
+                                ]
+                            }
+                        }
+                    ],
+                    "name": "swap",
+                    "payable": false,
+                    "returns": "unit",
+                    "stateful": true
+                },
+                {
+                    "arguments": [
+                        {
+                            "name": "to",
+                            "type": "address"
+                        }
+                    ],
+                    "name": "skim",
+                    "payable": false,
+                    "returns": {
+                        "tuple": []
+                    },
+                    "stateful": true
+                },
+                {
+                    "arguments": [],
+                    "name": "sync",
+                    "payable": false,
+                    "returns": {
+                        "tuple": []
+                    },
+                    "stateful": true
+                },
+                {
+                    "arguments": [
+                        {
+                            "name": "for_account",
+                            "type": "address"
+                        },
+                        {
+                            "name": "value",
+                            "type": "int"
+                        }
+                    ],
+                    "name": "create_allowance",
+                    "payable": false,
+                    "returns": {
+                        "tuple": []
+                    },
+                    "stateful": true
+                },
+                {
+                    "arguments": [
+                        {
+                            "name": "recipient",
+                            "type": "address"
+                        },
+                        {
+                            "name": "amount",
+                            "type": "int"
+                        }
+                    ],
+                    "name": "transfer",
+                    "payable": false,
+                    "returns": "unit",
+                    "stateful": true
+                },
+                {
+                    "arguments": [
+                        {
+                            "name": "from_account",
+                            "type": "address"
+                        },
+                        {
+                            "name": "to_account",
+                            "type": "address"
+                        },
+                        {
+                            "name": "value",
+                            "type": "int"
+                        }
+                    ],
+                    "name": "transfer_allowance",
+                    "payable": false,
+                    "returns": {
+                        "tuple": []
+                    },
+                    "stateful": true
+                },
+                {
+                    "arguments": [
+                        {
+                            "name": "for_account",
+                            "type": "address"
+                        },
+                        {
+                            "name": "value_change",
+                            "type": "int"
+                        }
+                    ],
+                    "name": "change_allowance",
+                    "payable": false,
+                    "returns": {
+                        "tuple": []
+                    },
+                    "stateful": true
+                },
+                {
+                    "arguments": [
+                        {
+                            "name": "for_account",
+                            "type": "address"
+                        }
+                    ],
+                    "name": "reset_allowance",
+                    "payable": false,
+                    "returns": {
+                        "tuple": []
+                    },
+                    "stateful": true
+                }
+            ],
+            "kind": "contract_main",
+            "name": "AedexV2Pair",
+            "payable": false,
+            "state": {
+                "record": [
+                    {
+                        "name": "total_supply",
+                        "type": "int"
+                    },
+                    {
+                        "name": "balance_of",
+                        "type": "AedexV2Pair.balances"
+                    },
+                    {
+                        "name": "locked_liquidity",
+                        "type": "int"
+                    },
+                    {
+                        "name": "allowances",
+                        "type": "AedexV2Pair.allowances"
+                    },
+                    {
+                        "name": "factory",
+                        "type": "IAedexV2FactoryForPair"
+                    },
+                    {
+                        "name": "token0",
+                        "type": "IAEX9Minimal"
+                    },
+                    {
+                        "name": "token1",
+                        "type": "IAEX9Minimal"
+                    },
+                    {
+                        "name": "reserve0",
+                        "type": "int"
+                    },
+                    {
+                        "name": "reserve1",
+                        "type": "int"
+                    },
+                    {
+                        "name": "block_timestamp_last",
+                        "type": "int"
+                    },
+                    {
+                        "name": "price0_cumulative_last",
+                        "type": "int"
+                    },
+                    {
+                        "name": "price1_cumulative_last",
+                        "type": "int"
+                    },
+                    {
+                        "name": "min_liquidity",
+                        "type": "int"
+                    },
+                    {
+                        "name": "k_last",
+                        "type": "int"
+                    },
+                    {
+                        "name": "debug_time",
+                        "type": {
+                            "option": [
+                                "int"
+                            ]
+                        }
+                    }
+                ]
+            },
+            "typedefs": [
+                {
+                    "name": "owner",
+                    "typedef": "address",
+                    "vars": []
+                },
+                {
+                    "name": "spender",
+                    "typedef": "address",
+                    "vars": []
+                },
+                {
+                    "name": "allowance_accounts",
+                    "typedef": "IAEX9Minimal.allowance_accounts",
+                    "vars": []
+                },
+                {
+                    "name": "allowances",
+                    "typedef": {
+                        "map": [
+                            "AedexV2Pair.allowance_accounts",
+                            "int"
+                        ]
+                    },
+                    "vars": []
+                },
+                {
+                    "name": "balances",
+                    "typedef": {
+                        "map": [
+                            "AedexV2Pair.owner",
+                            "int"
+                        ]
+                    },
+                    "vars": []
+                }
+            ]
+        }
+    }
+]

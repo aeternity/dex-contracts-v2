@@ -18,16 +18,19 @@
     "test:aedex-router-debug": "node --inspect-brk node_modules/.bin/mocha ./test/aedex-router.test.js --timeout 0 --exit -b",
     "test:aedex-pair": "mocha ./test/aedex-pair.test.js --timeout 0 --exit",
     "test:aedex-pair-break": "mocha ./test/aedex-pair.test.js  --timeout 0 --exit -b --failed-first",
-    "test:aedex-pair-debug": "node --inspect-brk node_modules/.bin/mocha ./test/aedex-pair.test.js --timeout 0 --exit -b"
+    "test:aedex-pair-debug": "node --inspect-brk node_modules/.bin/mocha ./test/aedex-pair.test.js --timeout 0 --exit -b",
+    "test:aedex-wae": "mocha ./test/wae.test.js --timeout 0 --exit",
+    "test:aedex-wae-break": "mocha ./test/wae.test.js  --timeout 0 --exit -b --failed-first",
+    "test:aedex-wae-debug": "node --inspect-brk node_modules/.bin/mocha ./test/wae.test.js --timeout 0 --exit -b"
   },
   "author": "",
   "license": "ISC",
   "dependencies":{
-    "@aeternity/aepp-sdk": "^12.1.3",
-    "crypto": "^1.0.1",
     "fs": "^0.0.1-security"
   },
   "devDependencies": {
+    "@aeternity/aepp-sdk": "^13.0.1",
+    "crypto": "^1.0.1",
     "@aeternity/aeproject": "^4.1.0",
     "@babel/cli": "^7.15.4",
     "@babel/core": "^7.15.4",

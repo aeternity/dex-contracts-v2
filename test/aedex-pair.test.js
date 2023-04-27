@@ -88,17 +88,17 @@ describe( 'Pair Factory', () => {
     }
     const pairBurn = async ( address ) => {
         console.debug( `pair.burn( ${address})` )
-        return pair.contract.methods.burn( address,  { gas: 100000 }  )
+        return pair.contract.burn( address,  { gas: 100000 }  )
     }
 
     const mint = ( address ) => {
         console.debug( `pair.mint( ${address} )` )
-        return pair.contract.methods.mint( address,  { gas: 100000 } )
+        return pair.contract.mint( address,  { gas: 100000 } )
     }
     const swap = ( amount0, amount1, address ) => {
         const calleeAddress = getA( callee )
         console.debug( `pair.swap( ${amount0.toString()}, ${amount1.toString()}, ${address}, ${calleeAddress} )` )
-        return pair.contract.methods.swap(
+        return pair.contract.swap(
             BigInt( amount0 ),
             BigInt( amount1 ),
             address,
