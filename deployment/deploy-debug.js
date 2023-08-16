@@ -22,23 +22,28 @@ const NETWORKS = require( '../config/network.json' )
 const DEFAULT_NETWORK_NAME = 'local'
 const FungibleTokenFull = require( 'aeternity-fungible-token/FungibleTokenFull.aes.js' )
 const FungibleToken = require( 'aeternity-fungible-token/FungibleToken.aes.js' )
+require( 'dotenv' ).config()
+const SECRET_KEY = process.env.SECRET_KEY
+console.log( `SECRET_KEY ${SECRET_KEY}` )
+const NETWORK_NAME = process.env.NETWORK_NAME || DEFAULT_NETWORK_NAME
+console.log( `NETWORK_NAME ${NETWORK_NAME}` )
+const COMPILER_URL = process.env.COMPILER_URL || NETWORKS[NETWORK_NAME].compilerUrl
+console.log( `COMPILER_URL ${COMPILER_URL}` )
 
-const deploy = async ( secretKey, network, compiler ) => {
-    if ( !secretKey ) {
+const deploy = async ( ) => {
+    if ( !SECRET_KEY ) {
         throw new Error( `Required option missing: secretKey` )
     }
-    const NETWORK_NAME = network ? network : DEFAULT_NETWORK_NAME
-
     const instance = new Node( NETWORKS[NETWORK_NAME].nodeUrl, { ignoreVersion: true } )
 
-    const cmp = new CompilerHttp( compiler ? compiler : NETWORKS[NETWORK_NAME].compilerUrl )
+    const cmp = new CompilerHttp( COMPILER_URL ? COMPILER_URL : NETWORKS[NETWORK_NAME].compilerUrl )
     const client = new AeSdk( {
         nodes      : [ { name: NETWORK_NAME, instance } ],
         onCompiler : cmp,
         interval   : 50,
     } )
 
-    client.addAccount( new MemoryAccount(  secretKey ), { select: true } )
+    client.addAccount( new MemoryAccount(  SECRET_KEY ), { select: true } )
 
     const deployContract_ = async ( { source, file }, params, interfaceName ) => {
         try {
@@ -122,6 +127,5 @@ const deploy = async ( secretKey, network, compiler ) => {
     }
 }
 
-module.exports = {
-    deploy
-}
+deploy()
+
