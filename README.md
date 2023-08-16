@@ -42,3 +42,31 @@ make stop-node
 ```text
 make test
 ```
+
+## Deploy contracts
+You have to set 3 Environment variables
+
+- `SECRET_KEY` the secret key of the wallet
+- `NETWORK_NAME` the destination network ( `local` | `testnet` | `mainnet` )
+- `FEE_TO_SETTER` the initial address for the `fee_to_setter` from the `AedexV2Factory`. Note: initially the `state.fee_to` is disabled, this is used just to set who is entitled to change the `fee_to` mode
+
+and run
+
+```text
+make deploy
+```
+## Aeternity deployed contracts
+
+The official deployed contract addresses
+
+### On mainnet
+
+- Factory: `ct_2mfj3FoZxnhkSw5RZMcP8BfPoB1QR4QiYGNCdkAvLZ1zfF6paW`
+- Router  `ct_azbNZ1XrPjXfqBqbAh1ffLNTQ1sbnuUDFvJrXjYz7JQA1saQ3`
+- Wrapped AE: `ct_J3zBY8xxjsRr3QojETNw48Eb38fjvEuJKkQ6KzECvubvEcvCa`
+
+### On testnet
+
+- Factory: `ct_NhbxN8wg8NLkGuzwRNDQhMDKSKBwDAQgxQawK7tkigi2aC7i9`
+- Router  `ct_MLXQEP12MBn99HL6WDaiTqDbG4bJQ3Q9Bzr57oLfvEkghvpFb`
+- Wrapped AE: `ct_JDp175ruWd7mQggeHewSLS1PFXt9AzThCDaFedxon8mF8xTRF`
