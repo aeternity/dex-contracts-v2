@@ -1,12 +1,12 @@
 {
     "testnet": {
         "nodeUrl": "https://testnet.aeternity.io",
-        "compilerUrl": "https://latest.compiler.aepps.com",
+        "compilerUrl": "https://v7.compiler.aepps.com/version",
         "middlewareUrl": "https://testnet.aeternity.io/mdw"
     },
     "mainnet": {
         "nodeUrl": "https://mainnet.aeternity.io",
-        "compilerUrl": "https://latest.compiler.aepps.com",
+        "compilerUrl": "https://v7.compiler.aepps.com/version",
         "middlewareUrl": "https://mainnet.aeternity.io/mdw"
     },
     "local": {
