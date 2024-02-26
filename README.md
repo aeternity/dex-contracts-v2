@@ -70,3 +70,98 @@ The official deployed contract addresses
 - Factory: `ct_NhbxN8wg8NLkGuzwRNDQhMDKSKBwDAQgxQawK7tkigi2aC7i9`
 - Router  `ct_MLXQEP12MBn99HL6WDaiTqDbG4bJQ3Q9Bzr57oLfvEkghvpFb`
 - Wrapped AE: `ct_JDp175ruWd7mQggeHewSLS1PFXt9AzThCDaFedxon8mF8xTRF`
+
+## Using the DEX contracts in your application
+
+### Trading pair swap price calculation
+To calculate the price of your token (`token_a`) in terms of another token, such as Wrapped Aethernity (`token_b`), 
+you can use the DEX contracts to fetch the necessary information. 
+The price calculation for a trading pair `token_a`/`token_b` involves the following steps:
+
+#### 1. Get trading pair
+Firstly, obtain the trading pair contract address from the DEX factory using the `get_pair` entrypoint. 
+You need the addresses of `token_a` and `token_b`. 
+The function returns the address of the trading pair’s liquidity pool contract:
+```
+AedexV2Factory.get_pair(token_a: IAEX9Minimal, token_b: IAEX9Minimal): option(IAedexV2Pair)
+```
+
+#### 2. Get reserves for pair
+Use the `get_reserves` function of the pair’s contract to obtain the current reserves for `token_a` and `token_b`:
+```
+AedexV2Pair.get_reserves(): { reserve_token_a: int, reserve_token_b:, block_timestamp_last: int }
+```
+
+#### 3. Calculate price for trading pair
+Ensure you know the decimals for `token_a` and `token_b`. The decimals can be retrieved from the token contract's `meta_info`.
+If the tokens' decimals vary, normalize the reserves by adjusting for the token decimals:
+- `reserve_token_a_normalized = reserve_token_a * 10^(-decimals_token_a)`
+- `reserve_token_b_normalized = reserve_token_b * 10^(-decimals_token_b)`
+
+After normalization, calculate the trading prices as follows:
+- Price of `token_a` in `token_b`: 
+  - `p = reserve_token_b_normalized / reserve_token_a_normalized`
+  - &rarr; for `x token_a` you get `y token_b`, where `y = p * x`  
+- Price of `token_b` in `token_a`:
+  - `p = reserve_token_a_normalized / reserve_token_b_normalized`
+  - &rarr; for `x token_b` you get `y token_a`, where `y = p * x`
+- Remember to also account for the 0.3% trading fee, which affects the final received amount:
+  - `final_amount = y - (y * 0.003)`
+
+#### Swap routes
+If no direct trading pair for your tokens exists yet, you should consider creating it.
+
+Another option is using a swap route and making multiple swaps. For example, while there might be no direct trading pair 
+for `token_a` to `token_b`, we might have the pairs `token_a`/`token_c` and `token_c`/`token_b`.
+In this example we can reach the desired `token_b` with two swaps. The price has to be calculated step by step using the priorly described calculation:
+- for `x token_a` you get `y token_c`
+- for `y token c` you get `z token_b`
+- &rarr; for `x token_a` you get `z token_b`
+- The trading fee of 0.3% applies for every swap. In this example:  
+ `final_amount = z - (z * 0.003 * #swaps) = z - (z * 0.003 * 2)`
+
+If the swap route for a pair is not known, you can use the [dex-backend](https://github.com/aeternity/dex-backend) to calculate and fetch a swap route from `token_a` to `token_b`, if such route exists.
+```
+GET {baseURl}/pairs/swap-routes/{from}/{to}
+```
+- `baseUrl` for Mainnet: https://dex-backend-mainnet.prd.aepps.com/
+- `baseUrl` for Testnet: https://dex-backend-testnet.prd.aepps.com/
+- `from`: address of the token to trade from
+- `to`: address of the token to trade to
+
+The route returns a list of trading pairs for the route:
+```json
+[
+  {
+    "address": "ct_zWrWQLJNwymGiNE5A2J2cYVXFBFdlXb1mI6TvtbsgsxRowdsJ",
+    "synchronized": true,
+    "liquidityInfo": {
+      "totalSupply": "4827358",
+      "reserve0": "5447795267693766794858383164274815332456551156773585988559756985887324529",
+      "reserve1": "47881259697979243886731888549326111249911942419926825959439"
+    },
+    "token0": "ct_b7FZHQzBcAW4r43ECWpV3qQJMQJp5BxkZUGNKrqqLyjVRN3SC",
+    "token1": "ct_JDp175ruWd7mQggeHewSLS1PFXt9AzThCDaFedxon8mF8xTRF"
+  },
+  ...
+]
+```
+If no swap route is available, an empty array is returned.
+### Trading pair pool shares
+In the DEX, a trading pair pool is a collection of funds locked in a smart contract used to
+facilitate trading between two assets. Liquidity providers (LPs) supply these funds to the pool and, in return, 
+receive liquidity provider tokens (LP tokens). These tokens represent their share of the pool and a claim on a portion
+of the trading fees.
+
+#### Liquidity Provision
+When providing liquidity, an LP contributes assets to a trading pair like `token_a`/`token_b`.
+The amount of LP tokens received depends on the existing liquidity in the pool.
+Initially, LP tokens are minted based on the ratio of the assets provided.
+As more liquidity is added or removed, the amount of LP tokens minted or burned varies accordingly.
+
+#### `total_supply`
+The `total_supply` of a trading pair indicates the total number of LP tokens in circulation for that pool.
+It increases when liquidity is added (LP tokens are minted) and decreases when liquidity is withdrawn (LP tokens are burned).
+The ownership share of the pool is proportional to an LP's tokens relative to the `total_supply`.
+For instance, if you hold 10 LP tokens and the `total_supply` is 100, you own 10% of the pool,
+entitling you to 10% of the trading fees generated.
