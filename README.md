@@ -99,14 +99,39 @@ If the tokens' decimals vary, normalize the reserves by adjusting for the token 
 - `reserve_token_b_normalized = reserve_token_b * 10^(-decimals_token_b)`
 
 After normalization, calculate the trading prices as follows:
-- Price of `token_a` in `token_b`: 
+- Price `p` of `token_a` in `token_b`: 
   - `p = reserve_token_b_normalized / reserve_token_a_normalized`
-  - &rarr; for `x token_a` you get `y token_b`, where `y = p * x`  
-- Price of `token_b` in `token_a`:
-  - `p = reserve_token_a_normalized / reserve_token_b_normalized`
-  - &rarr; for `x token_b` you get `y token_a`, where `y = p * x`
+  - &rarr; for `x token_a` you get `y token_b`, where `y = p * x`
 - Remember to also account for the 0.3% trading fee, which affects the final received amount:
   - `final_amount = y - (y * 0.003)`
+
+In Sophia the price calculation looks like this:
+```Sophia
+entrypoint calculate_price(factory: IAedexV2Factory, token_a: IAEX9Minimal, token_b: IAEX9Minimal) = 
+
+  let pair_option = factory.get_pair(token_a, token_b)
+  
+  let pair_reserves = switch(pair_option)
+    None => abort("No pair found.")
+    Some(pair) => pair.get_reserves()
+
+  // Normalization. Only needed if token decimals are expected to be different
+  // Get token decimals
+  let decimals_token_a = token_a.meta_info().decimals
+  let decimals_token_b = token_b.meta_info().decimals
+
+  // As Sophia doesn't have float numbers, we normalize by scaling with the decimals of the opposite token
+  let reserve_token_a_normalized = pair_reserves.reserve0 * 10^(decimals_token_b)
+  let reserve_token_b_normalized = pair_reserves.reserve1 * 10^(decimals_token_a)
+
+  // Use precision to get precise result without float numbers. 
+  // As exponent pick a number that reflects your desired level of precision.  
+  let precision = 10^18
+
+  // Calculate price with precision
+  let p = (reserve_token_b_normalized * precision) / reserve_token_a_normalized
+  p
+```
 
 #### Swap routes
 If no direct trading pair for your tokens exists yet, you should consider creating it.
